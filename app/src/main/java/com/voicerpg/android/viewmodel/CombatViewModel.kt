@@ -439,12 +439,12 @@ class CombatViewModel(
         speechManager.stopListening()
     }
 
-    fun submitTypedChant(text: String) {
+    fun submitTypedChant(text: String, forcedAcoustic: com.voicerpg.android.model.AcousticProfile? = null) {
         speechManager.cancel()
-        processIncantation(text)
+        processIncantation(text, forcedAcoustic)
     }
 
-    fun processIncantation(utterance: String) {
+    fun processIncantation(utterance: String, forcedAcoustic: com.voicerpg.android.model.AcousticProfile? = null) {
         if (_state.value.phase != CombatPhase.PLAYER_INPUT) return
         val lower = utterance.lowercase().trim()
         if (lower.isBlank()) return
@@ -497,8 +497,13 @@ class CombatViewModel(
 
             // 2. Parse intent using the selected hero's specific available spells
             val parsed = IntentParser.parse(utterance, activeHero.spells)
-            val acoustic = speechManager.getLatestAcousticProfile()
-            val resonance = resonanceEngine.evaluate(utterance, parsed.spell.school, acoustic)
+            val acoustic = forcedAcoustic ?: speechManager.getLatestAcousticProfile()
+            val resonance = resonanceEngine.evaluate(
+                utterance = utterance,
+                school = parsed.spell.school,
+                acousticProfile = acoustic,
+                ignoreNoveltyDecay = forcedAcoustic != null
+            )
 
             val isSuperLogos = resonance.bonusPercent >= 100
             val isTranscendental = resonance.tier == ResonanceTier.TRANSCENDENTAL

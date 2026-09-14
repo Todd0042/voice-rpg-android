@@ -21,7 +21,8 @@ class ResonanceEngine(
     fun evaluate(
         utterance: String,
         school: SpellSchool,
-        acousticProfile: AcousticProfile = AcousticProfile()
+        acousticProfile: AcousticProfile = AcousticProfile(),
+        ignoreNoveltyDecay: Boolean = false
     ): ResonanceResult {
         val trimmed = utterance.trim()
         if (trimmed.isBlank()) {
@@ -71,7 +72,11 @@ class ResonanceEngine(
         val inflectionPoints = acousticProfile.inflectionScore * 100f // 0f to 40f
 
         // 5. Anti-Repetition Novelty Cache & Surge (Up to +30% bonus)
-        val noveltyResult = noveltyCache.evaluateAndRecord(trimmed)
+        val noveltyResult = if (ignoreNoveltyDecay) {
+            NoveltyCache.NoveltyResult(isNovel = true, decayFactor = 1.0f)
+        } else {
+            noveltyCache.evaluateAndRecord(trimmed)
+        }
         val noveltyPoints = when {
             !noveltyResult.isNovel -> 0f
             wordCount <= 2 -> 0f

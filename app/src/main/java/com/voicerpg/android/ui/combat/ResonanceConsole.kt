@@ -54,9 +54,12 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.voicerpg.android.audio.SpeechState
+import com.voicerpg.android.engine.SpellChantPresets
+import com.voicerpg.android.model.AcousticProfile
 import com.voicerpg.android.model.CombatPhase
 import com.voicerpg.android.model.ResonanceResult
 import com.voicerpg.android.model.ResonanceTier
+import com.voicerpg.android.model.SpellSchool
 import com.voicerpg.android.ui.theme.FrostCyan
 import com.voicerpg.android.ui.theme.LightningViolet
 import com.voicerpg.android.ui.theme.LogosGold
@@ -75,7 +78,7 @@ fun ResonanceConsole(
     activePartyMember: com.voicerpg.android.model.PartyMember?,
     onStartListening: () -> Unit,
     onStopListening: () -> Unit,
-    onSubmitChant: (String) -> Unit,
+    onSubmitChant: (String, AcousticProfile?) -> Unit,
     onCycleHero: () -> Unit = {},
     isChimeMuted: Boolean = true,
     onToggleChimeMute: () -> Unit = {},
@@ -85,6 +88,7 @@ fun ResonanceConsole(
     modifier: Modifier = Modifier
 ) {
     var typedText by remember { mutableStateOf("") }
+    var selectedTier by remember { mutableStateOf(ResonanceTier.TRANSCENDENTAL) }
     val isListening = speechState is SpeechState.Listening
     val isInputEnabled = phase == CombatPhase.PLAYER_INPUT
 
@@ -258,9 +262,100 @@ fun ResonanceConsole(
             }
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(6.dp))
 
-        // Quick Preset Chant Chips (Tailored to active character's spells)
+        // --- CHEATER HUD: RESONANCE INTENSITY SELECTOR ---
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(8.dp))
+                .background(Color(0xFF141424))
+                .border(1.dp, Color(0xFF373752), RoundedCornerShape(8.dp))
+                .padding(horizontal = 8.dp, vertical = 6.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "CHEATER HUD • INTENSITY:",
+                    color = Color(0xFF90A4AE),
+                    fontSize = 8.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Monospace
+                )
+                Text(
+                    text = when (selectedTier) {
+                        ResonanceTier.TRANSCENDENTAL -> "👑 TRANSCENDENTAL (+200% / 3.0x)"
+                        ResonanceTier.MYTHIC -> "🟡 MYTHIC (+125% / 2.25x)"
+                        ResonanceTier.MASTER -> "🟣 MASTER (+80% / 1.8x)"
+                        ResonanceTier.ADEPT -> "🟢 ADEPT (+40% / 1.4x)"
+                        ResonanceTier.BASIC -> "⚪ BASIC (+10% / 1.1x)"
+                    },
+                    color = when (selectedTier) {
+                        ResonanceTier.TRANSCENDENTAL -> Color(0xFFFFEE58)
+                        ResonanceTier.MYTHIC -> LogosGold
+                        ResonanceTier.MASTER -> LightningViolet
+                        ResonanceTier.ADEPT -> FrostCyan
+                        ResonanceTier.BASIC -> Color.LightGray
+                    },
+                    fontSize = 8.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Monospace
+                )
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            // Intensity Selector Pills
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                val tiers = listOf(
+                    Triple(ResonanceTier.BASIC, "⚪ 10%", Color.Gray),
+                    Triple(ResonanceTier.ADEPT, "🟢 40%", FrostCyan),
+                    Triple(ResonanceTier.MASTER, "🟣 80%", LightningViolet),
+                    Triple(ResonanceTier.MYTHIC, "🟡 125%", LogosGold),
+                    Triple(ResonanceTier.TRANSCENDENTAL, "👑 200% MAX", Color(0xFFFFEE58))
+                )
+
+                tiers.forEach { (tier, label, color) ->
+                    val isSelected = selectedTier == tier
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(
+                                if (isSelected) color.copy(alpha = 0.25f) else Color(0xFF1E1E30)
+                            )
+                            .border(
+                                width = if (isSelected) 1.5.dp else 1.dp,
+                                color = if (isSelected) color else Color(0xFF3A3A52),
+                                shape = RoundedCornerShape(6.dp)
+                            )
+                            .clickable(enabled = isInputEnabled) {
+                                selectedTier = tier
+                            }
+                            .padding(horizontal = 8.dp, vertical = 3.dp)
+                    ) {
+                        Text(
+                            text = label,
+                            color = if (isSelected) color else Color(0xFFB0BEC5),
+                            fontSize = 8.5.sp,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(6.dp))
+
+        // Action Chips: Active Hero's Spells + Defend + One-Tap Quick Casts
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -269,20 +364,56 @@ fun ResonanceConsole(
         ) {
             val spells = activePartyMember?.spells ?: emptyList()
             spells.forEach { spell ->
+                val preset = SpellChantPresets.getPreset(spell, selectedTier)
+                val icon = when (spell.school) {
+                    SpellSchool.PYROMANCY -> "🔥"
+                    SpellSchool.CRYOMANCY -> "❄️"
+                    SpellSchool.ELECTROMANCY -> "⚡"
+                    SpellSchool.HOLY -> if (spell.isHeal) "💚" else "⚔️"
+                    SpellSchool.SHADOW -> "🗡️"
+                    SpellSchool.PHYSICAL -> "🛡️"
+                }
                 ChantChip(
-                    title = "${spell.name} (${spell.school.displayName.take(4)})",
-                    chantText = spell.exampleChant,
-                    enabled = isInputEnabled
-                ) { onSubmitChant(it) }
+                    title = "$icon ${spell.name} [${preset.label.take(4)}]",
+                    chantText = preset.chantText,
+                    acousticProfile = preset.acousticProfile,
+                    enabled = isInputEnabled,
+                    accentColor = spell.school.themeColor
+                ) { text, acoustic -> onSubmitChant(text, acoustic) }
             }
 
-            // Universal high-resonance demonstration chants & tactical actions
-            ChantChip("🛡 Defend", "Defend", isInputEnabled) { onSubmitChant(it) }
-            ChantChip("Master (+15%)", "Spirits of the cinder, engulf the archer in an inferno!", isInputEnabled) { onSubmitChant(it) }
-            ChantChip("Logos (+20%)", "O primordial flame of the solar core, descend from the heavens and reduce that wretched archer to ash!", isInputEnabled) { onSubmitChant(it) }
+            // Universal tactical action
+            ChantChip(
+                title = "🛡 Defend",
+                chantText = "Defend",
+                acousticProfile = null,
+                enabled = isInputEnabled,
+                accentColor = Color(0xFF90A4AE)
+            ) { text, acoustic -> onSubmitChant(text, acoustic) }
+
+            // One-Tap Quick Cast Chips for all 5 intensities on primary spell
+            val primarySpell = spells.firstOrNull()
+            if (primarySpell != null) {
+                listOf(
+                    Triple(ResonanceTier.TRANSCENDENTAL, "👑 Cast 200%", Color(0xFFFFEE58)),
+                    Triple(ResonanceTier.MYTHIC, "🟡 Cast 125%", LogosGold),
+                    Triple(ResonanceTier.MASTER, "🟣 Cast 80%", LightningViolet),
+                    Triple(ResonanceTier.ADEPT, "🟢 Cast 40%", FrostCyan),
+                    Triple(ResonanceTier.BASIC, "⚪ Cast 10%", Color.LightGray)
+                ).forEach { (tier, label, color) ->
+                    val quickPreset = SpellChantPresets.getPreset(primarySpell, tier)
+                    ChantChip(
+                        title = label,
+                        chantText = quickPreset.chantText,
+                        acousticProfile = quickPreset.acousticProfile,
+                        enabled = isInputEnabled,
+                        accentColor = color
+                    ) { text, acoustic -> onSubmitChant(text, acoustic) }
+                }
+            }
         }
 
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         // Controls: Mic Button + Text Input Field
         Row(
@@ -342,7 +473,7 @@ fun ResonanceConsole(
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
                 keyboardActions = KeyboardActions(onSend = {
                     if (typedText.isNotBlank()) {
-                        onSubmitChant(typedText)
+                        onSubmitChant(typedText, null)
                         typedText = ""
                     }
                 }),
@@ -350,7 +481,7 @@ fun ResonanceConsole(
                     IconButton(
                         onClick = {
                             if (typedText.isNotBlank()) {
-                                onSubmitChant(typedText)
+                                onSubmitChant(typedText, null)
                                 typedText = ""
                             }
                         },
@@ -433,15 +564,20 @@ private fun ResonanceMeterBar(lastResonance: ResonanceResult?) {
 private fun ChantChip(
     title: String,
     chantText: String,
+    acousticProfile: AcousticProfile?,
     enabled: Boolean,
-    onClick: (String) -> Unit
+    accentColor: Color = LogosGlow,
+    onClick: (String, AcousticProfile?) -> Unit
 ) {
     Surface(
-        onClick = { onClick(chantText) },
+        onClick = { onClick(chantText, acousticProfile) },
         enabled = enabled,
         shape = RoundedCornerShape(12.dp),
         color = Color(0xFF26263B),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF4A4A6A)),
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            if (enabled) accentColor.copy(alpha = 0.7f) else Color(0xFF4A4A6A)
+        ),
         modifier = Modifier.height(28.dp)
     ) {
         Row(
@@ -451,7 +587,7 @@ private fun ChantChip(
             Text(
                 text = title,
                 fontSize = 9.sp,
-                color = if (enabled) LogosGlow else Color.Gray,
+                color = if (enabled) accentColor else Color.Gray,
                 fontWeight = FontWeight.SemiBold,
                 fontFamily = FontFamily.Monospace
             )

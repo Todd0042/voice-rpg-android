@@ -59,4 +59,52 @@ data class AcousticProfile(
 
             return score.coerceIn(0.0f, 0.40f)
         }
+
+    companion object {
+        val BASIC = AcousticProfile(
+            peakVolumeDb = 2.5f,
+            averageVolumeDb = 2.0f,
+            volumeDynamicRange = 1.0f,
+            volumeCrescendoSlope = 0.0f,
+            pitchVarianceHz = 5f,
+            durationMs = 800L
+        )
+
+        val ADEPT = AcousticProfile(
+            peakVolumeDb = 4.0f,
+            averageVolumeDb = 3.5f,
+            volumeDynamicRange = 3.6f,
+            volumeCrescendoSlope = 0.4f,
+            pitchVarianceHz = 8f,
+            durationMs = 1500L
+        )
+
+        val MASTER = AcousticProfile(
+            peakVolumeDb = 6.0f,
+            averageVolumeDb = 5.2f,
+            volumeDynamicRange = 4.0f,
+            volumeCrescendoSlope = 1.0f,
+            pitchVarianceHz = 16f,
+            durationMs = 2600L
+        )
+
+        val MYTHIC = AcousticProfile(
+            peakVolumeDb = 7.6f,
+            averageVolumeDb = 6.5f,
+            volumeDynamicRange = 4.6f,
+            volumeCrescendoSlope = 1.8f,
+            pitchVarianceHz = 20f,
+            durationMs = 3800L
+        )
+
+        val TRANSCENDENTAL = AcousticProfile(
+            peakVolumeDb = 9.8f,
+            averageVolumeDb = 7.8f,
+            volumeDynamicRange = 8.4f,
+            volumeCrescendoSlope = 2.5f,
+            pitchVarianceHz = 38f,
+            estimatedPitchHz = 195f,
+            durationMs = 5200L
+        )
+    }
 }

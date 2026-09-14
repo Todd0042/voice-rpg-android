@@ -174,7 +174,7 @@ fun RetroBattleScreen(
                     activePartyMember = state.activePartyMember,
                     onStartListening = { viewModel.startVoiceListening() },
                     onStopListening = { viewModel.stopVoiceListening() },
-                    onSubmitChant = { viewModel.submitTypedChant(it) },
+                    onSubmitChant = { chant, acoustic -> viewModel.submitTypedChant(chant, acoustic) },
                     onCycleHero = { viewModel.cycleNextPartyMember() },
                     isChimeMuted = isChimeMuted,
                     onToggleChimeMute = { viewModel.speechManager.toggleChimeMute() },

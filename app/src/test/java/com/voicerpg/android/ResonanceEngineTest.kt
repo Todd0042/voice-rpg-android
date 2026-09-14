@@ -3,6 +3,7 @@ package com.voicerpg.android
 import com.voicerpg.android.engine.IntentParser
 import com.voicerpg.android.engine.NoveltyCache
 import com.voicerpg.android.engine.ResonanceEngine
+import com.voicerpg.android.engine.SpellChantPresets
 import com.voicerpg.android.model.AcousticProfile
 import com.voicerpg.android.model.ResonanceTier
 import com.voicerpg.android.model.Spell
@@ -199,5 +200,83 @@ class ResonanceEngineTest {
         assertEquals(0f, deadEnemy.hpRatio)
         assertEquals(0f, deadEnemy.atbRatio)
         assertFalse(deadEnemy.isTurnReady)
+    }
+
+    @Test
+    fun testAllSpellChantPresetsAcrossAllResonanceTiers() {
+        val allSpells = listOf(
+            Spell("fireball", "Fireball", SpellSchool.PYROMANCY, 65, 15, false, false, "Flame", "Fireball"),
+            Spell("frost_spike", "Frost Spike", SpellSchool.CRYOMANCY, 58, 12, false, false, "Ice", "Frost"),
+            Spell("chain_lightning", "Chain Lightning", SpellSchool.ELECTROMANCY, 48, 20, false, true, "Shock", "Lightning"),
+            Spell("holy_smite", "Holy Smite", SpellSchool.HOLY, 70, 14, false, false, "Smite", "Smite"),
+            Spell("lay_on_hands", "Lay on Hands", SpellSchool.HOLY, 110, 16, true, false, "Heal", "Mend"),
+            Spell("shield_wall", "Shield Wall", SpellSchool.PHYSICAL, 40, 10, false, true, "Shield", "Shield"),
+            Spell("soothing_rain", "Soothing Rain", SpellSchool.HOLY, 65, 18, true, true, "Rain", "Rain"),
+            Spell("briar_entangle", "Briar Entangle", SpellSchool.HOLY, 60, 12, false, false, "Snare", "Briar"),
+            Spell("shadow_strike", "Shadow Strike", SpellSchool.SHADOW, 75, 12, false, false, "Shadow", "Strike"),
+            Spell("venom_flurry", "Venom Flurry", SpellSchool.SHADOW, 50, 15, false, true, "Venom", "Flurry")
+        )
+
+        val tiers = listOf(
+            ResonanceTier.BASIC,
+            ResonanceTier.ADEPT,
+            ResonanceTier.MASTER,
+            ResonanceTier.MYTHIC,
+            ResonanceTier.TRANSCENDENTAL
+        )
+
+        for (spell in allSpells) {
+            for (expectedTier in tiers) {
+                val preset = SpellChantPresets.getPreset(spell, expectedTier)
+                val result = engine.evaluate(
+                    utterance = preset.chantText,
+                    school = spell.school,
+                    acousticProfile = preset.acousticProfile,
+                    ignoreNoveltyDecay = true
+                )
+
+                assertEquals(
+                    "Spell '${spell.id}' with preset tier $expectedTier failed: got ${result.tier} with ${result.bonusPercent}%",
+                    expectedTier,
+                    result.tier
+                )
+
+                if (expectedTier == ResonanceTier.TRANSCENDENTAL) {
+                    assertTrue(
+                        "Transcendental tier for ${spell.id} should hit >= 155% bonus (got ${result.bonusPercent}%)",
+                        result.bonusPercent >= 155
+                    )
+                    assertTrue(
+                        "Damage multiplier should be >= 2.55x (got ${result.damageMultiplier}x)",
+                        result.damageMultiplier >= 2.55f
+                    )
+                }
+            }
+        }
+    }
+
+    @Test
+    fun testCheaterHudRepeatTapsDoNotDecay() {
+        val spell = Spell("fireball", "Fireball", SpellSchool.PYROMANCY, 65, 15, false, false, "Flame", "Fireball")
+        val transcendentalPreset = SpellChantPresets.getPreset(spell, ResonanceTier.TRANSCENDENTAL)
+
+        val first = engine.evaluate(
+            utterance = transcendentalPreset.chantText,
+            school = spell.school,
+            acousticProfile = transcendentalPreset.acousticProfile,
+            ignoreNoveltyDecay = true
+        )
+        assertEquals(ResonanceTier.TRANSCENDENTAL, first.tier)
+        assertTrue(first.bonusPercent >= 155)
+
+        // Repeat tap from Cheater HUD with ignoreNoveltyDecay = true
+        val second = engine.evaluate(
+            utterance = transcendentalPreset.chantText,
+            school = spell.school,
+            acousticProfile = transcendentalPreset.acousticProfile,
+            ignoreNoveltyDecay = true
+        )
+        assertEquals("Repeat tap with ignoreNoveltyDecay should maintain Transcendental tier", ResonanceTier.TRANSCENDENTAL, second.tier)
+        assertEquals(first.bonusPercent, second.bonusPercent)
     }
 }
