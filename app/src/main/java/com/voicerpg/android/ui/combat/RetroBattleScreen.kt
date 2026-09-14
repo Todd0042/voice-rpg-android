@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.voicerpg.android.model.CombatPhase
 import com.voicerpg.android.model.FloatingCombatText
+import com.voicerpg.android.ui.environment.BattleEnvironmentCanvas
 import com.voicerpg.android.ui.theme.LogosGold
 import com.voicerpg.android.ui.theme.LogosGlow
 import com.voicerpg.android.ui.theme.RetroBlack
@@ -79,27 +80,30 @@ fun RetroBattleScreen(
                     roundNumber = state.roundNumber,
                     party = state.party,
                     activePartyMemberId = state.activePartyMemberId,
-                    modifier = Modifier.padding(top = 8.dp, start = 8.dp, end = 8.dp)
+                    modifier = Modifier.padding(top = 6.dp, start = 8.dp, end = 8.dp)
                 )
 
-                // Middle: 16-bit Tactical Battle Arena (Left: Party, Right: Monsters)
+                // Environment Switcher Bar (4-Frame Living Backgrounds)
+                EnvironmentSwitcherBar(
+                    currentEnvironment = state.currentEnvironment,
+                    onSelectEnvironment = { viewModel.setEnvironment(it) },
+                    modifier = Modifier.padding(vertical = 2.dp)
+                )
+
+                // Middle: 32-bit Tactical Battle Arena (Left: Party, Right: Monsters)
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
-                        .padding(horizontal = 4.dp, vertical = 6.dp)
+                        .padding(horizontal = 4.dp, vertical = 2.dp)
                         .clip(RoundedCornerShape(8.dp))
-                        .background(
-                            Brush.verticalGradient(
-                                colors = listOf(
-                                    RetroDeepSlate,
-                                    Color(0xFF1B1B2A),
-                                    Color(0xFF141420)
-                                )
-                            )
-                        )
                         .border(1.dp, RetroBorder, RoundedCornerShape(8.dp))
                 ) {
+                    // 4-Frame Living Environmental Background Canvas
+                    BattleEnvironmentCanvas(
+                        environment = state.currentEnvironment,
+                        modifier = Modifier.fillMaxSize()
+                    )
                     // Battle Grid
                     Row(
                         modifier = Modifier

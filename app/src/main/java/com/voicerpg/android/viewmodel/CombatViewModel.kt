@@ -7,6 +7,7 @@ import com.voicerpg.android.audio.SfxManager
 import com.voicerpg.android.audio.SpeechManager
 import com.voicerpg.android.engine.IntentParser
 import com.voicerpg.android.engine.ResonanceEngine
+import com.voicerpg.android.model.BattleEnvironment
 import com.voicerpg.android.model.CharacterStance
 import com.voicerpg.android.model.CombatPhase
 import com.voicerpg.android.model.Enemy
@@ -37,7 +38,8 @@ data class CombatState(
     val isLogosBannerVisible: Boolean = false,
     val floatingTexts: List<FloatingCombatText> = emptyList(),
     val screenShakeOffsetX: Float = 0f,
-    val screenShakeOffsetY: Float = 0f
+    val screenShakeOffsetY: Float = 0f,
+    val currentEnvironment: BattleEnvironment = BattleEnvironment.DUNGEON
 ) {
     val activePartyMember: PartyMember?
         get() = party.firstOrNull { it.id == activePartyMemberId }
@@ -722,8 +724,13 @@ class CombatViewModel(
         }
     }
 
+    fun setEnvironment(env: BattleEnvironment) {
+        _state.value = _state.value.copy(currentEnvironment = env)
+    }
+
     fun restartBattle() {
-        _state.value = createInitialState()
+        val currentEnv = _state.value.currentEnvironment
+        _state.value = createInitialState().copy(currentEnvironment = currentEnv)
         particleEmitter.clear()
         spellVfxEngine.projectiles.clear()
         resonanceEngine.noveltyCache.clear()

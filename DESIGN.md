@@ -29,10 +29,27 @@ A centerpiece innovation of the game is the **Incantation Resonance Engine**: an
   2. **Combat Encounters (Side-View Tactical Battle):**
      * Shattering screen transition into battle.
      * **Layout:**
-       * **Left Flank (Enemies):** Animated monster pixel sprites with breathing cycles, hit reactions, status ailment icons, and segmented HP/barrier gauges.
-       * **Right Flank (Party):** Up to 4 active party members in classic 16-bit combat stances (ready, casting, damaged, victory).
-       * **Top HUD:** Turn-order initiative track (ATB / round-based timeline).
+       * **Left Flank (Party):** Up to 4 active party members in classic 32-bit combat stances (ready, casting, damaged, fallen) on the left flank facing right.
+       * **Right Flank (Enemies):** Animated monster pixel sprites with breathing cycles, hit reactions, and segmented HP/barrier gauges on the right flank facing left.
+       * **Top HUD:** Turn-order initiative track (ATB / round-based timeline) with active hero highlight and environment selector.
        * **Bottom HUD Console:** Live voice transcription terminal displaying the player's recognized words in glowing pixel typography with real-time Resonance Meter feedback.
+
+### The Four-Frame Living Background Rule
+All combat arena backgrounds must feature **four distinct animation frames** looping cyclically (at ~350ms to 450ms per frame) to ensure the environment feels dynamic, alive, and atmospheric without distracting from combat readability:
+
+* **Rule Principles:**
+  1. **Wind & Foliage Motion:** Living vegetation (canopy branches, vines, marsh reeds, grass blades) must bend, sway, and oscillate across the 4 frames.
+  2. **Dynamic Light & Shadow Shifting:** Light sources (braziers, torches, bioluminescent flora, crystal gleams) must modulate between dim and bright flares, causing cast shadows on walls and floors to stretch, angle, and adjust.
+  3. **Atmospheric Secondary Motion:** Floating environmental motes (drifting spores, sparks/embers, water droplets & ripple rings, wandering wisps) travel across predictable trajectory phases over the 4 frames.
+
+#### The Five Canonical Environments
+| Scene | Lore Location | 4-Frame Living Environmental Elements |
+| :--- | :--- | :--- |
+| **Forest** | *Ashwood Wilds* | Swaying tree canopies, grass blades rustling with wind gusts, shifting moonlit ground shadows, drifting golden spore/firefly motes. |
+| **Castle** | *The Broken Garrison* | Stone parapets & crenellations, royal battle banners fluttering in the gale, iron wall braziers with crackling 4-stage flame tongues, drifting smoke embers, moving torchlight reflections across stone slabs. |
+| **Dungeon** | *The Ashwood Sanctum* | Arched gothic masonry, wall sconces flickering between bright flares and dim embers, pillar shadows stretching and adjusting across flagstones, pulsing ancient cyan runic wall glyphs. |
+| **Cave** | *Void Hollows* | Jagged stalactite ceiling with a 4-stage water droplet cycle (forming $\rightarrow$ falling $\rightarrow$ splash $\rightarrow$ expanding ripple ring), glowing amethyst/cyan crystal clusters with pulsing specular glints, shifting cavern wall shadows. |
+| **Swamp Land** | *The Sunken Mire* | Draped moss and swaying cattails, toxic bioluminescent will-o'-the-wisps hovering and bobbing in a 4-frame sine loop, murky bog water pools with expanding bubble ripples, undulating swamp fog. |
 
 ---
 
