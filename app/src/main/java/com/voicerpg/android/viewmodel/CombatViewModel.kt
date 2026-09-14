@@ -7,9 +7,11 @@ import com.voicerpg.android.audio.SfxManager
 import com.voicerpg.android.audio.SpeechManager
 import com.voicerpg.android.engine.IntentParser
 import com.voicerpg.android.engine.ResonanceEngine
+import com.voicerpg.android.engine.StoryEncounters
 import com.voicerpg.android.model.BattleEnvironment
 import com.voicerpg.android.model.CharacterStance
 import com.voicerpg.android.model.CombatPhase
+import com.voicerpg.android.model.EncounterDefinition
 import com.voicerpg.android.model.Enemy
 import com.voicerpg.android.model.FloatingCombatText
 import com.voicerpg.android.model.PartyMember
@@ -20,6 +22,7 @@ import com.voicerpg.android.model.SpellSchool
 import com.voicerpg.android.model.TargetSelection
 import com.voicerpg.android.ui.vfx.ParticleEmitter
 import com.voicerpg.android.ui.vfx.SpellVfxEngine
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -55,8 +58,12 @@ class CombatViewModel(
     val sfxManager: SfxManager = SfxManager(),
     val resonanceEngine: ResonanceEngine = ResonanceEngine(),
     val particleEmitter: ParticleEmitter = ParticleEmitter(),
-    val spellVfxEngine: SpellVfxEngine = SpellVfxEngine()
+    val spellVfxEngine: SpellVfxEngine = SpellVfxEngine(),
+    private val scopeOverride: CoroutineScope? = null
 ) : ViewModel() {
+
+    private val activeScope: CoroutineScope
+        get() = scopeOverride ?: viewModelScope
 
     // Unique Authentic Spell Sets for each Party Member (from DESIGN.md)
     private val aethelSpells = listOf(
@@ -115,7 +122,7 @@ class CombatViewModel(
 
     private fun startAtbLoop() {
         atbJob?.cancel()
-        atbJob = viewModelScope.launch {
+        atbJob = activeScope.launch {
             while (true) {
                 delay(40)
                 if (_state.value.phase == CombatPhase.ATB_WAITING) {
@@ -186,7 +193,7 @@ class CombatViewModel(
                 }
             )
             if (speechManager.isAutoListen.value) {
-                viewModelScope.launch {
+                activeScope.launch {
                     delay(150)
                     startVoiceListening()
                 }
@@ -198,7 +205,7 @@ class CombatViewModel(
     }
 
     private fun executeSingleEnemyAttack(enemy: Enemy) {
-        viewModelScope.launch {
+        activeScope.launch {
             // 1. Immediately pause everything in ENEMY_ACTIONS phase
             _state.value = _state.value.copy(
                 phase = CombatPhase.ENEMY_ACTIONS,
@@ -209,6 +216,40 @@ class CombatViewModel(
             val aliveHeroes = _state.value.party.filter { it.isAlive }
             if (aliveHeroes.isEmpty()) {
                 _state.value = _state.value.copy(phase = CombatPhase.BATTLE_LOST)
+                return@launch
+            }
+
+            val aliveEnemiesCount = _state.value.enemies.count { it.isAlive }
+            val isSummoner = enemy.isBoss || enemy.subtitle.contains("Summoner", ignoreCase = true) ||
+                    enemy.subtitle.contains("Occultist", ignoreCase = true)
+
+            // Boss or summoner summons minions if under 70% HP or field has fewer than 3 enemies (capped at 6)
+            val shouldSummon = isSummoner && aliveEnemiesCount < 4 &&
+                    (enemy.hpRatio <= 0.70f || (enemy.isBoss && aliveEnemiesCount <= 1)) &&
+                    Random.nextFloat() < 0.60f
+
+            if (shouldSummon) {
+                // Reset this enemy's ATB gauge to 0
+                val updatedEnemies = _state.value.enemies.map {
+                    if (it.id == enemy.id) it.copy(atbGauge = 0f) else it
+                }
+                _state.value = _state.value.copy(enemies = updatedEnemies)
+
+                val minionName = when {
+                    enemy.id.contains("broodmother") -> "Spiderling"
+                    enemy.id.contains("acolyte") || enemy.id.contains("bone") -> "Restless Skeleton"
+                    else -> "Blighted Minion"
+                }
+                val minion = StoryEncounters.createMinion(
+                    idSuffix = "${System.currentTimeMillis() % 1000}",
+                    name = minionName,
+                    subtitle = "Minion",
+                    hp = if (enemy.isBoss) 160 else 130
+                )
+                summonReinforcements(listOf(minion))
+
+                delay(700)
+                checkAndTransitionNextTurn()
                 return@launch
             }
 
@@ -269,7 +310,7 @@ class CombatViewModel(
                 floatingTexts = _state.value.floatingTexts + fct
             )
 
-            viewModelScope.launch {
+            activeScope.launch {
                 delay(1200)
                 _state.value = _state.value.copy(
                     floatingTexts = _state.value.floatingTexts.filter { it.id != fct.id }
@@ -320,7 +361,7 @@ class CombatViewModel(
                 }
             )
             if (speechManager.isAutoListen.value) {
-                viewModelScope.launch {
+                activeScope.launch {
                     delay(150)
                     startVoiceListening()
                 }
@@ -361,7 +402,7 @@ class CombatViewModel(
                 startY = 420f
             )
             _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts + fct)
-            viewModelScope.launch {
+            activeScope.launch {
                 delay(1000)
                 _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts.filter { it.id != fct.id })
             }
@@ -379,7 +420,7 @@ class CombatViewModel(
                 startY = 420f
             )
             _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts + fct)
-            viewModelScope.launch {
+            activeScope.launch {
                 delay(900)
                 _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts.filter { it.id != fct.id })
             }
@@ -404,7 +445,7 @@ class CombatViewModel(
         val activeHero = _state.value.activePartyMember ?: return
         if (_state.value.phase != CombatPhase.PLAYER_INPUT) return
 
-        viewModelScope.launch {
+        activeScope.launch {
             speechManager.cancel()
             val fct = FloatingCombatText(
                 text = "${activeHero.name} Guards! (+Def)",
@@ -420,7 +461,7 @@ class CombatViewModel(
                 activePartyMemberId = null,
                 floatingTexts = _state.value.floatingTexts + fct
             )
-            viewModelScope.launch {
+            activeScope.launch {
                 delay(1000)
                 _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts.filter { it.id != fct.id })
             }
@@ -486,7 +527,7 @@ class CombatViewModel(
 
         val activeHero = heroByName ?: heroBySpell ?: heroBySchoolKeyword ?: _state.value.activePartyMember ?: return
 
-        viewModelScope.launch {
+        activeScope.launch {
             speechManager.cancel()
 
             // 1. Enter resolving phase & update active hero
@@ -496,7 +537,7 @@ class CombatViewModel(
             )
 
             // 2. Parse intent using the selected hero's specific available spells
-            val parsed = IntentParser.parse(utterance, activeHero.spells)
+            val parsed = IntentParser.parse(utterance, activeHero.spells, _state.value.enemies, _state.value.party)
             val acoustic = forcedAcoustic ?: speechManager.getLatestAcousticProfile()
             val resonance = resonanceEngine.evaluate(
                 utterance = utterance,
@@ -573,9 +614,9 @@ class CombatViewModel(
             val finalAmount = (parsed.spell.basePower * resonance.damageMultiplier).toInt()
 
             if (isHeal) {
-                applyHealAction(activeHero, parsed.spell, parsed.target, finalAmount, resonance.tier)
+                applyHealAction(activeHero, parsed.spell, parsed.target, parsed.targetHeroId, finalAmount, resonance.tier)
             } else {
-                applyDamageToEnemies(parsed.target, finalAmount, resonance.tier)
+                applyDamageToEnemies(parsed.target, parsed.targetEnemyId, finalAmount, resonance.tier)
             }
 
             delay(700)
@@ -613,6 +654,7 @@ class CombatViewModel(
         caster: PartyMember,
         spell: Spell,
         target: TargetSelection,
+        targetHeroId: String?,
         healAmount: Int,
         tier: ResonanceTier
     ) {
@@ -622,6 +664,10 @@ class CombatViewModel(
 
         val targetsToHeal = when {
             spell.hitsAll || target == TargetSelection.PARTY_LOWEST -> currentParty.filter { it.isAlive }
+            targetHeroId != null -> {
+                val matched = currentParty.filter { it.id == targetHeroId && it.isAlive }
+                if (matched.isNotEmpty()) matched else listOfNotNull(currentParty.filter { it.isAlive }.minByOrNull { it.hpRatio })
+            }
             target == TargetSelection.CEDRIC -> currentParty.filter { it.id == "cedric" && it.isAlive }
             target == TargetSelection.LYRA -> currentParty.filter { it.id == "lyra" && it.isAlive }
             target == TargetSelection.ZEPHYR -> currentParty.filter { it.id == "zephyr" && it.isAlive }
@@ -656,7 +702,7 @@ class CombatViewModel(
             floatingTexts = _state.value.floatingTexts + newFloatingTexts
         )
 
-        viewModelScope.launch {
+        activeScope.launch {
             delay(1200)
             val idsToRemove = newFloatingTexts.map { it.id }.toSet()
             _state.value = _state.value.copy(
@@ -665,14 +711,28 @@ class CombatViewModel(
         }
     }
 
-    private fun applyDamageToEnemies(target: TargetSelection, damage: Int, tier: ResonanceTier) {
+    private fun applyDamageToEnemies(
+        target: TargetSelection,
+        targetEnemyId: String?,
+        damage: Int,
+        tier: ResonanceTier
+    ) {
         val currentEnemies = _state.value.enemies
 
-        val targetList = when (target) {
-            TargetSelection.ORC -> currentEnemies.filter { it.id == "orc" && it.isAlive }
-            TargetSelection.ARCHER -> currentEnemies.filter { it.id == "archer" && it.isAlive }
-            TargetSelection.SHAMAN -> currentEnemies.filter { it.id == "shaman" && it.isAlive }
-            TargetSelection.ALL_ENEMIES -> currentEnemies.filter { it.isAlive }
+        val targetList = when {
+            target == TargetSelection.ALL_ENEMIES -> currentEnemies.filter { it.isAlive }
+            targetEnemyId != null -> {
+                val matched = currentEnemies.filter { it.id == targetEnemyId && it.isAlive }
+                if (matched.isNotEmpty()) matched
+                else {
+                    val marked = currentEnemies.firstOrNull { it.isTargeted && it.isAlive }
+                    if (marked != null) listOf(marked)
+                    else listOfNotNull(currentEnemies.firstOrNull { it.isAlive })
+                }
+            }
+            target == TargetSelection.ORC -> currentEnemies.filter { it.id == "orc" && it.isAlive }
+            target == TargetSelection.ARCHER -> currentEnemies.filter { it.id == "archer" && it.isAlive }
+            target == TargetSelection.SHAMAN -> currentEnemies.filter { it.id == "shaman" && it.isAlive }
             else -> {
                 val marked = currentEnemies.firstOrNull { it.isTargeted && it.isAlive }
                 if (marked != null) listOf(marked)
@@ -717,7 +777,7 @@ class CombatViewModel(
             floatingTexts = _state.value.floatingTexts + newFloatingTexts
         )
 
-        viewModelScope.launch {
+        activeScope.launch {
             delay(1200)
             val idsToRemove = newFloatingTexts.map { it.id }.toSet()
             _state.value = _state.value.copy(
@@ -726,7 +786,7 @@ class CombatViewModel(
         }
 
         // Clear flash
-        viewModelScope.launch {
+        activeScope.launch {
             delay(200)
             _state.value = _state.value.copy(
                 enemies = _state.value.enemies.map { it.copy(isDamagedFlash = false) }
@@ -735,7 +795,7 @@ class CombatViewModel(
     }
 
     private fun triggerScreenShake(magnitude: Float = 20f) {
-        viewModelScope.launch {
+        activeScope.launch {
             for (i in 0 until 8) {
                 val dx = (Random.nextFloat() * magnitude * 2f - magnitude)
                 val dy = (Random.nextFloat() * magnitude * 2f - magnitude)
@@ -748,6 +808,90 @@ class CombatViewModel(
 
     fun setEnvironment(env: BattleEnvironment) {
         _state.value = _state.value.copy(currentEnvironment = env)
+    }
+
+    /**
+     * Spawns new enemies onto the battlefield mid-fight (e.g. boss summon or reinforcements wave),
+     * strictly enforcing the hard maximum cap of 6 enemies simultaneously on field.
+     */
+    fun summonReinforcements(newEnemies: List<Enemy>): Int {
+        val currentAlive = _state.value.enemies.count { it.isAlive }
+        val maxAllowed = (6 - currentAlive).coerceAtLeast(0)
+        val toAdd = newEnemies.take(maxAllowed).map {
+            it.copy(atbGauge = 0f, isDamagedFlash = false)
+        }
+        if (toAdd.isEmpty()) return 0
+
+        val updatedEnemies = _state.value.enemies + toAdd
+        val announcementText = if (toAdd.size == 1) {
+            "${toAdd.first().name} Joined!"
+        } else {
+            "Reinforcements Arrived! (+${toAdd.size})"
+        }
+
+        val fct = FloatingCombatText(
+            text = announcementText,
+            color = Color(0xFFFFB74D),
+            startX = 780f,
+            startY = 380f,
+            isCrit = true
+        )
+
+        sfxManager.playSpellCast()
+        triggerScreenShake(12f)
+
+        _state.value = _state.value.copy(
+            enemies = updatedEnemies,
+            floatingTexts = _state.value.floatingTexts + fct
+        )
+
+        activeScope.launch {
+            delay(1500)
+            _state.value = _state.value.copy(
+                floatingTexts = _state.value.floatingTexts.filter { it.id != fct.id }
+            )
+        }
+
+        return toAdd.size
+    }
+
+    fun spawnEnemy(enemy: Enemy): Boolean = summonReinforcements(listOf(enemy)) > 0
+
+    fun startEncounter(encounter: EncounterDefinition) {
+        val partyToUse = encounter.initialParty ?: if (_state.value.party.isNotEmpty()) {
+            _state.value.party.map {
+                it.copy(
+                    currentHp = it.maxHp,
+                    currentMp = it.maxMp,
+                    stance = CharacterStance.READY,
+                    atbGauge = (Random.nextFloat() * 0.4f + 0.3f)
+                )
+            }
+        } else {
+            StoryEncounters.createStandardParty()
+        }
+        startEncounter(partyToUse, encounter.enemies, encounter.environment)
+    }
+
+    fun startEncounter(
+        party: List<PartyMember>,
+        enemies: List<Enemy>,
+        environment: BattleEnvironment
+    ) {
+        atbJob?.cancel()
+        speechManager.cancel()
+        particleEmitter.clear()
+        spellVfxEngine.projectiles.clear()
+        resonanceEngine.noveltyCache.clear()
+
+        _state.value = CombatState(
+            phase = CombatPhase.ATB_WAITING,
+            roundNumber = 1,
+            party = party,
+            enemies = enemies.take(6),
+            currentEnvironment = environment
+        )
+        startAtbLoop()
     }
 
     fun restartBattle() {

@@ -676,28 +676,54 @@ object PixelSpriteData {
                 }
                 grid to ZEPHYR_PALETTE
             }
-            "orc" -> {
-                val grid = when (frame) {
-                    SpriteFrame.IDLE_UPRIGHT -> ORC_UPRIGHT
-                    else -> ORC_CROUCH
+            else -> {
+                val lowerId = characterId.lowercase()
+                when {
+                    lowerId == "orc" || lowerId.contains("vanguard") || lowerId.contains("ironclad") ||
+                            lowerId.contains("guard") || lowerId.contains("captain") || lowerId.contains("brute") ||
+                            lowerId.contains("minion") || lowerId.contains("knight") -> {
+                        val grid = when (frame) {
+                            SpriteFrame.IDLE_UPRIGHT -> ORC_UPRIGHT
+                            else -> ORC_CROUCH
+                        }
+                        grid to ORC_PALETTE
+                    }
+                    lowerId == "archer" || lowerId.contains("sniper") || lowerId.contains("arbalest") ||
+                            lowerId.contains("marksman") || lowerId.contains("scout") || lowerId.contains("bone_archer") -> {
+                        val grid = when (frame) {
+                            SpriteFrame.IDLE_UPRIGHT -> ARCHER_UPRIGHT
+                            else -> ARCHER_CROUCH
+                        }
+                        grid to ARCHER_PALETTE
+                    }
+                    lowerId == "shaman" || lowerId.contains("occultist") || lowerId.contains("warlock") ||
+                            lowerId.contains("acolyte") || lowerId.contains("wisp") || lowerId.contains("broodmother") ||
+                            lowerId.contains("summoner") || lowerId.contains("witch") || lowerId.contains("phantom") ||
+                            lowerId.contains("ghoul") || lowerId.contains("bone") -> {
+                        val grid = when (frame) {
+                            SpriteFrame.IDLE_UPRIGHT -> SHAMAN_UPRIGHT
+                            else -> SHAMAN_CROUCH
+                        }
+                        grid to SHAMAN_PALETTE
+                    }
+                    lowerId == "hero" || lowerId.contains("aethel") -> {
+                        val grid = when (frame) {
+                            SpriteFrame.IDLE_UPRIGHT -> AETHEL_UPRIGHT
+                            SpriteFrame.IDLE_CROUCH -> AETHEL_CROUCH
+                            SpriteFrame.ACTION_CAST -> AETHEL_CAST
+                            SpriteFrame.DAMAGED -> AETHEL_CROUCH
+                        }
+                        grid to AETHEL_PALETTE
+                    }
+                    else -> {
+                        val grid = when (frame) {
+                            SpriteFrame.IDLE_UPRIGHT -> ORC_UPRIGHT
+                            else -> ORC_CROUCH
+                        }
+                        grid to ORC_PALETTE
+                    }
                 }
-                grid to ORC_PALETTE
             }
-            "archer" -> {
-                val grid = when (frame) {
-                    SpriteFrame.IDLE_UPRIGHT -> ARCHER_UPRIGHT
-                    else -> ARCHER_CROUCH
-                }
-                grid to ARCHER_PALETTE
-            }
-            "shaman" -> {
-                val grid = when (frame) {
-                    SpriteFrame.IDLE_UPRIGHT -> SHAMAN_UPRIGHT
-                    else -> SHAMAN_CROUCH
-                }
-                grid to SHAMAN_PALETTE
-            }
-            else -> AETHEL_UPRIGHT to AETHEL_PALETTE
         }
     }
 }

@@ -1,5 +1,7 @@
 package com.voicerpg.android.engine
 
+import com.voicerpg.android.model.Enemy
+import com.voicerpg.android.model.PartyMember
 import com.voicerpg.android.model.ParsedIntent
 import com.voicerpg.android.model.Spell
 import com.voicerpg.android.model.SpellSchool
@@ -7,25 +9,136 @@ import com.voicerpg.android.model.TargetSelection
 
 object IntentParser {
 
-    fun parse(utterance: String, availableSpells: List<Spell>): ParsedIntent {
+    fun parse(
+        utterance: String,
+        availableSpells: List<Spell>,
+        activeEnemies: List<Enemy> = emptyList(),
+        party: List<PartyMember> = emptyList()
+    ): ParsedIntent {
         val lower = utterance.lowercase()
+        val hasHealKeyword = lower.contains("heal") || lower.contains("mend") || lower.contains("restore") ||
+                lower.contains("cure") || lower.contains("rain") || lower.contains("soothing")
+
+        val wordsInUtterance = lower.split(Regex("[^a-zA-Z0-9]+")).toSet()
+
+        var targetEnemyId: String? = null
+        var targetHeroId: String? = null
 
         // 1. Detect target
-        var target = when {
-            lower.contains("cedric") || lower.contains("templar") -> TargetSelection.CEDRIC
-            lower.contains("lyra") || lower.contains("warden") || lower.contains("druid") -> TargetSelection.LYRA
-            lower.contains("zephyr") || lower.contains("assassin") -> TargetSelection.ZEPHYR
-            lower.contains("aethel") || lower.contains("mage") && (lower.contains("heal") || lower.contains("mend")) -> TargetSelection.HERO
-            lower.contains("orc") || lower.contains("warrior") -> TargetSelection.ORC
-            lower.contains("archer") || lower.contains("skeleton") -> TargetSelection.ARCHER
-            lower.contains("shaman") || lower.contains("mage") || lower.contains("caster") -> TargetSelection.SHAMAN
-            lower.contains("all") || lower.contains("everyone") || lower.contains("horde") -> TargetSelection.ALL_ENEMIES
+        var target: TargetSelection = when {
+            // Check Party targets
+            lower.contains("cedric") || lower.contains("templar") -> {
+                targetHeroId = party.firstOrNull { it.id == "cedric" }?.id ?: "cedric"
+                TargetSelection.CEDRIC
+            }
+            lower.contains("lyra") || lower.contains("warden") || lower.contains("druid") -> {
+                targetHeroId = party.firstOrNull { it.id == "lyra" }?.id ?: "lyra"
+                TargetSelection.LYRA
+            }
+            lower.contains("zephyr") || lower.contains("assassin") -> {
+                targetHeroId = party.firstOrNull { it.id == "zephyr" }?.id ?: "zephyr"
+                TargetSelection.ZEPHYR
+            }
+            lower.contains("aethel") || ((lower.contains("mage") || lower.contains("elementalist")) && hasHealKeyword) -> {
+                targetHeroId = party.firstOrNull { it.id == "hero" }?.id ?: "hero"
+                TargetSelection.HERO
+            }
+            // Check dynamic party names if not standard 4
+            party.any { lower.contains(it.name.lowercase()) } -> {
+                val matchedHero = party.first { lower.contains(it.name.lowercase()) }
+                targetHeroId = matchedHero.id
+                TargetSelection.SPECIFIC_HERO
+            }
+            "self" in wordsInUtterance || "me" in wordsInUtterance -> TargetSelection.SELF
             lower.contains("party") || lower.contains("allies") || lower.contains("team") -> TargetSelection.PARTY_LOWEST
-            lower.contains("self") || lower.contains("me") -> TargetSelection.SELF
+            "all" in wordsInUtterance || "everyone" in wordsInUtterance || "horde" in wordsInUtterance ||
+                    lower.contains("all enemies") || lower.contains("all foes") -> TargetSelection.ALL_ENEMIES
             else -> TargetSelection.FIRST_ALIVE_ENEMY
         }
 
-        val hasHealKeyword = lower.contains("heal") || lower.contains("mend") || lower.contains("restore") || lower.contains("cure") || lower.contains("rain") || lower.contains("soothing")
+        // If target is not a party-specific target, check enemy targets dynamically
+        if (target == TargetSelection.FIRST_ALIVE_ENEMY) {
+            val aliveEnemies = activeEnemies.filter { it.isAlive }
+
+            // A. Ordinal position matching ("first", "second", "third", etc.)
+            val ordinalIndex = when {
+                lower.contains("first") || lower.contains("1st") || lower.contains("enemy 1") || lower.contains("monster 1") -> 0
+                lower.contains("second") || lower.contains("2nd") || lower.contains("enemy 2") || lower.contains("monster 2") -> 1
+                lower.contains("third") || lower.contains("3rd") || lower.contains("enemy 3") || lower.contains("monster 3") -> 2
+                lower.contains("fourth") || lower.contains("4th") || lower.contains("enemy 4") || lower.contains("monster 4") -> 3
+                lower.contains("fifth") || lower.contains("5th") || lower.contains("enemy 5") || lower.contains("monster 5") -> 4
+                lower.contains("sixth") || lower.contains("6th") || lower.contains("enemy 6") || lower.contains("monster 6") -> 5
+                else -> -1
+            }
+
+            if (ordinalIndex in aliveEnemies.indices) {
+                val matched = aliveEnemies[ordinalIndex]
+                target = TargetSelection.SPECIFIC_ENEMY
+                targetEnemyId = matched.id
+            } else {
+                // B. Dynamic name and subtitle matching from active enemies with relevance scoring
+                val scoredEnemies = aliveEnemies.map { enemy ->
+                    val nameLower = enemy.name.lowercase()
+                    val subtitleLower = enemy.subtitle.lowercase()
+                    val idLower = enemy.id.lowercase()
+                    var score = 0
+
+                    if (lower.contains(nameLower)) score += 100
+                    if (lower.contains(subtitleLower)) score += 30
+                    if (lower.contains(idLower)) score += 40
+
+                    val words = (nameLower.split(" ") + subtitleLower.split(" "))
+                        .map { it.trim().trimEnd('!', '.', ',', '?') }
+                        .filter { it.length >= 3 && it != "the" && it != "and" }
+
+                    for (word in words) {
+                        if (lower.contains(word)) {
+                            score += if (word.length >= 4) 15 else 8
+                        }
+                    }
+                    enemy to score
+                }.filter { it.second > 0 }
+
+                val matchedByName = scoredEnemies.maxByOrNull { it.second }?.first
+
+                if (matchedByName != null) {
+                    target = when (matchedByName.id) {
+                        "orc" -> TargetSelection.ORC
+                        "archer" -> TargetSelection.ARCHER
+                        "shaman" -> TargetSelection.SHAMAN
+                        else -> TargetSelection.SPECIFIC_ENEMY
+                    }
+                    targetEnemyId = matchedByName.id
+                } else {
+                    // C. Fallback to classic keyword matching (useful when activeEnemies list is empty or for presets)
+                    when {
+                        lower.contains("orc") || lower.contains("warrior") -> {
+                            target = TargetSelection.ORC
+                            targetEnemyId = "orc"
+                        }
+                        lower.contains("archer") || lower.contains("skeleton") -> {
+                            target = TargetSelection.ARCHER
+                            targetEnemyId = "archer"
+                        }
+                        lower.contains("shaman") || lower.contains("caster") || (lower.contains("mage") && !hasHealKeyword) -> {
+                            target = TargetSelection.SHAMAN
+                            targetEnemyId = "shaman"
+                        }
+                        else -> {
+                            // D. If an enemy is currently marked as targeted by the player, lock on to it
+                            val currentTargeted = activeEnemies.firstOrNull { it.isTargeted && it.isAlive }
+                            if (currentTargeted != null) {
+                                target = TargetSelection.SPECIFIC_ENEMY
+                                targetEnemyId = currentTargeted.id
+                            } else {
+                                target = TargetSelection.FIRST_ALIVE_ENEMY
+                                targetEnemyId = aliveEnemies.firstOrNull()?.id
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
         // 2. Detect spell
         val matchedSpell = availableSpells.firstOrNull { spell ->
@@ -42,15 +155,18 @@ object IntentParser {
             schoolKeywords.any { lower.contains(it) }
         } ?: availableSpells.firstOrNull() ?: defaultFallbackSpell()
 
-        // If it's a heal spell and targeting was unset/first alive enemy, default to party lowest or self
-        if (matchedSpell.isHeal && (target == TargetSelection.FIRST_ALIVE_ENEMY || target == TargetSelection.ALL_ENEMIES)) {
+        // If it's a heal spell and targeting was unset/first alive enemy/all enemies, default to party lowest
+        if (matchedSpell.isHeal && (target == TargetSelection.FIRST_ALIVE_ENEMY || target == TargetSelection.ALL_ENEMIES || target == TargetSelection.SPECIFIC_ENEMY)) {
             target = TargetSelection.PARTY_LOWEST
+            targetEnemyId = null
         }
 
         return ParsedIntent(
             spell = matchedSpell,
             target = target,
-            rawUtterance = utterance
+            rawUtterance = utterance,
+            targetEnemyId = targetEnemyId,
+            targetHeroId = targetHeroId
         )
     }
 

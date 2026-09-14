@@ -1,0 +1,211 @@
+package com.voicerpg.android
+
+import androidx.compose.ui.graphics.Color
+import com.voicerpg.android.audio.SpeechManager
+import com.voicerpg.android.engine.IntentParser
+import com.voicerpg.android.engine.NoveltyCache
+import com.voicerpg.android.engine.ResonanceEngine
+import com.voicerpg.android.engine.StoryEncounters
+import com.voicerpg.android.model.BattleEnvironment
+import com.voicerpg.android.model.CharacterStance
+import com.voicerpg.android.model.CombatPhase
+import com.voicerpg.android.model.Enemy
+import com.voicerpg.android.model.PartyMember
+import com.voicerpg.android.model.Spell
+import com.voicerpg.android.model.SpellSchool
+import com.voicerpg.android.model.TargetSelection
+import com.voicerpg.android.viewmodel.CombatViewModel
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
+import org.junit.Before
+import org.junit.Test
+
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+
+class DynamicEncounterTest {
+
+    private lateinit var viewModel: CombatViewModel
+
+    @Before
+    fun setUp() {
+        val dummySpeech = SpeechManager()
+        val testScope = CoroutineScope(Dispatchers.Default)
+        viewModel = CombatViewModel(
+            speechManager = dummySpeech,
+            resonanceEngine = ResonanceEngine(NoveltyCache()),
+            scopeOverride = testScope
+        )
+    }
+
+    @Test
+    fun testSoloPrologue1Hero2Enemies() {
+        viewModel.startEncounter(StoryEncounters.PROLOGUE_SOLO)
+        val state = viewModel.state.value
+
+        assertEquals(1, state.party.size)
+        assertEquals("hero", state.party[0].id)
+        assertEquals(2, state.enemies.size)
+        assertEquals(BattleEnvironment.FOREST, state.currentEnvironment)
+
+        // Dynamic voice targeting by custom enemy name
+        val intent = IntentParser.parse(
+            utterance = "Fireball the shadow wisp beta!",
+            availableSpells = state.party[0].spells,
+            activeEnemies = state.enemies,
+            party = state.party
+        )
+
+        assertEquals("fireball", intent.spell.id)
+        assertEquals("wisp_2", intent.targetEnemyId)
+    }
+
+    @Test
+    fun testFull6EnemyHordeEncounterAndOrdinalTargeting() {
+        viewModel.startEncounter(StoryEncounters.CASTLE_HORDE)
+        val state = viewModel.state.value
+
+        assertEquals(4, state.party.size)
+        assertEquals(6, state.enemies.size)
+        assertEquals(BattleEnvironment.CASTLE, state.currentEnvironment)
+
+        // Target by specific title/role
+        val intentBoss = IntentParser.parse(
+            utterance = "Frost spike the gate captain!",
+            availableSpells = StoryEncounters.aethelSpells,
+            activeEnemies = state.enemies,
+            party = state.party
+        )
+        assertEquals("gate_captain", intentBoss.targetEnemyId)
+
+        // Target by ordinal (first, second, third, etc.)
+        val intentOrdinal = IntentParser.parse(
+            utterance = "Strike enemy 2 with lightning",
+            availableSpells = StoryEncounters.aethelSpells,
+            activeEnemies = state.enemies,
+            party = state.party
+        )
+        // Enemy at index 1 is "ironclad_2"
+        assertEquals(state.enemies[1].id, intentOrdinal.targetEnemyId)
+    }
+
+    @Test
+    fun testMidBattleReinforcementsStrict6EnemyCap() {
+        // Start encounter with 4 enemies
+        val initialEnemies = listOf(
+            StoryEncounters.createMinion("1", "Minion 1"),
+            StoryEncounters.createMinion("2", "Minion 2"),
+            StoryEncounters.createMinion("3", "Minion 3"),
+            StoryEncounters.createMinion("4", "Minion 4")
+        )
+        viewModel.startEncounter(
+            party = StoryEncounters.createStandardParty(),
+            enemies = initialEnemies,
+            environment = BattleEnvironment.DUNGEON
+        )
+
+        assertEquals(4, viewModel.state.value.enemies.size)
+
+        // Attempt to summon 4 reinforcements (would be 8 total, exceeding cap of 6)
+        val incoming = listOf(
+            StoryEncounters.createMinion("5", "Minion 5"),
+            StoryEncounters.createMinion("6", "Minion 6"),
+            StoryEncounters.createMinion("7", "Minion 7"),
+            StoryEncounters.createMinion("8", "Minion 8")
+        )
+
+        val admitted = viewModel.summonReinforcements(incoming)
+
+        // Exactly 2 enemies should be admitted to reach the hard maximum of 6
+        assertEquals(2, admitted)
+        assertEquals(6, viewModel.state.value.enemies.size)
+        assertEquals(6, viewModel.state.value.enemies.count { it.isAlive })
+
+        // A subsequent summon while at 6 alive enemies must admit 0
+        val extra = viewModel.summonReinforcements(listOf(StoryEncounters.createMinion("9", "Minion 9")))
+        assertEquals(0, extra)
+        assertEquals(6, viewModel.state.value.enemies.size)
+    }
+
+    @Test
+    fun testReinforcementsAdmittedWhenEnemiesAreDefeated() {
+        val initialEnemies = listOf(
+            StoryEncounters.createMinion("1", "Minion 1", hp = 100),
+            StoryEncounters.createMinion("2", "Minion 2", hp = 0), // Already defeated!
+            StoryEncounters.createMinion("3", "Minion 3", hp = 100),
+            StoryEncounters.createMinion("4", "Minion 4", hp = 0)  // Already defeated!
+        )
+        viewModel.startEncounter(
+            party = StoryEncounters.createStandardParty(),
+            enemies = initialEnemies,
+            environment = BattleEnvironment.CAVE
+        )
+
+        // 2 alive enemies out of 4 total on field
+        val currentAlive = viewModel.state.value.enemies.count { it.isAlive }
+        assertEquals(2, currentAlive)
+
+        // (6 - 2) = 4 available slots
+        val reinforcements = listOf(
+            StoryEncounters.createMinion("r1", "Reinforcement 1"),
+            StoryEncounters.createMinion("r2", "Reinforcement 2"),
+            StoryEncounters.createMinion("r3", "Reinforcement 3"),
+            StoryEncounters.createMinion("r4", "Reinforcement 4"),
+            StoryEncounters.createMinion("r5", "Reinforcement 5")
+        )
+
+        val admitted = viewModel.summonReinforcements(reinforcements)
+        assertEquals(4, admitted) // Only 4 admitted to reach cap of 6 alive
+        assertEquals(6, viewModel.state.value.enemies.count { it.isAlive })
+    }
+
+    @Test
+    fun testDynamicPartyHealingTargetResolution() {
+        val party = StoryEncounters.createStandardParty()
+        val spells = StoryEncounters.lyraSpells
+
+        val healIntentCedric = IntentParser.parse(
+            utterance = "Spirits of the grove, mend Sir Cedric's wounds!",
+            availableSpells = spells,
+            activeEnemies = emptyList(),
+            party = party
+        )
+        assertEquals("soothing_rain", healIntentCedric.spell.id)
+        assertEquals("cedric", healIntentCedric.targetHeroId)
+
+        val healIntentParty = IntentParser.parse(
+            utterance = "Soothing rain upon our entire party",
+            availableSpells = spells,
+            activeEnemies = emptyList(),
+            party = party
+        )
+        assertEquals(TargetSelection.PARTY_LOWEST, healIntentParty.target)
+    }
+
+    @Test
+    fun testPlayerIncantationAgainstReinforcedMinion() {
+        viewModel.startEncounter(StoryEncounters.DUNGEON_DESCENT)
+
+        // Spawn a reinforcement mid-battle
+        val summonSuccess = viewModel.spawnEnemy(
+            StoryEncounters.createMinion("bone_guard", "Bone Vanguard", hp = 200)
+        )
+        assertTrue(summonSuccess)
+
+        val activeEnemies = viewModel.state.value.enemies
+        assertTrue(activeEnemies.any { it.name == "Bone Vanguard" })
+
+        // Target the summoned minion by voice
+        val intent = IntentParser.parse(
+            utterance = "Holy smite the bone vanguard!",
+            availableSpells = StoryEncounters.cedricSpells,
+            activeEnemies = activeEnemies,
+            party = viewModel.state.value.party
+        )
+
+        assertEquals("holy_smite", intent.spell.id)
+        assertEquals("minion_bone_guard", intent.targetEnemyId)
+    }
+}

@@ -87,22 +87,32 @@ fun InitiativeTrack(
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                val memberMap = party.associateBy { it.id }
-                listOf(
-                    Triple("hero", "A", Color(0xFF0288D1)),
-                    Triple("cedric", "C", Color(0xFFFFA000)),
-                    Triple("lyra", "L", Color(0xFF43A047)),
-                    Triple("zephyr", "Z", Color(0xFF8E24AA))
-                ).forEach { (id, label, color) ->
-                    val member = memberMap[id]
-                    val isAlive = member?.isAlive ?: true
-                    val isCurrent = isAlive && phase == CombatPhase.PLAYER_INPUT && activePartyMemberId == id
-                    TimelineIcon(
-                        label = if (isAlive) label else "💀",
-                        isCurrent = isCurrent,
-                        isAlive = isAlive,
-                        color = if (isAlive) color else Color(0xFF37474F)
-                    )
+                if (party.isEmpty()) {
+                    listOf(
+                        Triple("hero", "A", Color(0xFF0288D1)),
+                        Triple("cedric", "C", Color(0xFFFFA000)),
+                        Triple("lyra", "L", Color(0xFF43A047)),
+                        Triple("zephyr", "Z", Color(0xFF8E24AA))
+                    ).forEach { (id, label, color) ->
+                        TimelineIcon(
+                            label = label,
+                            isCurrent = false,
+                            isAlive = true,
+                            color = color
+                        )
+                    }
+                } else {
+                    party.forEach { member ->
+                        val isAlive = member.isAlive
+                        val isCurrent = isAlive && phase == CombatPhase.PLAYER_INPUT && activePartyMemberId == member.id
+                        val label = if (isAlive) member.name.take(1).uppercase() else "💀"
+                        TimelineIcon(
+                            label = label,
+                            isCurrent = isCurrent,
+                            isAlive = isAlive,
+                            color = if (isAlive) member.avatarTint else Color(0xFF37474F)
+                        )
+                    }
                 }
             }
         }

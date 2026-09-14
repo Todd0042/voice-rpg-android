@@ -33,6 +33,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.voicerpg.android.engine.StoryEncounters
 import com.voicerpg.android.model.CombatPhase
 import com.voicerpg.android.model.FloatingCombatText
 import com.voicerpg.android.ui.environment.BattleEnvironmentCanvas
@@ -83,10 +84,20 @@ fun RetroBattleScreen(
                     modifier = Modifier.padding(top = 6.dp, start = 8.dp, end = 8.dp)
                 )
 
-                // Environment Switcher Bar (4-Frame Living Backgrounds)
+                // Environment & Story Encounter Switcher Bar
                 EnvironmentSwitcherBar(
                     currentEnvironment = state.currentEnvironment,
                     onSelectEnvironment = { viewModel.setEnvironment(it) },
+                    onSelectEncounter = { viewModel.startEncounter(it) },
+                    onSummonMinion = {
+                        val minionNum = (state.enemies.size + 1)
+                        val minion = StoryEncounters.createMinion(
+                            idSuffix = "$minionNum",
+                            name = "Blighted Minion $minionNum",
+                            hp = 180
+                        )
+                        viewModel.summonReinforcements(listOf(minion))
+                    },
                     modifier = Modifier.padding(vertical = 2.dp)
                 )
 
@@ -102,6 +113,8 @@ fun RetroBattleScreen(
                     // 4-Frame Living Environmental Background Canvas
                     BattleEnvironmentCanvas(
                         environment = state.currentEnvironment,
+                        partyCount = state.party.size,
+                        enemyCount = state.enemies.size,
                         modifier = Modifier.fillMaxSize()
                     )
                     // Battle Grid

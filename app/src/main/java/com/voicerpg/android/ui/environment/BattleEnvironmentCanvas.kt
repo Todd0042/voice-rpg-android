@@ -36,6 +36,8 @@ import kotlin.math.sin
 @Composable
 fun BattleEnvironmentCanvas(
     environment: BattleEnvironment,
+    partyCount: Int = 4,
+    enemyCount: Int = 3,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -88,7 +90,7 @@ fun BattleEnvironmentCanvas(
         }
 
         // Contact shadows beneath heroes (left) and enemies (right)
-        drawGroundContactShadows(w, h, horizonY, environment, frameIndex)
+        drawGroundContactShadows(w, h, horizonY, environment, frameIndex, partyCount, enemyCount)
     }
 }
 
@@ -616,7 +618,9 @@ private fun DrawScope.drawGroundContactShadows(
     h: Float,
     horizonY: Float,
     environment: BattleEnvironment,
-    frame: Int
+    frame: Int,
+    partyCount: Int = 4,
+    enemyCount: Int = 3
 ) {
     val shadowOffsetX = when (environment) {
         BattleEnvironment.DUNGEON -> when (frame) {
@@ -636,10 +640,12 @@ private fun DrawScope.drawGroundContactShadows(
 
     val shadowColor = Color(0x55000000)
 
-    // 4 Party Members Shadow Positions (Left Flank)
-    for (i in 0..3) {
-        val heroShadowX = w * 0.22f + shadowOffsetX
-        val heroShadowY = horizonY + (h - horizonY) * (0.22f + i * 0.22f)
+    // Party Members Shadow Positions (Left Flank)
+    val safePartyCount = partyCount.coerceIn(1, 4)
+    for (i in 0 until safePartyCount) {
+        val heroShadowX = w * 0.20f + shadowOffsetX
+        val spacing = (h - horizonY) / (safePartyCount + 1)
+        val heroShadowY = horizonY + spacing * (i + 1)
         drawOval(
             color = shadowColor,
             topLeft = Offset(heroShadowX - 24f, heroShadowY - 6f),
@@ -647,14 +653,46 @@ private fun DrawScope.drawGroundContactShadows(
         )
     }
 
-    // 3 Enemy Shadows Positions (Right Flank)
-    for (i in 0..2) {
-        val enemyShadowX = w * 0.78f + shadowOffsetX
-        val enemyShadowY = horizonY + (h - horizonY) * (0.26f + i * 0.28f)
-        drawOval(
-            color = shadowColor,
-            topLeft = Offset(enemyShadowX - 28f, enemyShadowY - 7f),
-            size = Size(56f, 14f)
-        )
+    // Enemy Shadows Positions (Right Flank)
+    val safeEnemyCount = enemyCount.coerceIn(1, 6)
+    if (safeEnemyCount <= 3) {
+        for (i in 0 until safeEnemyCount) {
+            val enemyShadowX = w * 0.80f + shadowOffsetX
+            val spacing = (h - horizonY) / (safeEnemyCount + 1)
+            val enemyShadowY = horizonY + spacing * (i + 1)
+            drawOval(
+                color = shadowColor,
+                topLeft = Offset(enemyShadowX - 28f, enemyShadowY - 7f),
+                size = Size(56f, 14f)
+            )
+        }
+    } else {
+        // 2-Column Staggered layout for 4-6 enemies
+        val frontCount = (safeEnemyCount + 1) / 2
+        val backCount = safeEnemyCount / 2
+
+        // Front row (closer to center)
+        for (i in 0 until frontCount) {
+            val enemyShadowX = w * 0.70f + shadowOffsetX
+            val spacing = (h - horizonY) / (frontCount + 1)
+            val enemyShadowY = horizonY + spacing * (i + 1)
+            drawOval(
+                color = shadowColor,
+                topLeft = Offset(enemyShadowX - 22f, enemyShadowY - 5f),
+                size = Size(44f, 10f)
+            )
+        }
+
+        // Back row (rearguard)
+        for (i in 0 until backCount) {
+            val enemyShadowX = w * 0.86f + shadowOffsetX
+            val spacing = (h - horizonY) / (backCount + 1)
+            val enemyShadowY = horizonY + spacing * (i + 1)
+            drawOval(
+                color = shadowColor,
+                topLeft = Offset(enemyShadowX - 22f, enemyShadowY - 5f),
+                size = Size(44f, 10f)
+            )
+        }
     }
 }

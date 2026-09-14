@@ -23,7 +23,9 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.voicerpg.android.engine.StoryEncounters
 import com.voicerpg.android.model.BattleEnvironment
+import com.voicerpg.android.model.EncounterDefinition
 import com.voicerpg.android.ui.theme.LogosGold
 import com.voicerpg.android.ui.theme.LogosGlow
 import com.voicerpg.android.ui.theme.RetroBorder
@@ -33,6 +35,8 @@ import com.voicerpg.android.ui.theme.RetroPanel
 fun EnvironmentSwitcherBar(
     currentEnvironment: BattleEnvironment,
     onSelectEnvironment: (BattleEnvironment) -> Unit,
+    onSelectEncounter: ((EncounterDefinition) -> Unit)? = null,
+    onSummonMinion: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -43,6 +47,7 @@ fun EnvironmentSwitcherBar(
         horizontalArrangement = Arrangement.spacedBy(6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        // 1. Environments
         BattleEnvironment.entries.forEach { env ->
             val isSelected = env == currentEnvironment
             Box(
@@ -73,6 +78,53 @@ fun EnvironmentSwitcherBar(
                         fontFamily = FontFamily.Monospace
                     )
                 }
+            }
+        }
+
+        // 2. Story Encounter Switchers (Party 1-4, Enemies 1-6)
+        if (onSelectEncounter != null) {
+            listOf(
+                Triple(StoryEncounters.PROLOGUE_SOLO, "👤 Solo (1v2)", Color(0xFF81D4FA)),
+                Triple(StoryEncounters.FOREST_AMBUSH, "👥 Ambush (2v3)", Color(0xFFA5D6A7)),
+                Triple(StoryEncounters.CASTLE_HORDE, "⚔️ Horde (4v6)", Color(0xFFFFB74D)),
+                Triple(StoryEncounters.CAVE_BROODMOTHER, "👑 Boss Queen", Color(0xFFFF8A80))
+            ).forEach { (enc, label, tint) ->
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(Color(0xFF1E2430))
+                        .border(1.dp, tint.copy(alpha = 0.6f), RoundedCornerShape(6.dp))
+                        .clickable { onSelectEncounter(enc) }
+                        .padding(horizontal = 7.dp, vertical = 4.dp)
+                ) {
+                    Text(
+                        text = label,
+                        color = tint,
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.Monospace
+                    )
+                }
+            }
+        }
+
+        // 3. Mid-Fight Reinforcement / Summon button
+        if (onSummonMinion != null) {
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(Color(0xFF332014))
+                    .border(1.dp, Color(0xFFFF9800), RoundedCornerShape(6.dp))
+                    .clickable { onSummonMinion() }
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
+            ) {
+                Text(
+                    text = "➕ Summon Minion",
+                    color = Color(0xFFFFB74D),
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Monospace
+                )
             }
         }
     }

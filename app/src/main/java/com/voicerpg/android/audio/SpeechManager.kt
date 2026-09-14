@@ -22,9 +22,9 @@ sealed class SpeechState {
     data class Error(val message: String) : SpeechState()
 }
 
-class SpeechManager(private val context: Context) {
+class SpeechManager(private val context: Context? = null) {
 
-    private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
+    private val audioManager = context?.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
     private var speechRecognizer: SpeechRecognizer? = null
 
     private val _speechState = MutableStateFlow<SpeechState>(SpeechState.Idle)
@@ -58,7 +58,7 @@ class SpeechManager(private val context: Context) {
     fun getLatestAcousticProfile(): com.voicerpg.android.model.AcousticProfile = _lastAcousticProfile.value
 
     val isAvailable: Boolean
-        get() = SpeechRecognizer.isRecognitionAvailable(context)
+        get() = context != null && try { SpeechRecognizer.isRecognitionAvailable(context) } catch (_: Exception) { false }
 
     fun toggleChimeMute() {
         _isChimeMuted.value = !_isChimeMuted.value

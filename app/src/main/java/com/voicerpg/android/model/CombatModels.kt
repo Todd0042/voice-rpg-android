@@ -74,12 +74,14 @@ data class Enemy(
 
 enum class TargetSelection {
     FIRST_ALIVE_ENEMY,
+    SPECIFIC_ENEMY,
     ORC,
     ARCHER,
     SHAMAN,
     ALL_ENEMIES,
     PARTY_LOWEST,
     SELF,
+    SPECIFIC_HERO,
     HERO,
     CEDRIC,
     LYRA,
@@ -89,7 +91,18 @@ enum class TargetSelection {
 data class ParsedIntent(
     val spell: Spell,
     val target: TargetSelection,
-    val rawUtterance: String
+    val rawUtterance: String,
+    val targetEnemyId: String? = null,
+    val targetHeroId: String? = null
+)
+
+data class EncounterDefinition(
+    val id: String,
+    val name: String,
+    val description: String = "",
+    val environment: BattleEnvironment,
+    val enemies: List<Enemy>,
+    val initialParty: List<PartyMember>? = null
 )
 
 data class FloatingCombatText(
