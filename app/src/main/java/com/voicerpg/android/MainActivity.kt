@@ -7,6 +7,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import com.voicerpg.android.audio.CombatNarrator
 import com.voicerpg.android.audio.SpeechManager
 import com.voicerpg.android.ui.combat.RetroBattleScreen
 import com.voicerpg.android.ui.theme.VoiceRPGTheme
@@ -15,6 +16,7 @@ import com.voicerpg.android.viewmodel.CombatViewModel
 class MainActivity : ComponentActivity() {
 
     private lateinit var speechManager: SpeechManager
+    private lateinit var combatNarrator: CombatNarrator
     private lateinit var combatViewModel: CombatViewModel
 
     private val requestPermissionLauncher = registerForActivityResult(
@@ -29,7 +31,11 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         speechManager = SpeechManager(this)
-        combatViewModel = CombatViewModel(speechManager)
+        combatNarrator = CombatNarrator(this)
+        combatViewModel = CombatViewModel(
+            speechManager = speechManager,
+            combatNarrator = combatNarrator
+        )
 
         checkAudioPermission()
 
@@ -49,5 +55,6 @@ class MainActivity : ComponentActivity() {
     override fun onDestroy() {
         super.onDestroy()
         speechManager.destroy()
+        combatNarrator.destroy()
     }
 }

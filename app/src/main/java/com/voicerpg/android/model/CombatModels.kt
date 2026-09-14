@@ -88,12 +88,25 @@ enum class TargetSelection {
     ZEPHYR
 }
 
+enum class MetaCommand {
+    NONE,
+    STATUS_REPORT,
+    CHECK_ENEMIES,
+    CHECK_PARTY,
+    TOGGLE_EYES_FREE,
+    TOGGLE_AUTO_LISTEN,
+    OPEN_OPTIONS,
+    CLOSE_OPTIONS,
+    HELP
+}
+
 data class ParsedIntent(
     val spell: Spell,
     val target: TargetSelection,
     val rawUtterance: String,
     val targetEnemyId: String? = null,
-    val targetHeroId: String? = null
+    val targetHeroId: String? = null,
+    val metaCommand: MetaCommand = MetaCommand.NONE
 )
 
 data class EncounterDefinition(

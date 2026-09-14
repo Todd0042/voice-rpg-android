@@ -4,6 +4,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -42,6 +43,7 @@ import com.voicerpg.android.ui.theme.LogosGlow
 import com.voicerpg.android.ui.theme.RetroBlack
 import com.voicerpg.android.ui.theme.RetroBorder
 import com.voicerpg.android.ui.theme.RetroDeepSlate
+import com.voicerpg.android.ui.theme.RetroPanel
 import com.voicerpg.android.ui.vfx.ParticleCanvas
 import com.voicerpg.android.ui.vfx.SpellVfxCanvas
 import com.voicerpg.android.viewmodel.CombatViewModel
@@ -75,14 +77,41 @@ fun RetroBattleScreen(
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
-                // Top: Initiative & Round Status with Active Hero Highlight
-                InitiativeTrack(
-                    phase = state.phase,
-                    roundNumber = state.roundNumber,
-                    party = state.party,
-                    activePartyMemberId = state.activePartyMemberId,
-                    modifier = Modifier.padding(top = 6.dp, start = 8.dp, end = 8.dp)
-                )
+                // Top: Initiative & Round Status with Quick Options / Pocket Mode Toggle
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 6.dp, start = 8.dp, end = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    InitiativeTrack(
+                        phase = state.phase,
+                        roundNumber = state.roundNumber,
+                        party = state.party,
+                        activePartyMemberId = state.activePartyMemberId,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    // Quick Settings Button (Options modal & Pocket Mode status)
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(if (state.isEyesFreeMode) Color(0xFF1565C0) else RetroPanel.copy(alpha = 0.9f))
+                            .border(1.dp, if (state.isEyesFreeMode) Color(0xFF64B5F6) else RetroBorder, RoundedCornerShape(8.dp))
+                            .clickable { viewModel.openOptions() }
+                            .padding(horizontal = 8.dp, vertical = 6.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = if (state.isEyesFreeMode) "🎧 POCKET" else "⚙️ OPTIONS",
+                            color = if (state.isEyesFreeMode) Color(0xFFE3F2FD) else LogosGold,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    }
+                }
 
                 // Environment & Story Encounter Switcher Bar
                 EnvironmentSwitcherBar(
@@ -197,6 +226,18 @@ fun RetroBattleScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
             }
+
+            // Options & Pocket Accessibility Modal
+            OptionsDialog(
+                isOpen = state.isOptionsOpen,
+                isEyesFreeMode = state.isEyesFreeMode,
+                isAutoListen = isAutoListen,
+                isChimeMuted = isChimeMuted,
+                onToggleEyesFreeMode = { viewModel.toggleEyesFreeMode() },
+                onToggleAutoListen = { viewModel.speechManager.toggleAutoListen() },
+                onToggleChimeMute = { viewModel.speechManager.toggleChimeMute() },
+                onClose = { viewModel.closeOptions() }
+            )
         }
     }
 }

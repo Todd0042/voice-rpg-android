@@ -7,19 +7,60 @@ import com.voicerpg.android.model.Spell
 import com.voicerpg.android.model.SpellSchool
 import com.voicerpg.android.model.TargetSelection
 
+import com.voicerpg.android.model.MetaCommand
+
 object IntentParser {
 
     fun parse(
         utterance: String,
-        availableSpells: List<Spell>,
+        availableSpells: List<Spell> = emptyList(),
         activeEnemies: List<Enemy> = emptyList(),
         party: List<PartyMember> = emptyList()
     ): ParsedIntent {
-        val lower = utterance.lowercase()
+        val lower = utterance.lowercase().trim()
+        val wordsInUtterance = lower.split(Regex("[^a-zA-Z0-9]+")).filter { it.isNotBlank() }.toSet()
+
+        // 0. Detect Meta Voice Commands (Accessibility, Screenless / Pocket Mode, Status, Settings)
+        val metaCommand = when {
+            lower == "status" || lower == "report" || lower == "status report" || lower.contains("situation report") ||
+                    lower == "check status" || lower == "battle status" || lower == "health" || lower == "hp" -> MetaCommand.STATUS_REPORT
+
+            lower == "enemies" || lower == "check enemies" || lower == "monsters" || lower == "targets" ||
+                    lower.contains("who is alive") || lower.contains("who is left") || lower == "target scan" -> MetaCommand.CHECK_ENEMIES
+
+            lower == "party" || lower == "allies" || lower == "party status" || lower == "check party" ||
+                    lower == "fellowship" || lower.contains("team status") || lower == "team health" -> MetaCommand.CHECK_PARTY
+
+            lower.contains("eyes free") || lower.contains("pocket mode") || lower.contains("blind mode") ||
+                    lower.contains("screenless") || lower.contains("audio mode") || lower.contains("toggle narrator") ||
+                    lower.contains("toggle audio") || lower == "narrator" -> MetaCommand.TOGGLE_EYES_FREE
+
+            lower.contains("auto listen") || lower.contains("hands free") || lower.contains("auto mic") ||
+                    lower.contains("automatic listening") -> MetaCommand.TOGGLE_AUTO_LISTEN
+
+            lower == "options" || lower == "settings" || lower == "menu" || lower.contains("open options") ||
+                    lower.contains("open settings") || lower.contains("show options") -> MetaCommand.OPEN_OPTIONS
+
+            lower.contains("close options") || lower.contains("close settings") || lower == "resume" ||
+                    lower == "back" || lower == "close menu" -> MetaCommand.CLOSE_OPTIONS
+
+            lower == "help" || lower.contains("what can i say") || lower == "commands" ||
+                    lower == "voice commands" || lower == "help commands" -> MetaCommand.HELP
+
+            else -> MetaCommand.NONE
+        }
+
+        if (metaCommand != MetaCommand.NONE) {
+            return ParsedIntent(
+                spell = defaultFallbackSpell(),
+                target = TargetSelection.FIRST_ALIVE_ENEMY,
+                rawUtterance = utterance,
+                metaCommand = metaCommand
+            )
+        }
+
         val hasHealKeyword = lower.contains("heal") || lower.contains("mend") || lower.contains("restore") ||
                 lower.contains("cure") || lower.contains("rain") || lower.contains("soothing")
-
-        val wordsInUtterance = lower.split(Regex("[^a-zA-Z0-9]+")).toSet()
 
         var targetEnemyId: String? = null
         var targetHeroId: String? = null

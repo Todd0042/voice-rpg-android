@@ -3,6 +3,7 @@ package com.voicerpg.android.viewmodel
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.voicerpg.android.audio.CombatNarrator
 import com.voicerpg.android.audio.SfxManager
 import com.voicerpg.android.audio.SpeechManager
 import com.voicerpg.android.engine.IntentParser
@@ -14,6 +15,7 @@ import com.voicerpg.android.model.CombatPhase
 import com.voicerpg.android.model.EncounterDefinition
 import com.voicerpg.android.model.Enemy
 import com.voicerpg.android.model.FloatingCombatText
+import com.voicerpg.android.model.MetaCommand
 import com.voicerpg.android.model.PartyMember
 import com.voicerpg.android.model.ResonanceResult
 import com.voicerpg.android.model.ResonanceTier
@@ -42,7 +44,9 @@ data class CombatState(
     val floatingTexts: List<FloatingCombatText> = emptyList(),
     val screenShakeOffsetX: Float = 0f,
     val screenShakeOffsetY: Float = 0f,
-    val currentEnvironment: BattleEnvironment = BattleEnvironment.DUNGEON
+    val currentEnvironment: BattleEnvironment = BattleEnvironment.DUNGEON,
+    val isEyesFreeMode: Boolean = false,
+    val isOptionsOpen: Boolean = false
 ) {
     val activePartyMember: PartyMember?
         get() = party.firstOrNull { it.id == activePartyMemberId }
@@ -59,6 +63,7 @@ class CombatViewModel(
     val resonanceEngine: ResonanceEngine = ResonanceEngine(),
     val particleEmitter: ParticleEmitter = ParticleEmitter(),
     val spellVfxEngine: SpellVfxEngine = SpellVfxEngine(),
+    val combatNarrator: CombatNarrator = CombatNarrator(),
     private val scopeOverride: CoroutineScope? = null
 ) : ViewModel() {
 
@@ -192,10 +197,12 @@ class CombatViewModel(
                     if (it.id == readyHero.id) it.copy(stance = CharacterStance.READY) else it
                 }
             )
-            if (speechManager.isAutoListen.value) {
-                activeScope.launch {
-                    delay(150)
-                    startVoiceListening()
+            combatNarrator.narratePlayerTurn(readyHero, updatedEnemies) {
+                if (speechManager.isAutoListen.value) {
+                    activeScope.launch {
+                        delay(100)
+                        startVoiceListening()
+                    }
                 }
             }
         } else if (topEnemy != null) {
@@ -255,6 +262,13 @@ class CombatViewModel(
 
             val targetHero = aliveHeroes.random()
             val damage = (enemy.baseAttack * (Random.nextFloat() * 0.25f + 0.85f)).toInt()
+            val isHeroFallen = (targetHero.currentHp - damage) <= 0
+            combatNarrator.narrateEnemyAction(
+                enemyName = enemy.name,
+                targetHeroName = targetHero.name,
+                damage = damage,
+                isFallen = isHeroFallen
+            )
 
             val school = if (enemy.id == "shaman") SpellSchool.SHADOW else SpellSchool.PHYSICAL
             spellVfxEngine.launch(
@@ -329,6 +343,7 @@ class CombatViewModel(
             // Check defeat
             if (_state.value.party.none { it.isAlive }) {
                 _state.value = _state.value.copy(phase = CombatPhase.BATTLE_LOST)
+                combatNarrator.narrateConclusion(isVictory = false)
                 return@launch
             }
 
@@ -360,10 +375,12 @@ class CombatViewModel(
                     if (it.id == nextHero.id) it.copy(stance = CharacterStance.READY) else it
                 }
             )
-            if (speechManager.isAutoListen.value) {
-                activeScope.launch {
-                    delay(150)
-                    startVoiceListening()
+            combatNarrator.narratePlayerTurn(nextHero, currentEnemies) {
+                if (speechManager.isAutoListen.value) {
+                    activeScope.launch {
+                        delay(100)
+                        startVoiceListening()
+                    }
                 }
             }
         } else if (readyEnemies.isNotEmpty()) {
@@ -485,10 +502,152 @@ class CombatViewModel(
         processIncantation(text, forcedAcoustic)
     }
 
+    fun toggleEyesFreeMode(): Boolean {
+        val enabled = combatNarrator.toggleEyesFreeMode()
+        _state.value = _state.value.copy(isEyesFreeMode = enabled)
+        val text = if (enabled) "Eyes-free pocket mode enabled." else "Eyes-free pocket mode disabled."
+        combatNarrator.speak(text, force = true) {
+            if (_state.value.phase == CombatPhase.PLAYER_INPUT && speechManager.isAutoListen.value) {
+                activeScope.launch {
+                    delay(100)
+                    startVoiceListening()
+                }
+            }
+        }
+        return enabled
+    }
+
+    fun setEyesFreeMode(enabled: Boolean) {
+        combatNarrator.setEyesFreeMode(enabled)
+        _state.value = _state.value.copy(isEyesFreeMode = enabled)
+    }
+
+    fun openOptions() {
+        _state.value = _state.value.copy(isOptionsOpen = true)
+        combatNarrator.speak("Options open. Say Pocket Mode, Auto Listen, Help, or Close Options.", force = _state.value.isEyesFreeMode) {
+            if (speechManager.isAutoListen.value) {
+                activeScope.launch {
+                    delay(100)
+                    startVoiceListening()
+                }
+            }
+        }
+    }
+
+    fun closeOptions() {
+        _state.value = _state.value.copy(isOptionsOpen = false)
+        combatNarrator.speak("Resuming battle.", force = _state.value.isEyesFreeMode) {
+            if (_state.value.phase == CombatPhase.PLAYER_INPUT && speechManager.isAutoListen.value) {
+                activeScope.launch {
+                    delay(100)
+                    startVoiceListening()
+                }
+            }
+        }
+    }
+
+    fun handleMetaCommand(command: MetaCommand) {
+        when (command) {
+            MetaCommand.STATUS_REPORT -> {
+                combatNarrator.narrateStatus(_state.value.party, _state.value.enemies) {
+                    if (_state.value.phase == CombatPhase.PLAYER_INPUT && speechManager.isAutoListen.value) {
+                        activeScope.launch {
+                            delay(100)
+                            startVoiceListening()
+                        }
+                    }
+                }
+            }
+            MetaCommand.CHECK_ENEMIES -> {
+                combatNarrator.narrateEnemies(_state.value.enemies) {
+                    if (_state.value.phase == CombatPhase.PLAYER_INPUT && speechManager.isAutoListen.value) {
+                        activeScope.launch {
+                            delay(100)
+                            startVoiceListening()
+                        }
+                    }
+                }
+            }
+            MetaCommand.CHECK_PARTY -> {
+                combatNarrator.narrateParty(_state.value.party) {
+                    if (_state.value.phase == CombatPhase.PLAYER_INPUT && speechManager.isAutoListen.value) {
+                        activeScope.launch {
+                            delay(100)
+                            startVoiceListening()
+                        }
+                    }
+                }
+            }
+            MetaCommand.TOGGLE_EYES_FREE -> {
+                val enabled = toggleEyesFreeMode()
+                val fct = FloatingCombatText(
+                    text = if (enabled) "Eyes-Free Mode: ON 🎧" else "Eyes-Free Mode: OFF 📱",
+                    color = Color(0xFF64B5F6),
+                    startX = 500f,
+                    startY = 400f
+                )
+                _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts + fct)
+                activeScope.launch {
+                    delay(1500)
+                    _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts.filter { it.id != fct.id })
+                }
+            }
+            MetaCommand.TOGGLE_AUTO_LISTEN -> {
+                speechManager.toggleAutoListen()
+                val enabled = speechManager.isAutoListen.value
+                val status = if (enabled) "Auto listen enabled." else "Auto listen disabled."
+                combatNarrator.speak(status, force = true) {
+                    if (enabled && _state.value.phase == CombatPhase.PLAYER_INPUT) {
+                        activeScope.launch {
+                            delay(100)
+                            startVoiceListening()
+                        }
+                    }
+                }
+                val fct = FloatingCombatText(
+                    text = if (enabled) "Auto-Listen: ON 👂" else "Auto-Listen: OFF 🔇",
+                    color = Color(0xFF81C784),
+                    startX = 500f,
+                    startY = 400f
+                )
+                _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts + fct)
+                activeScope.launch {
+                    delay(1500)
+                    _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts.filter { it.id != fct.id })
+                }
+            }
+            MetaCommand.OPEN_OPTIONS -> {
+                openOptions()
+            }
+            MetaCommand.CLOSE_OPTIONS -> {
+                closeOptions()
+            }
+            MetaCommand.HELP -> {
+                combatNarrator.narrateHelp {
+                    if (_state.value.phase == CombatPhase.PLAYER_INPUT && speechManager.isAutoListen.value) {
+                        activeScope.launch {
+                            delay(100)
+                            startVoiceListening()
+                        }
+                    }
+                }
+            }
+            MetaCommand.NONE -> Unit
+        }
+    }
+
     fun processIncantation(utterance: String, forcedAcoustic: com.voicerpg.android.model.AcousticProfile? = null) {
-        if (_state.value.phase != CombatPhase.PLAYER_INPUT) return
         val lower = utterance.lowercase().trim()
         if (lower.isBlank()) return
+
+        // 0. Intercept Meta Voice Commands (Accessibility, Screenless / Pocket Mode, Status, Options)
+        val peek = IntentParser.parse(utterance, emptyList(), _state.value.enemies, _state.value.party)
+        if (peek.metaCommand != MetaCommand.NONE) {
+            handleMetaCommand(peek.metaCommand)
+            return
+        }
+
+        if (_state.value.phase != CombatPhase.PLAYER_INPUT) return
 
         if (lower == "defend" || lower == "guard" || lower == "pass" || lower.contains("defend")) {
             defendActivePartyMember()
@@ -616,7 +775,7 @@ class CombatViewModel(
             if (isHeal) {
                 applyHealAction(activeHero, parsed.spell, parsed.target, parsed.targetHeroId, finalAmount, resonance.tier)
             } else {
-                applyDamageToEnemies(parsed.target, parsed.targetEnemyId, finalAmount, resonance.tier)
+                applyDamageToEnemies(activeHero, parsed.spell, parsed.target, parsed.targetEnemyId, finalAmount, resonance.tier)
             }
 
             delay(700)
@@ -640,6 +799,7 @@ class CombatViewModel(
             // Check victory
             if (_state.value.enemies.none { it.isAlive }) {
                 _state.value = _state.value.copy(phase = CombatPhase.BATTLE_WON)
+                combatNarrator.narrateConclusion(isVictory = true)
                 return@launch
             }
 
@@ -702,6 +862,17 @@ class CombatViewModel(
             floatingTexts = _state.value.floatingTexts + newFloatingTexts
         )
 
+        val targetDesc = if (spell.hitsAll) "the fellowship" else targetsToHeal.joinToString(", ") { it.name }
+        combatNarrator.narrateSpellCast(
+            heroName = caster.name,
+            spellName = spell.name,
+            targetName = targetDesc,
+            amount = healAmount,
+            isHeal = true,
+            tierTitle = tier.title,
+            isDefeated = false
+        )
+
         activeScope.launch {
             delay(1200)
             val idsToRemove = newFloatingTexts.map { it.id }.toSet()
@@ -712,6 +883,8 @@ class CombatViewModel(
     }
 
     private fun applyDamageToEnemies(
+        caster: PartyMember,
+        spell: Spell,
         target: TargetSelection,
         targetEnemyId: String?,
         damage: Int,
@@ -753,6 +926,18 @@ class CombatViewModel(
                 )
             } else enemy
         }
+
+        val anyDefeated = updatedEnemies.any { targetList.any { t -> t.id == it.id } && !it.isAlive }
+        val enemyTargetDesc = if (target == TargetSelection.ALL_ENEMIES) "all enemies" else targetList.joinToString(", ") { it.name }
+        combatNarrator.narrateSpellCast(
+            heroName = caster.name,
+            spellName = spell.name,
+            targetName = enemyTargetDesc,
+            amount = damage,
+            isHeal = false,
+            tierTitle = tier.title,
+            isDefeated = anyDefeated
+        )
 
         // If targeted enemy was defeated, auto-retarget the next living enemy
         val hasDeadTarget = updatedEnemies.any { it.isTargeted && !it.isAlive }
@@ -839,6 +1024,7 @@ class CombatViewModel(
 
         sfxManager.playSpellCast()
         triggerScreenShake(12f)
+        combatNarrator.narrateReinforcements(toAdd.size, toAdd.map { it.name })
 
         _state.value = _state.value.copy(
             enemies = updatedEnemies,
@@ -907,5 +1093,6 @@ class CombatViewModel(
         super.onCleared()
         atbJob?.cancel()
         speechManager.destroy()
+        combatNarrator.destroy()
     }
 }
