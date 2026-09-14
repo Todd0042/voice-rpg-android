@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Echoes of the Logos</string>
+    <string name="record_audio_rationale">VoiceRPG requires microphone access to chant incantations and issue tactical party commands.</string>
+</resources>
