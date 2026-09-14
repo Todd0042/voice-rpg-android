@@ -117,6 +117,24 @@ object StoryEncounters {
         initialParty = createStandardParty()
     )
 
+    // 6. Swamp Encounter: The Rotting Willow (Trio Party vs Swamp Horrors)
+    val SWAMP_BEHEMOTH = EncounterDefinition(
+        id = "swamp_behemoth",
+        name = "Chapter 5: The Rotting Willow",
+        description = "Deep in the murky bog, Lyra sings to protect the weeping willow against swamp horrors.",
+        environment = BattleEnvironment.SWAMP,
+        enemies = listOf(
+            Enemy("behemoth", "Bog Behemoth", "Vanguard", currentHp = 520, maxHp = 520, baseAttack = 26, isTargeted = true, spriteTint = Color(0xFF66BB6A), speed = 38, atbGauge = 0.25f),
+            Enemy("leech_1", "Marsh Leech Alpha", "Sniper", currentHp = 160, maxHp = 160, baseAttack = 18, isTargeted = false, spriteTint = Color(0xFF81C784), speed = 68, atbGauge = 0.40f),
+            Enemy("leech_2", "Marsh Leech Beta", "Sniper", currentHp = 160, maxHp = 160, baseAttack = 18, isTargeted = false, spriteTint = Color(0xFFAED581), speed = 64, atbGauge = 0.35f)
+        ),
+        initialParty = listOf(
+            PartyMember("hero", "Aethel", "Elementalist", currentHp = 240, maxHp = 240, currentMp = 140, maxMp = 140, spells = aethelSpells, avatarTint = Color(0xFF90CAF9), speed = 70, atbGauge = 0.85f),
+            PartyMember("cedric", "Sir Cedric", "Templar", currentHp = 310, maxHp = 420, currentMp = 80, maxMp = 80, spells = cedricSpells, avatarTint = Color(0xFFFFD54F), speed = 55, atbGauge = 0.50f),
+            PartyMember("lyra", "Lyra", "Grove Warden", currentHp = 240, maxHp = 280, currentMp = 120, maxMp = 120, spells = lyraSpells, avatarTint = Color(0xFFA5D6A7), speed = 65, atbGauge = 0.70f)
+        )
+    )
+
     // Helper to generate reinforcement minions dynamically
     fun createMinion(idSuffix: String, name: String = "Blighted Minion", subtitle: String = "Minion", hp: Int = 180): Enemy {
         return Enemy(
@@ -138,6 +156,7 @@ object StoryEncounters {
         FOREST_AMBUSH,
         DUNGEON_DESCENT,
         CASTLE_HORDE,
-        CAVE_BROODMOTHER
+        CAVE_BROODMOTHER,
+        SWAMP_BEHEMOTH
     )
 }
