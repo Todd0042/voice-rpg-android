@@ -508,9 +508,11 @@ class CombatViewModel(
             val isSuperLogos = resonance.bonusPercent >= 100
             val isTranscendental = resonance.tier == ResonanceTier.TRANSCENDENTAL
 
+            val showBanner = resonance.bonusPercent >= 50
+
             _state.value = _state.value.copy(
                 lastResonance = resonance,
-                isLogosBannerVisible = resonance.bonusPercent >= 50,
+                isLogosBannerVisible = showBanner,
                 party = _state.value.party.map {
                     if (it.id == activeHero.id) it.copy(stance = CharacterStance.CASTING) else it
                 }
@@ -525,9 +527,16 @@ class CombatViewModel(
                 triggerScreenShake(10f)
             }
 
-            delay(300)
+            // Let the banner shine in its full glory, then dismiss it BEFORE the spell fires
+            if (showBanner) {
+                delay(if (isTranscendental) 1200L else 1000L)
+                _state.value = _state.value.copy(isLogosBannerVisible = false)
+                delay(220L) // Wait for smooth scaleOut + fadeOut exit animation
+            } else {
+                delay(250L)
+            }
 
-            // 3. Play VFX on Canvas - Projectile Launch & Impact
+            // 3. Play VFX on Canvas - Projectile Launch & Impact (Screen is now completely clear!)
             _state.value = _state.value.copy(phase = CombatPhase.SPELL_VFX_PLAYING)
 
             // Spatially place particles & projectile: heal over party (left), attack over monsters (right)

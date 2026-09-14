@@ -145,13 +145,13 @@ fun RetroBattleScreen(
                         FloatingNumberItem(fct = ft)
                     }
 
-                    // Logos Golden Banner Overlay
+                    // Logos Golden Banner Overlay (Top-Center Notification Style)
                     LogosBanner(
                         resonance = state.lastResonance,
                         visible = state.isLogosBannerVisible,
                         modifier = Modifier
-                            .align(Alignment.Center)
-                            .padding(16.dp)
+                            .align(Alignment.TopCenter)
+                            .padding(top = 16.dp, start = 12.dp, end = 12.dp)
                     )
 
                     // Battle Won / Lost Overlay
