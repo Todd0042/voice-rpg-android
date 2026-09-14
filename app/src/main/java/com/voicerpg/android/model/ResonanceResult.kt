@@ -1,26 +1,27 @@
 package com.voicerpg.android.model
 
 /**
- * Categorical resonance tiers as defined in DESIGN.md.
+ * Categorical resonance tiers supporting up to +200% Damage Multiplier (3.0x Base Damage).
  */
 enum class ResonanceTier(
     val title: String,
-    val minScore: Float,
-    val maxScore: Float,
-    val bonusDamagePercent: Int,
+    val minBonusPercent: Int,
+    val maxBonusPercent: Int,
     val particleMultiplier: Float,
     val baseParticleCount: Int
 ) {
-    BASIC("Basic Chant", 0.0f, 0.29f, 0, 1.0f, 40),
-    ADEPT("Adept Resonance", 0.3f, 0.59f, 8, 1.8f, 80),
-    MASTER("Master Incantation", 0.6f, 0.89f, 15, 2.6f, 180),
-    LOGOS("Logos Resonance", 0.9f, 1.0f, 20, 3.8f, 320);
+    BASIC("Basic Chant", 0, 15, 1.0f, 40),
+    ADEPT("Adept Resonance", 20, 50, 1.6f, 90),
+    MASTER("Master Incantation", 55, 95, 2.4f, 180),
+    MYTHIC("Mythic Logos", 100, 150, 3.2f, 300),
+    TRANSCENDENTAL("Transcendental Logos", 155, 200, 4.5f, 450);
 
     companion object {
-        fun fromScore(score: Float): ResonanceTier = when {
-            score >= 0.9f -> LOGOS
-            score >= 0.6f -> MASTER
-            score >= 0.3f -> ADEPT
+        fun fromBonusPercent(bonusPercent: Int): ResonanceTier = when {
+            bonusPercent >= 155 -> TRANSCENDENTAL
+            bonusPercent >= 100 -> MYTHIC
+            bonusPercent >= 55 -> MASTER
+            bonusPercent >= 20 -> ADEPT
             else -> BASIC
         }
     }
@@ -28,17 +29,21 @@ enum class ResonanceTier(
 
 /**
  * Result of evaluating an incantation via the Incantation Resonance Engine.
+ * Supports up to +200% damage multiplier graded across thematic lexicon, lexical cadence,
+ * acoustic vocal volume projection, pitch inflection & dynamics, and novelty.
  */
 data class ResonanceResult(
     val rawText: String,
-    val score: Float, // 0.0 to 1.0
+    val score: Float, // Normalized 0.0 to 1.0
+    val bonusPercent: Int, // 0% to 200%
     val tier: ResonanceTier,
-    val damageMultiplier: Float, // 1.0 to 1.20
-    val particleCount: Int,
+    val damageMultiplier: Float, // 1.0x to 3.0x (up to +200% bonus!)
+    val particleCount: Int, // 40 to 450+ particles
     val matchedThematicRoots: List<String>,
     val syllableCount: Int,
-    val isNovel: Boolean,
-    val repetitionDecayApplied: Float = 1.0f // 1.0 = no decay, 0.5 = 50% decay, etc.
+    val acousticProfile: AcousticProfile = AcousticProfile(),
+    val isNovel: Boolean = true,
+    val repetitionDecayApplied: Float = 1.0f
 ) {
-    val bonusPercentText: String get() = "+${tier.bonusDamagePercent}%"
+    val bonusPercentText: String get() = "+$bonusPercent%"
 }

@@ -497,11 +497,15 @@ class CombatViewModel(
 
             // 2. Parse intent using the selected hero's specific available spells
             val parsed = IntentParser.parse(utterance, activeHero.spells)
-            val resonance = resonanceEngine.evaluate(utterance, parsed.spell.school)
+            val acoustic = speechManager.getLatestAcousticProfile()
+            val resonance = resonanceEngine.evaluate(utterance, parsed.spell.school, acoustic)
+
+            val isSuperLogos = resonance.bonusPercent >= 100
+            val isTranscendental = resonance.tier == ResonanceTier.TRANSCENDENTAL
 
             _state.value = _state.value.copy(
                 lastResonance = resonance,
-                isLogosBannerVisible = resonance.tier == ResonanceTier.LOGOS || resonance.tier == ResonanceTier.MASTER,
+                isLogosBannerVisible = resonance.bonusPercent >= 50,
                 party = _state.value.party.map {
                     if (it.id == activeHero.id) it.copy(stance = CharacterStance.CASTING) else it
                 }
@@ -509,9 +513,11 @@ class CombatViewModel(
 
             // Audio & Feedback
             sfxManager.playSpellCast()
-            if (resonance.tier == ResonanceTier.LOGOS) {
+            if (isSuperLogos) {
                 sfxManager.playLogosFanfare()
-                triggerScreenShake()
+                triggerScreenShake(if (isTranscendental) 30f else 18f)
+            } else if (resonance.bonusPercent >= 50) {
+                triggerScreenShake(10f)
             }
 
             delay(300)
@@ -525,7 +531,6 @@ class CombatViewModel(
             val startY = 480f
             val targetOriginX = if (isHeal) 260f else 780f
             val targetOriginY = if (isHeal) 440f else 480f
-            val isLogos = resonance.tier == ResonanceTier.LOGOS
 
             spellVfxEngine.launch(
                 startX = startX,
@@ -534,19 +539,21 @@ class CombatViewModel(
                 targetY = targetOriginY,
                 school = parsed.spell.school,
                 isHeal = isHeal,
+                bonusPercent = resonance.bonusPercent,
+                tier = resonance.tier,
                 onImpact = {
                     particleEmitter.emit(
                         school = parsed.spell.school,
                         originX = targetOriginX,
                         originY = targetOriginY,
                         count = resonance.particleCount,
-                        isLogos = isLogos
+                        isLogos = isSuperLogos
                     )
                 }
             )
 
             // Allow projectile to travel to target
-            delay(400)
+            delay(420)
 
             // 4. Calculate amount
             val finalAmount = (parsed.spell.basePower * resonance.damageMultiplier).toInt()
@@ -626,7 +633,7 @@ class CombatViewModel(
                 startX = 260f,
                 startY = 400f,
                 isHeal = true,
-                isCrit = tier == ResonanceTier.LOGOS
+                isCrit = tier == ResonanceTier.TRANSCENDENTAL || tier == ResonanceTier.MYTHIC
             )
         }
 
@@ -680,13 +687,14 @@ class CombatViewModel(
             updatedEnemies.map { it.copy(isTargeted = it.id == nextAlive?.id) }
         } else updatedEnemies
 
+        val isSuper = tier == ResonanceTier.TRANSCENDENTAL || tier == ResonanceTier.MYTHIC
         val newFloatingTexts = targetList.map {
             FloatingCombatText(
                 text = "-$damage",
-                color = if (tier == ResonanceTier.LOGOS) Color(0xFFFFD700) else Color(0xFFFF5252),
+                color = if (isSuper) Color(0xFFFFD700) else Color(0xFFFF5252),
                 startX = 780f,
                 startY = 400f,
-                isCrit = tier == ResonanceTier.LOGOS
+                isCrit = isSuper
             )
         }
 
@@ -712,11 +720,11 @@ class CombatViewModel(
         }
     }
 
-    private fun triggerScreenShake() {
+    private fun triggerScreenShake(magnitude: Float = 20f) {
         viewModelScope.launch {
-            for (i in 0 until 6) {
-                val dx = (Random.nextFloat() * 24f - 12f)
-                val dy = (Random.nextFloat() * 24f - 12f)
+            for (i in 0 until 8) {
+                val dx = (Random.nextFloat() * magnitude * 2f - magnitude)
+                val dy = (Random.nextFloat() * magnitude * 2f - magnitude)
                 _state.value = _state.value.copy(screenShakeOffsetX = dx, screenShakeOffsetY = dy)
                 delay(30)
             }

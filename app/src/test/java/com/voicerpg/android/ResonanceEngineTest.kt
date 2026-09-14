@@ -3,6 +3,7 @@ package com.voicerpg.android
 import com.voicerpg.android.engine.IntentParser
 import com.voicerpg.android.engine.NoveltyCache
 import com.voicerpg.android.engine.ResonanceEngine
+import com.voicerpg.android.model.AcousticProfile
 import com.voicerpg.android.model.ResonanceTier
 import com.voicerpg.android.model.Spell
 import com.voicerpg.android.model.SpellSchool
@@ -33,33 +34,64 @@ class ResonanceEngineTest {
     fun testBasicChantScoring() {
         val result = engine.evaluate("Fireball archer", SpellSchool.PYROMANCY)
         assertEquals(ResonanceTier.BASIC, result.tier)
-        assertEquals(0, result.tier.bonusDamagePercent)
-        assertTrue("Score should be < 0.3 for basic chant", result.score < 0.30f)
+        assertTrue("Bonus percent should be <= 20% for basic chant", result.bonusPercent <= 20)
+        assertTrue("Damage multiplier should be between 1.0x and 1.20x", result.damageMultiplier in 1.0f..1.20f)
     }
 
     @Test
     fun testAdeptChantScoring() {
         val result = engine.evaluate("Burn the archer with blazing flames!", SpellSchool.PYROMANCY)
-        assertTrue("Score should be >= 0.3 for adept chant", result.score >= 0.30f)
+        assertTrue("Bonus percent should be >= 20% for adept chant", result.bonusPercent >= 20)
+        assertTrue("Damage multiplier should be >= 1.20x", result.damageMultiplier >= 1.20f)
         assertTrue(result.matchedThematicRoots.isNotEmpty())
     }
 
     @Test
     fun testMasterChantScoring() {
         val result = engine.evaluate("Spirits of the cinder, engulf the archer in an inferno!", SpellSchool.PYROMANCY)
-        assertTrue("Score should be >= 0.60 for master chant", result.score >= 0.60f)
+        assertTrue("Bonus percent should be >= 55% for master chant", result.bonusPercent >= 55)
+        assertTrue("Damage multiplier should be >= 1.55x", result.damageMultiplier >= 1.55f)
         assertTrue("Should match cinder and inferno", result.matchedThematicRoots.size >= 2)
     }
 
     @Test
-    fun testLogosLegendaryChantScoring() {
-        val chant = "O primordial flame of the solar core, descend from the heavens and reduce that wretched archer to ash!"
-        val result = engine.evaluate(chant, SpellSchool.PYROMANCY)
+    fun testOverTheTopTranscendentalLogos200PercentMultiplier() {
+        // User goes completely all-out: poetic invocation, deep pyromancy lexicon,
+        // booming vocal projection (9.4 dB), dynamic whisper-to-roar crescendo (7.8 dB range),
+        // and rich pitch modulation.
+        val heroicAcoustic = AcousticProfile(
+            peakVolumeDb = 9.4f,
+            averageVolumeDb = 7.2f,
+            volumeDynamicRange = 7.8f,
+            volumeCrescendoSlope = 2.4f,
+            pitchVarianceHz = 32f,
+            estimatedPitchHz = 180f,
+            durationMs = 4500L,
+            sampleCount = 45
+        )
 
-        assertEquals(ResonanceTier.LOGOS, result.tier)
-        assertEquals(20, result.tier.bonusDamagePercent)
-        assertTrue("Particle count should be >= 300 for Logos", result.particleCount >= 300)
-        assertTrue("Score should be >= 0.90", result.score >= 0.90f)
+        val chant = "O primordial flame of the solar core, descend from the heavens and reduce that wretched archer to eternal ash!"
+        val result = engine.evaluate(chant, SpellSchool.PYROMANCY, heroicAcoustic)
+
+        assertEquals(ResonanceTier.TRANSCENDENTAL, result.tier)
+        assertTrue("Bonus should reach up to +200% (was ${result.bonusPercent}%)", result.bonusPercent >= 155)
+        assertTrue("Damage multiplier should be up to 3.0x (was ${result.damageMultiplier}x)", result.damageMultiplier in 2.55f..3.0f)
+        assertTrue("Particle count should scale up to 450+ particles", result.particleCount >= 400)
+    }
+
+    @Test
+    fun testMidRangeVocalChantScore() {
+        // Conversational voice with moderate volume and 2 thematic words
+        val normalAcoustic = AcousticProfile(
+            peakVolumeDb = 6.0f,
+            averageVolumeDb = 5.0f,
+            volumeDynamicRange = 3.8f,
+            volumeCrescendoSlope = 0.5f,
+            pitchVarianceHz = 15f
+        )
+        val result = engine.evaluate("Blazing flames consume the orc!", SpellSchool.PYROMANCY, normalAcoustic)
+        assertTrue("Mid-range chant should score between +40% and +100%", result.bonusPercent in 40..100)
+        assertTrue("Damage multiplier should be between 1.40x and 2.0x", result.damageMultiplier in 1.40f..2.0f)
     }
 
     @Test
@@ -73,11 +105,11 @@ class ResonanceEngineTest {
         val second = engine.evaluate(chant, SpellSchool.PYROMANCY)
         assertEquals(0.5f, second.repetitionDecayApplied, 0.01f)
         assertFalse(second.isNovel)
-        assertTrue(second.score < first.score)
+        assertTrue(second.bonusPercent < first.bonusPercent)
 
         val third = engine.evaluate(chant, SpellSchool.PYROMANCY)
         assertEquals(0.25f, third.repetitionDecayApplied, 0.01f)
-        assertTrue(third.score < second.score)
+        assertTrue(third.bonusPercent < second.bonusPercent)
     }
 
     @Test
@@ -143,10 +175,10 @@ class ResonanceEngineTest {
             loreClass = "Elementalist",
             currentHp = 0,
             maxHp = 240,
-            currentMp = 140, // Even if raw int is 140
+            currentMp = 140,
             maxMp = 140,
             spells = emptyList(),
-            atbGauge = 0.95f // Even if raw float is 0.95f
+            atbGauge = 0.95f
         )
         assertFalse(deadHero.isAlive)
         assertEquals(0f, deadHero.hpRatio)

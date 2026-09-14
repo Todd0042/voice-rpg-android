@@ -234,7 +234,8 @@ fun ResonanceConsole(
                 val textColor = when {
                     isListening -> FrostCyan
                     speechState is SpeechState.Error -> Color(0xFFFF8A80)
-                    lastResonance != null && lastResonance.tier == ResonanceTier.LOGOS -> LogosGold
+                    lastResonance != null && lastResonance.bonusPercent >= 100 -> LogosGold
+                    lastResonance != null && lastResonance.bonusPercent >= 50 -> LightningViolet
                     else -> Color(0xFFB0BEC5)
                 }
 
@@ -374,10 +375,12 @@ private fun ResonanceMeterBar(lastResonance: ResonanceResult?) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            val bonus = lastResonance?.bonusPercent ?: 0
             Text(
-                text = "RESONANCE: ${tier.title.uppercase()} (${(score * 100).toInt()}%)",
+                text = "RESONANCE: ${tier.title.uppercase()} (+${bonus}%)",
                 color = when (tier) {
-                    ResonanceTier.LOGOS -> LogosGold
+                    ResonanceTier.TRANSCENDENTAL -> Color(0xFFFFEE58)
+                    ResonanceTier.MYTHIC -> LogosGold
                     ResonanceTier.MASTER -> LightningViolet
                     ResonanceTier.ADEPT -> FrostCyan
                     ResonanceTier.BASIC -> Color.Gray
@@ -388,7 +391,7 @@ private fun ResonanceMeterBar(lastResonance: ResonanceResult?) {
             )
 
             Text(
-                text = "BONUS: ${tier.bonusDamagePercent}% | ${(tier.particleMultiplier * 100).toInt()}% VFX",
+                text = "MULT: ${String.format("%.2f", lastResonance?.damageMultiplier ?: 1.0f)}x | ${lastResonance?.particleCount ?: 40} VFX",
                 color = LogosGlow,
                 fontSize = 10.sp,
                 fontWeight = FontWeight.Bold,

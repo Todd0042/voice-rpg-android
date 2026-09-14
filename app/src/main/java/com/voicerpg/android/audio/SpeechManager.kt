@@ -45,8 +45,17 @@ class SpeechManager(private val context: Context) {
     private val _rmsLevel = MutableStateFlow(0f)
     val rmsLevel: StateFlow<Float> = _rmsLevel.asStateFlow()
 
+    private val pitchDetector = PitchDetector()
+    private val rmsSamples = mutableListOf<Float>()
+    private var speechStartTimeMs = 0L
+
+    private val _lastAcousticProfile = MutableStateFlow(com.voicerpg.android.model.AcousticProfile())
+    val lastAcousticProfile: StateFlow<com.voicerpg.android.model.AcousticProfile> = _lastAcousticProfile.asStateFlow()
+
     private var isMutedTemporary = false
     private var onFinalResultCallback: ((String) -> Unit)? = null
+
+    fun getLatestAcousticProfile(): com.voicerpg.android.model.AcousticProfile = _lastAcousticProfile.value
 
     val isAvailable: Boolean
         get() = SpeechRecognizer.isRecognitionAvailable(context)
@@ -164,17 +173,24 @@ class SpeechManager(private val context: Context) {
 
             override fun onBeginningOfSpeech() {
                 _speechState.value = SpeechState.Listening
+                speechStartTimeMs = System.currentTimeMillis()
+                rmsSamples.clear()
+                pitchDetector.reset()
             }
 
             override fun onRmsChanged(rmsdB: Float) {
-                // rmsdB is typically -2 to 10 on Android
-                _rmsLevel.value = (rmsdB.coerceIn(0f, 10f) / 10f)
+                val clamped = rmsdB.coerceIn(0f, 12f)
+                rmsSamples.add(clamped)
+                _rmsLevel.value = (clamped / 10f).coerceIn(0f, 1f)
             }
 
-            override fun onBufferReceived(buffer: ByteArray?) {}
+            override fun onBufferReceived(buffer: ByteArray?) {
+                buffer?.let { pitchDetector.processPcmBuffer(it) }
+            }
 
             override fun onEndOfSpeech() {
                 _rmsLevel.value = 0f
+                finalizeAcousticProfile()
                 suppressChime()
                 _speechState.value = SpeechState.Processing
                 restoreVolume(400L)
@@ -222,6 +238,7 @@ class SpeechManager(private val context: Context) {
 
             override fun onResults(results: Bundle?) {
                 _rmsLevel.value = 0f
+                finalizeAcousticProfile()
                 val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                 val finalTrans = matches?.firstOrNull() ?: ""
                 _liveTranscript.value = finalTrans
@@ -241,6 +258,35 @@ class SpeechManager(private val context: Context) {
 
             override fun onEvent(eventType: Int, params: Bundle?) {}
         }
+    }
+
+    private fun finalizeAcousticProfile() {
+        if (rmsSamples.isEmpty()) return
+        val peakDb = rmsSamples.maxOrNull() ?: 5f
+        val avgDb = rmsSamples.average().toFloat()
+        val minDb = rmsSamples.minOrNull() ?: 0f
+        val dynRange = (peakDb - minDb).coerceAtLeast(0f)
+
+        val half = rmsSamples.size / 2
+        val slope = if (half > 2) {
+            val firstHalfAvg = rmsSamples.take(half).average().toFloat()
+            val secondHalfAvg = rmsSamples.drop(half).average().toFloat()
+            (secondHalfAvg - firstHalfAvg)
+        } else 0f
+
+        pitchDetector.recordRmsModulation(rmsSamples)
+
+        val profile = com.voicerpg.android.model.AcousticProfile(
+            peakVolumeDb = peakDb,
+            averageVolumeDb = avgDb,
+            volumeDynamicRange = dynRange,
+            volumeCrescendoSlope = slope,
+            pitchVarianceHz = pitchDetector.getPitchVarianceHz(),
+            estimatedPitchHz = pitchDetector.getAveragePitchHz(),
+            durationMs = (System.currentTimeMillis() - speechStartTimeMs).coerceAtLeast(0L),
+            sampleCount = rmsSamples.size
+        )
+        _lastAcousticProfile.value = profile
     }
 }
 

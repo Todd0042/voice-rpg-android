@@ -15,6 +15,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -34,6 +35,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.voicerpg.android.model.ResonanceResult
+import com.voicerpg.android.model.ResonanceTier
 import com.voicerpg.android.ui.theme.LogosGold
 import com.voicerpg.android.ui.theme.LogosGlow
 import com.voicerpg.android.ui.theme.RetroBlack
@@ -49,63 +51,87 @@ fun LogosBanner(
         initialValue = 0.6f,
         targetValue = 1.0f,
         animationSpec = infiniteRepeatable(
-            animation = tween(400, easing = FastOutSlowInEasing),
+            animation = tween(350, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
         ),
         label = "shimmer"
     )
 
     AnimatedVisibility(
-        visible = visible && resonance != null && resonance.tier.bonusDamagePercent >= 15,
+        visible = visible && resonance != null && resonance.bonusPercent >= 50,
         enter = scaleIn(tween(250)) + fadeIn(),
         exit = scaleOut(tween(200)) + fadeOut(),
         modifier = modifier
     ) {
-        val isFullLogos = resonance?.score ?: 0f >= 0.90f
-        val bannerGold = if (isFullLogos) LogosGold else Color(0xFFFFAB00)
+        val tier = resonance?.tier ?: ResonanceTier.BASIC
+        val bonus = resonance?.bonusPercent ?: 0
+
+        val (headerTitle, headerColor, bgGradient) = when (tier) {
+            ResonanceTier.TRANSCENDENTAL -> Triple(
+                "👑 TRANSCENDENTAL LOGOS (+${bonus}% MAX) 👑",
+                Color(0xFFFFEE58),
+                listOf(Color(0xFFE040FB), Color(0xFFFFD54F), Color(0xFF0D0D1A))
+            )
+            ResonanceTier.MYTHIC -> Triple(
+                "🌟 MYTHIC LOGOS RESONANCE (+${bonus}%) 🌟",
+                LogosGlow,
+                listOf(LogosGold, Color(0xFF1B1429), Color(0xFF0D0D1A))
+            )
+            ResonanceTier.MASTER -> Triple(
+                "✦ MASTER INCANTATION (+${bonus}%) ✦",
+                Color(0xFFFFD54F),
+                listOf(Color(0xFFFF9800), Color(0xFF1B1429), Color(0xFF0D0D1A))
+            )
+            else -> Triple(
+                "⚡ ADEPT RESONANCE (+${bonus}%) ⚡",
+                Color(0xFF80DEEA),
+                listOf(Color(0xFF00ACC1), Color(0xFF141A29), Color(0xFF0D0D1A))
+            )
+        }
 
         Box(
             modifier = Modifier
-                .fillMaxWidth(0.92f)
-                .clip(RoundedCornerShape(8.dp))
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            bannerGold.copy(alpha = 0.95f),
-                            RetroBlack.copy(alpha = 0.95f)
-                        )
-                    )
-                )
-                .border(2.dp, LogosGlow.copy(alpha = shimmerAlpha), RoundedCornerShape(8.dp))
-                .padding(vertical = 12.dp, horizontal = 16.dp),
+                .fillMaxWidth(0.94f)
+                .clip(RoundedCornerShape(10.dp))
+                .background(Brush.verticalGradient(colors = bgGradient))
+                .border(2.dp, headerColor.copy(alpha = shimmerAlpha), RoundedCornerShape(10.dp))
+                .padding(vertical = 10.dp, horizontal = 14.dp),
             contentAlignment = Alignment.Center
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    text = if (isFullLogos) "★ LOGOS RESONANCE ★" else "✦ MASTER INCANTATION ✦",
-                    color = LogosGlow,
-                    fontSize = 18.sp,
+                    text = headerTitle,
+                    color = headerColor,
+                    fontSize = if (tier == ResonanceTier.TRANSCENDENTAL) 16.sp else 14.sp,
                     fontWeight = FontWeight.Black,
                     fontFamily = FontFamily.Monospace,
                     textAlign = TextAlign.Center
                 )
 
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(3.dp))
 
                 Text(
-                    text = "MAXIMUM POWER (${resonance?.bonusPercentText ?: "+20%"}) | DENSITY: ${resonance?.particleCount ?: 320} PARTICLES",
+                    text = "MULTIPLIER: ${String.format("%.2f", resonance?.damageMultiplier ?: 1.0f)}x DAMAGE | VFX: ${resonance?.particleCount ?: 40} PARTICLES",
                     color = Color.White,
-                    fontSize = 11.sp,
+                    fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
                     fontFamily = FontFamily.Monospace,
                     textAlign = TextAlign.Center
                 )
 
-                if (!resonance?.matchedThematicRoots.isNullOrEmpty()) {
+                Spacer(modifier = Modifier.height(2.dp))
+
+                // Breakdown of vocal and lexical scoring attributes
+                val acoustic = resonance?.acousticProfile
+                val volumeText = "Vol: ${String.format("%.1f", acoustic?.peakVolumeDb ?: 0f)}dB"
+                val inflectionText = if ((acoustic?.volumeDynamicRange ?: 0f) >= 4f) "Crescendo: +${(acoustic?.inflectionScore ?: 0f) * 100}%" else "Inflection: OK"
+                val rootsText = if (!resonance?.matchedThematicRoots.isNullOrEmpty()) "Roots: ${resonance?.matchedThematicRoots?.joinToString("/")}" else "Lexicon: Standard"
+
+                Row {
                     Text(
-                        text = "Roots: ${resonance?.matchedThematicRoots?.joinToString(", ")}",
-                        color = Color(0xFFFFE082),
-                        fontSize = 9.sp,
+                        text = "$volumeText • $inflectionText • $rootsText",
+                        color = Color(0xFFFFF9C4),
+                        fontSize = 8.5.sp,
                         fontFamily = FontFamily.Monospace,
                         textAlign = TextAlign.Center
                     )

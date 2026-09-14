@@ -62,53 +62,63 @@ Rather than forcing players into rigid, robotic commands ("Cast Fireball"), the 
 flowchart TD
     A["Player Spoken Chants / Commands"] --> B["Android SpeechRecognizer (On-Device Audio Stream)"]
     
-    subgraph Analysis ["Dual-Stream Intent & Resonance Analyzer"]
+    subgraph Analysis ["Dual-Stream Intent & Acoustic-Lexical Analyzer"]
         B --> C["Intent Extractor (Base Spell / Skill & Target Selection)"]
-        B --> D["Resonance Grading Engine (Lexical Analysis & Novelty Cache)"]
+        B --> D["Acoustic & Resonance Engine (Lexicon, Decibels, Pitch, Dynamics & Novelty)"]
     end
 
-    subgraph Scoring ["Multi-Factor Uniqueness Scoring (0.0 to 1.0)"]
-        D --> E1["Thematic Thesaurus Match (Pyromancy, Cryomancy, Holy, Shadow, etc.)"]
-        D --> E2["Lexical Richness & Cadence (Word diversity, syllables, evocative phrasing)"]
-        D --> E3["Anti-Repetition Novelty Cache (Circular buffer penalizing repeated phrases)"]
-        E1 & E2 & E3 --> F["Final Resonance Score: 0.0 - 1.0"]
+    subgraph Scoring ["Multi-Factor 200% Scaling Points (0% to +200% Bonus)"]
+        D --> E1["Thematic Thesaurus Density (Pyromancy, Cryomancy, Holy, etc.) [Up to +45%]"]
+        D --> E2["Lexical Richness & Syllable Cadence (Multi-clause poetic syntax) [Up to +45%]"]
+        D --> E3["Acoustic Vocal Volume & Projection (Decibel power) [Up to +40%]"]
+        D --> E4["Vocal Inflection, Pitch Modulation & Dynamic Crescendo (Whisper to Roar) [Up to +40%]"]
+        D --> E5["Anti-Repetition Novelty Cache & Surge (Rewards unrepeated phrases) [Up to +30%]"]
+        E1 & E2 & E3 & E4 & E5 --> F["Final Bonus Points: 0% to +200% (1.0x to 3.0x Multiplier)"]
     end
 
     subgraph Resolution ["Combat & Visual Impact"]
-        C & F --> G["Damage / Healing Scaling (100% to 120%)"]
-        C & F --> H["Particle Engine Density Scaling (1.0x to 3.8x Particles)"]
-        C & F --> I["Audio FX Pitch, Bass & Reverb Amplification"]
+        C & F --> G["Damage / Healing Scaling (100% to 300% Base Power)"]
+        C & F --> H["Visual Spell Scaling (Rotating Rune Rings, Multi-Branching Tempests, 40 to 450+ Particles)"]
+        C & F --> I["Screen Shake (Up to 30px Earthquake) & Procedural Choral Fanfare"]
     end
 ```
 
-### Uniqueness & Resonance Scoring Algorithm (100% On-Device)
-The engine processes recognized text through three discrete algorithms:
+### Uniqueness, Acoustic & Resonance Scoring Algorithm (100% On-Device)
+The engine processes both the recognized text and raw acoustic audio properties along five mathematical pillars:
 
-1. **Thematic Vocabulary Density (Spell Thesaurus):**
-   * Each school of magic contains a curated, multi-tiered dictionary of evocative roots:
+1. **Thematic Vocabulary Density (Spell Thesaurus — Up to +45%):**
+   * Curated multi-tiered dictionaries of evocative elemental roots:
      * **Pyromancy (Fire):** *cinder, inferno, ash, blaze, ignite, scorching, incandescent, solar, phoenix, wrath, embers, consume*.
      * **Cryomancy (Ice):** *glacial, permafrost, frostbite, blizzard, crystalline, absolute zero, tundra, shards, bitter, freeze*.
      * **Electromancy (Lightning):** *tempest, thunderclap, galvanic, arc, storm, fulgur, lightning, volt, flash, strike*.
      * **Holy / Restoration:** *radiance, divine, seraph, celestial, dawn, sanctify, blessing, mend, aegis, purity*.
      * **Shadow / Rogue:** *umbra, abyss, venom, phantom, whisper, shroud, eclipse, silent, strike, hollow*.
-2. **Lexical Richness & Cadence:**
-   * Analyzes syllable count, adjective density, and linguistic complexity.
-   * Simple blunt shouts ("Fireball goblin") score low; rhythmic, multi-clause incantations score high.
-3. **Anti-Repetition Novelty Cache:**
-   * A rolling circular buffer of the player's last 15 incantations is preserved in memory.
-   * Repeating the exact same incantation in successive turns decays the resonance score by 50% per repetition.
-   * Uttering a fresh, unrepeated formulation rewards a **Novel Chant Surge**.
+2. **Lexical Richness, Syllable Cadence & Poetic Structure (Up to +45%):**
+   * Evaluates word count, multisyllabic complexity, and poetic/archaic invocation formulas (*"O spirits of...", "descend from the heavens...", "unto the void..."*).
+3. **Acoustic Vocal Volume & Projection (Up to +40%):**
+   * Real-time decibel profiling via `onRmsChanged`:
+     * Timid whisper / mumbling: $+0\%$
+     * Conversational speaking ($5.0 - 7.0\text{ dB}$): $+18\%$
+     * Heroic battle projection ($\ge 8.5\text{ dB}$): $+40\%$
+4. **Vocal Inflection, Pitch Modulation & Dynamic Crescendo (Up to +40%):**
+   * Evaluates dynamic volume range ($\Delta\text{dB}$) and fundamental pitch variance ($\Delta F_0\text{ in Hz}$):
+     * Flat monotone: $+0\%$
+     * Expressive pitch inflection ($\ge 25\text{ Hz variance}$): $+10\%$
+     * Dramatic dynamic crescendo (building from whisper to climactic roar, $\ge 6.0\text{ dB dynamic range}$ with rising volume slope): $+30\%$
+5. **Anti-Repetition Novelty Cache & Surge (Up to +30%):**
+   * Rolling circular buffer of last 15 incantations. Repetitions decay points by 50% per repeat. Uttering a completely fresh, creative chant triggers a **+30% Novelty Surge**.
 
-### Resonance Tiers, Damage Bonus & Graphic Scaling
+### Resonance Tiers, 200% Multipliers & Dynamic Visual Impact
 
-$$\text{Final Damage} = \text{Base Damage} \times (1.0 + [0.20 \times \text{Resonance Score}])$$
+$$\text{Final Damage} = \text{Base Damage} \times \left(1.0 + \frac{\text{Bonus Percent}}{100.0}\right) \quad [1.0\times \text{ to } 3.0\times]$$
 
-| Tier | Resonance Score | Bonus | Graphic Particle Density | Visual & Audio Effects | Example Chant |
+| Tier | Bonus Multiplier | Damage Multiplier | Visual Particle Count | Spell Visual Effects | Example Chant & Delivery |
 | :--- | :---: | :---: | :---: | :--- | :--- |
-| **Basic** | `0.0 - 0.2` | $+0\%$ | **1.0x** (Standard, ~40 particles) | Single retro fireball sprite, basic impact sound. | *"Fireball archer"* |
-| **Adept** | `0.3 - 0.5` | $+5\% - 10\%$ | **1.8x** (~80 particles) | Trailing smoke particles, moderate fireball size, slight screen bump. | *"Burn the archer with blazing flames!"* |
-| **Master** | `0.6 - 0.8` | $+11\% - 16\%$ | **2.6x** (~180 particles) | Swirling flame vortex, flying spark clusters, heavy screen shake, bass boom. | *"Spirits of the cinder, engulf the archer in an inferno!"* |
-| **Legendary (Logos)** | `0.9 - 1.0` | **$+20\%$ (Max)** | **3.8x** (~320+ particles) | Full-screen chromatic aberration flash, massive firestorm vortex, erupting embers, reverberant choir SFX, and glowing golden HUD banner: **"LOGOS RESONANCE (+20%)"**. | *"O primordial flame of the solar core, descend from the heavens and reduce that wretched archer to ash!"* |
+| **Basic** | $+0\% - 15\%$ | $1.0\times - 1.15\times$ | **40** (Standard) | Compact retro fireball sprite, basic impact SFX. | Flat tone: *"Fireball archer"* |
+| **Adept** | $+20\% - 50\%$ | $1.2\times - 1.50\times$ | **90** (Enhanced) | Trailing ember particles, larger core, slight screen bump. | Normal voice: *"Burn the archer with blazing flames!"* |
+| **Master** | $+55\% - 95\%$ | $1.55\times - 1.95\times$ | **180** (Dense) | Swirling flame vortex, flying spark clusters, heavy screen shake, bass boom. | Projected voice: *"Spirits of the cinder, engulf the archer in an inferno!"* |
+| **Mythic** | $+100\% - 150\%$ | $2.0\times - 2.50\times$ | **300** (Storm Vortex) | Roaring meteor vortex, multi-layered orbital plasma rings, camera zoom shake. | Passionate crescendo: *"O ancient embers of the dragon's maw, hear my call and incinerate the shadow vanguard!"* |
+| **Transcendental Logos** | **$+155\% - 200\%$ (MAX)** | **$2.55\times - 3.0\times$** | **450+** (Cataclysmic) | Full-screen chromatic aberration flash, giant solar super-core (4x scale), rotating arcane rune rings, 450+ particle firestorm vortex, screen-splitting shockwave, golden **"TRANSCENDENTAL LOGOS (+200%)"** banner! | Booming crescendo from whisper to roar: *"O primordial flame of the solar core, descend from the heavens and reduce that wretched archer to eternal ash!"* |
 
 ---
 
