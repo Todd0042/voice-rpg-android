@@ -7,17 +7,24 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import com.voicerpg.android.audio.CombatNarrator
 import com.voicerpg.android.audio.SpeechManager
+import com.voicerpg.android.model.GameScreen
 import com.voicerpg.android.ui.combat.RetroBattleScreen
+import com.voicerpg.android.ui.story.StoryScreen
 import com.voicerpg.android.ui.theme.VoiceRPGTheme
 import com.voicerpg.android.viewmodel.CombatViewModel
+import com.voicerpg.android.viewmodel.StoryViewModel
 
 class MainActivity : ComponentActivity() {
 
     private lateinit var speechManager: SpeechManager
     private lateinit var combatNarrator: CombatNarrator
     private lateinit var combatViewModel: CombatViewModel
+    private lateinit var storyViewModel: StoryViewModel
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -36,12 +43,39 @@ class MainActivity : ComponentActivity() {
             speechManager = speechManager,
             combatNarrator = combatNarrator
         )
+        storyViewModel = StoryViewModel(
+            speechManager = speechManager,
+            combatNarrator = combatNarrator
+        )
 
         checkAudioPermission()
 
         setContent {
+            val storyState by storyViewModel.state.collectAsState()
+
+            LaunchedEffect(storyState.activeEncounter) {
+                storyState.activeEncounter?.let { encounter ->
+                    combatViewModel.startEncounter(encounter)
+                }
+            }
+
             VoiceRPGTheme {
-                RetroBattleScreen(viewModel = combatViewModel)
+                when (storyState.gameScreen) {
+                    GameScreen.STORY_EXPLORATION -> {
+                        StoryScreen(
+                            storyViewModel = storyViewModel,
+                            combatViewModel = combatViewModel,
+                            onOpenOptions = { combatViewModel.openOptions() }
+                        )
+                    }
+                    GameScreen.COMBAT_ARENA -> {
+                        RetroBattleScreen(
+                            viewModel = combatViewModel,
+                            onReturnToStory = { storyViewModel.switchToStory() },
+                            onContinueStory = { storyViewModel.onCombatVictory() }
+                        )
+                    }
+                }
             }
         }
     }

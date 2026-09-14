@@ -53,6 +53,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun RetroBattleScreen(
     viewModel: CombatViewModel,
+    onReturnToStory: (() -> Unit)? = null,
+    onContinueStory: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val state by viewModel.state.collectAsState()
@@ -92,6 +94,27 @@ fun RetroBattleScreen(
                         activePartyMemberId = state.activePartyMemberId,
                         modifier = Modifier.weight(1f)
                     )
+
+                    // Return to Story Mode button (if provided)
+                    if (onReturnToStory != null) {
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color(0xFF1B5E20))
+                                .border(1.dp, Color(0xFF66BB6A), RoundedCornerShape(8.dp))
+                                .clickable { onReturnToStory() }
+                                .padding(horizontal = 8.dp, vertical = 6.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "📖 STORY",
+                                color = Color(0xFFE8F5E9),
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+                    }
 
                     // Quick Settings Button (Options modal & Pocket Mode status)
                     Box(
@@ -201,7 +224,8 @@ fun RetroBattleScreen(
                         Box(modifier = Modifier.align(Alignment.Center)) {
                             BattleConclusionOverlay(
                                 isVictory = state.phase == CombatPhase.BATTLE_WON,
-                                onRestart = { viewModel.restartBattle() }
+                                onRestart = { viewModel.restartBattle() },
+                                onContinueStory = onContinueStory
                             )
                         }
                     }
@@ -245,7 +269,8 @@ fun RetroBattleScreen(
 @Composable
 private fun BattleConclusionOverlay(
     isVictory: Boolean,
-    onRestart: () -> Unit
+    onRestart: () -> Unit,
+    onContinueStory: (() -> Unit)? = null
 ) {
     Box(
         modifier = Modifier
@@ -275,11 +300,30 @@ private fun BattleConclusionOverlay(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            if (isVictory && onContinueStory != null) {
+                Button(
+                    onClick = onContinueStory,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = LogosGold,
+                        contentColor = RetroBlack
+                    ),
+                    shape = RoundedCornerShape(6.dp)
+                ) {
+                    Text(
+                        text = "CONTINUE STORY ➔",
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Black
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
             Button(
                 onClick = onRestart,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isVictory) LogosGold else Color(0xFFC62828),
-                    contentColor = RetroBlack
+                    containerColor = if (isVictory) Color(0xFF37474F) else Color(0xFFC62828),
+                    contentColor = if (isVictory) Color.White else RetroBlack
                 ),
                 shape = RoundedCornerShape(6.dp)
             ) {
