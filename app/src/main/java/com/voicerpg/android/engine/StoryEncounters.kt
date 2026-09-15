@@ -151,6 +151,22 @@ object StoryEncounters {
         )
     )
 
+    // 8. Aqueduct Reconnaissance: Corrupted Sentinels (Cedric + Aethel vs 2 Sentinels)
+    val CH3_SENTINELS = EncounterDefinition(
+        id = "ch3_sentinels",
+        name = "Chapter 3: The Corrupted Sentinels",
+        description = "Cedric and Aethel engage the razor-clawed sentinels guarding the aqueduct perimeter.",
+        environment = BattleEnvironment.CAVE,
+        enemies = listOf(
+            Enemy("sentinel_1", "Aqueduct Sentinel", "Vanguard", currentHp = 260, maxHp = 260, baseAttack = 22, isTargeted = true, spriteTint = Color(0xFFEF5350), speed = 58, atbGauge = 0.35f),
+            Enemy("sentinel_2", "Brood Stalker", "Sniper", currentHp = 210, maxHp = 210, baseAttack = 24, isTargeted = false, spriteTint = Color(0xFFAB47BC), speed = 66, atbGauge = 0.25f)
+        ),
+        initialParty = listOf(
+            PartyMember("hero", "Aethel", "Elementalist", currentHp = 240, maxHp = 240, currentMp = 140, maxMp = 140, spells = aethelSpells, avatarTint = Color(0xFF90CAF9), speed = 70, atbGauge = 0.85f),
+            PartyMember("cedric", "Sir Cedric", "Templar", currentHp = 310, maxHp = 420, currentMp = 80, maxMp = 80, spells = cedricSpells, avatarTint = Color(0xFFFFD54F), speed = 55, atbGauge = 0.50f)
+        )
+    )
+
     // Helper to generate reinforcement minions dynamically
     fun createMinion(idSuffix: String, name: String = "Blighted Minion", subtitle: String = "Minion", hp: Int = 180): Enemy {
         return Enemy(
@@ -174,6 +190,7 @@ object StoryEncounters {
         CASTLE_HORDE,
         CAVE_BROODMOTHER,
         SWAMP_BEHEMOTH,
-        BLIGHT_TRACKERS
+        BLIGHT_TRACKERS,
+        CH3_SENTINELS
     )
 }

@@ -235,7 +235,7 @@ fun StoryScreen(
             )
 
             // Right Character (Companion / NPC - e.g. Sir Cedric or Shadow Wisp)
-            if (currentNode.speaker == DialogueSpeaker.CEDRIC || currentNode.id.contains("cedric") || currentNode.id.contains("crossroads") || currentNode.id.startsWith("camp_") || currentNode.id.startsWith("ch3_")) {
+            if (currentNode.speaker == DialogueSpeaker.CEDRIC || currentNode.id.contains("cedric") || currentNode.id.contains("crossroads") || currentNode.id.startsWith("camp_") || currentNode.id.startsWith("ch3_") || currentNode.id.startsWith("ch4_") || currentNode.id.startsWith("chapter3") || currentNode.id.startsWith("chapter4")) {
                 CharacterPortraitBust(
                     bitmap = cedricBitmap,
                     speaker = DialogueSpeaker.CEDRIC,

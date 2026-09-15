@@ -65,13 +65,43 @@ object StoryScript {
         ambientDescription = "Thick emerald mist drifts over black mire and gnarled roots."
     )
 
+    val SCENE_AQUEDUCT = StoryScene(
+        id = "scene_aqueduct",
+        name = "The Aqueducts of Solaria",
+        chapterTitle = "Chapter 3: The Ascent of Solaria",
+        backgroundAsset = "environments/cave.jpg",
+        initialNodeId = "chapter3_intro",
+        ambientDescription = "Colossal limestone arches rise above the mist as ancient waterfalls hang petrified in obsidian glass."
+    )
+
+    val SCENE_DUNGEON = StoryScene(
+        id = "scene_dungeon",
+        name = "Crypt of the Foundation",
+        chapterTitle = "Chapter 4: The Silent Catacombs",
+        backgroundAsset = "environments/dungeon.jpg",
+        initialNodeId = "chapter4_intro",
+        ambientDescription = "Ancient mosaic pillars of the Primordial Chanters lie buried beneath the Bell Tower foundations."
+    )
+
+    val SCENE_TOWER = StoryScene(
+        id = "scene_tower",
+        name = "The Solaria Bell Chamber",
+        chapterTitle = "Chapter 4: The Great Bell of Solaria",
+        backgroundAsset = "environments/castle.jpg",
+        initialNodeId = "ch4_tower_ascent",
+        ambientDescription = "High above the cloudline, the massive bronze Bell of Solaria hangs beneath open gothic parapets."
+    )
+
     val ALL_SCENES = mapOf(
         SCENE_COTTAGE.id to SCENE_COTTAGE,
         SCENE_VILLAGE.id to SCENE_VILLAGE,
         SCENE_CROSSROADS.id to SCENE_CROSSROADS,
         SCENE_CAMP.id to SCENE_CAMP,
         SCENE_CAVE.id to SCENE_CAVE,
-        SCENE_SWAMP.id to SCENE_SWAMP
+        SCENE_SWAMP.id to SCENE_SWAMP,
+        SCENE_AQUEDUCT.id to SCENE_AQUEDUCT,
+        SCENE_DUNGEON.id to SCENE_DUNGEON,
+        SCENE_TOWER.id to SCENE_TOWER
     )
 
     // -------------------------------------------------------------------------
@@ -249,14 +279,31 @@ object StoryScript {
             id = "crossroads_post_battle",
             speaker = DialogueSpeaker.CEDRIC,
             side = SpeakerSide.RIGHT,
-            text = "Glorious! Your voice pierces the darkness like the morning sun! With the power of the Logos and the Aegis of the Sun, we can save Aethelgard.",
+            text = "Glorious! Your voice pierces the darkness like the morning sun! I have not heard an incantation of such pure resonance since the high cathedral of Sol-Aethel was silenced.",
+            choices = listOf(
+                DialogueChoice("cr_ask_towers", "Ask Cedric about the Four Great Bell Towers", listOf("towers", "bells", "four", "solaria", "ask"), "crossroads_lore_towers"),
+                DialogueChoice("cr_ask_blight", "Ask how the Silent Blight overthrew the kingdom", listOf("blight", "silence", "sovereign", "kingdom", "overthrew"), "crossroads_lore_blight")
+            )
+        ),
+        DialogueNode(
+            id = "crossroads_lore_towers",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            text = "The Four Towers were built by the Primordial Chanters: Solaria in the east, the Drowned Spire in the marsh, the Iron Belfry in the north, and the Celestial Spire at the capital. When rung in harmony, their chimes generate an acoustic ward that shields every living soul from the Blight.",
+            nextNodeId = "crossroads_conclusion"
+        ),
+        DialogueNode(
+            id = "crossroads_lore_blight",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            text = "It happened during the Grand Concordance. The Mute Sovereign inverted the holy chimes, turning our words into petrifying obsidian glass. Entire armies were frozen mid-battle cry. Only those with the dormant spark of the Logos can speak and awaken the bells.",
             nextNodeId = "crossroads_conclusion"
         ),
         DialogueNode(
             id = "crossroads_conclusion",
             speaker = DialogueSpeaker.AETHEL,
             side = SpeakerSide.LEFT,
-            text = "The Fellowship of Echoes begins today. To the Bell Tower!",
+            text = "Then our purpose is clear. My voice and your shield will reignite the chimes of Aethelgard. The Fellowship of Echoes begins today!",
             nextNodeId = "crossroads_camp_trans"
         ),
         DialogueNode(
@@ -411,45 +458,293 @@ object StoryScript {
             nextNodeId = "chapter3_intro"
         ),
 
-        // === CHAPTER 3 COMMENCEMENT ===
+        // === CHAPTER 3: THE SUNKEN AQUEDUCTS OF SOLARIA ===
         DialogueNode(
             id = "chapter3_intro",
             speaker = DialogueSpeaker.NARRATOR,
             side = SpeakerSide.CENTER_NARRATOR,
-            text = "CHAPTER 3: THE ASCENT OF SOLARIA. Leaving the forest camp behind, you and Sir Cedric ascend the rocky slopes toward the colossal stone aqueducts of the First Bell Tower. Looming in the morning mist, the ancient gateway stands sealed by the Mute Sovereign's obsidian wards.",
-            changeSceneId = SCENE_CAVE.id,
+            text = "CHAPTER 3: THE ASCENT OF SOLARIA. Leaving the warmth of the camp behind, you and Sir Cedric climb the craggy mountain ridges toward the colossal stone aqueducts of the First Bell Tower. Looming in the morning mist, monumental arches span the gorge, yet the grand portal is choked in pulsing obsidian vines.",
+            changeSceneId = SCENE_AQUEDUCT.id,
+            nextNodeId = "ch3_cedric_assessment"
+        ),
+        DialogueNode(
+            id = "ch3_cedric_assessment",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            text = "Look at the sheer scale of the aqueduct... It brought mountain spring water to the bell disciples centuries ago. Now, the Mute Sovereign has turned it into a fortress. The death wards hum with discordant energy, and corrupted sentinels prowl the upper buttresses.",
+            nextNodeId = "ch3_hub"
+        ),
+        DialogueNode(
+            id = "ch3_hub",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            text = "We cannot force the main gate while the death wards hum and the sentinels flank our approach. Which objective shall we tackle first, Invocator?",
             choices = listOf(
-                DialogueChoice("ch3_chime", "Raise the Echo Chime to unseal the Aqueduct Gate", listOf("chime", "unseal", "raise", "echo", "gate"), "ch3_gate_unsealed"),
-                DialogueChoice("ch3_scout", "Inspect the corrupted sentinels guarding the portal", listOf("inspect", "sentinels", "guardians", "scout"), "ch3_sentinels_scout")
+                DialogueChoice(
+                    id = "ch3_scout",
+                    text = "Infiltrate the aqueduct cliffs to scout the corrupted sentinels",
+                    voiceKeywords = listOf("scout", "sentinels", "cliffs", "infiltrate", "prowl"),
+                    nextNodeId = "ch3_scout_approach",
+                    completionFlag = "ch3_sentinels_complete"
+                ),
+                DialogueChoice(
+                    id = "ch3_chime",
+                    text = "Channel the Echo Chime to unseal the resonant barrier",
+                    voiceKeywords = listOf("chime", "barrier", "unseal", "echo", "channel", "raise"),
+                    nextNodeId = "ch3_chime_approach",
+                    completionFlag = "ch3_chime_complete"
+                )
+            )
+        ),
+
+        // --- CHAPTER 3 / BRANCH 1: SENTINELS RECONNAISSANCE & ACOUSTIC FLAW ---
+        DialogueNode(
+            id = "ch3_scout_approach",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "You and Sir Cedric scale the damp stone buttresses, clinging to ancient handholds above the churning gorge. Ahead, two razor-clawed sentinels crouch over pulsating black cocoons, their jagged carapaces clicking in a discordant rhythm.",
+            choices = listOf(
+                DialogueChoice("c_scout_listen", "Observe their acoustic resonance patterns from the shadows", listOf("listen", "observe", "shadows", "resonance", "watch"), "ch3_scout_listen"),
+                DialogueChoice("c_scout_strike", "Chant a piercing harmonic note to test their reaction", listOf("strike", "chant", "piercing", "test", "sing"), "ch3_scout_strike")
             )
         ),
         DialogueNode(
-            id = "ch3_gate_unsealed",
+            id = "ch3_scout_listen",
             speaker = DialogueSpeaker.AETHEL,
             side = SpeakerSide.LEFT,
-            text = "By the resonance of the First Dawn... Echo Chime, awaken!",
-            nextNodeId = "ch3_aqueduct_boss_trigger"
+            text = "Listen closely... Their clicking is synchronized to a single subterranean pulse from the chamber above. When they screech, their obsidian shells vibrate out of phase.",
+            nextNodeId = "ch3_scout_ambush"
         ),
         DialogueNode(
-            id = "ch3_sentinels_scout",
+            id = "ch3_scout_strike",
+            speaker = DialogueSpeaker.AETHEL,
+            side = SpeakerSide.LEFT,
+            text = "Sol... Cantus! A high resonant pitch bursts from your lips. The sentinels shriek in agony as hairline fractures spider across their crystal shells!",
+            nextNodeId = "ch3_scout_ambush"
+        ),
+        DialogueNode(
+            id = "ch3_scout_ambush",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "The sentinels whirl around with venomous mandibles, leaping from the buttress! Cedric locks his golden shield into place: 'They've caught our scent! Purge the vanguard!'",
+            triggerBattleEncounterId = "ch3_sentinels"
+        ),
+        DialogueNode(
+            id = "ch3_sentinels_victory",
             speaker = DialogueSpeaker.CEDRIC,
             side = SpeakerSide.RIGHT,
-            text = "The gate is guarded by the Chittering Queen and her corrupted brood! We must purge them to breach the tower!",
+            text = "Magnificent! Notice how their chitin shattered when your chants struck their frequency? Their queen, the Grave Broodmother, shares the exact same vulnerability. High-cadence chants will pierce her carapace and shatter her summonings!",
+            setFlagOnEnter = "ch3_sentinels_complete",
+            nextNodeId = "ch3_return_hub"
+        ),
+
+        // --- CHAPTER 3 / BRANCH 2: RAISING THE ECHO CHIME & WARD SHATTERING ---
+        DialogueNode(
+            id = "ch3_chime_approach",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "You step before the grand ironwood portal. Interlocking obsidian bands seal the doors, oozing a pitch-black liquid silence that smothers all ambient sound. At the base stands an ancient tuning dais engraved with the sacred music staff of Solaria.",
+            choices = listOf(
+                DialogueChoice("c_chime_align", "Strike the Echo Chime to align with the Dawn harmonic", listOf("align", "dawn", "strike", "harmonic", "chime"), "ch3_chime_align"),
+                DialogueChoice("c_chime_channel", "Pour incandescent elemental mana through the chime", listOf("channel", "fire", "elemental", "mana", "pour"), "ch3_chime_channel")
+            )
+        ),
+        DialogueNode(
+            id = "ch3_chime_align",
+            speaker = DialogueSpeaker.AETHEL,
+            side = SpeakerSide.LEFT,
+            text = "By the chord of the First Morning... awaken! You strike the Echo Chime against the dais. A pristine, golden chime rings out, vibrating at the frequency of pure sunlight!",
+            nextNodeId = "ch3_chime_shatter"
+        ),
+        DialogueNode(
+            id = "ch3_chime_channel",
+            speaker = DialogueSpeaker.AETHEL,
+            side = SpeakerSide.LEFT,
+            text = "Flames of the Logos, ignite the ancient steel! The Echo Chime blazes with incandescent solar fire, boiling away the dark venom coating the stone!",
+            nextNodeId = "ch3_chime_shatter"
+        ),
+        DialogueNode(
+            id = "ch3_chime_shatter",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "CRACK! A radiant shockwave of golden sound detonates from the Echo Chime! Like brittle crystal under an opera note, the obsidian death wards fracture into millions of harmless motes of light.",
+            nextNodeId = "ch3_chime_complete_node"
+        ),
+        DialogueNode(
+            id = "ch3_chime_complete_node",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            text = "The death wards have disintegrated! The mechanical counterweights inside the archway are groaning back to life. The acoustic seal of Solaria is broken!",
+            setFlagOnEnter = "ch3_chime_complete",
+            nextNodeId = "ch3_return_hub"
+        ),
+
+        // --- CHAPTER 3 HUB RETURN & GRAND BREACH ---
+        DialogueNode(
+            id = "ch3_return_hub",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "You and Sir Cedric regroup at the base of the massive aqueduct threshold.",
+            nextNodeId = "ch3_hub"
+        ),
+        DialogueNode(
+            id = "ch3_all_completed",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            text = "The sentinels' acoustic weakness is known and the death wards are shattered! Look at the gates — the ancient sun-gears are turning! Brace yourself, Invocator, the queen descends!",
             nextNodeId = "ch3_aqueduct_boss_trigger"
         ),
         DialogueNode(
             id = "ch3_aqueduct_boss_trigger",
             speaker = DialogueSpeaker.NARRATOR,
             side = SpeakerSide.CENTER_NARRATOR,
-            text = "The Grave Broodmother descends from the aqueduct archway, screeching in deafening discord! Strike with your voice and cleanse the gate!",
+            text = "The colossal ironwood gates blast open! From the vaulted ceiling crawls the Grave Broodmother, screeching in deafening discord as toxic hatchlings spill from her back! Unleash your voice and cleanse the gate!",
             triggerBattleEncounterId = "cave_broodmother"
         ),
         DialogueNode(
-            id = "ch3_victory_ascent",
+            id = "ch3_boss_victory",
             speaker = DialogueSpeaker.CEDRIC,
             side = SpeakerSide.RIGHT,
-            text = "The gate collapses open! Ahead lies the winding spiral staircase to the Solaria Bell chamber. The First Bell Tower is within our grasp!",
-            nextNodeId = null
+            text = "The Broodmother shatters into harmless iridescent mist! The corrupted brood dissolves into the stone. Look through the breach — the aqueduct tunnels lead directly into the catacombs beneath the First Bell Tower!",
+            nextNodeId = "ch3_to_ch4"
+        ),
+        DialogueNode(
+            id = "ch3_to_ch4",
+            speaker = DialogueSpeaker.AETHEL,
+            side = SpeakerSide.LEFT,
+            text = "The air grows cool with the scent of sacred incense and sun-baked granite. The First Bell Tower is within our reach. Let us enter the catacombs!",
+            changeSceneId = SCENE_DUNGEON.id,
+            nextNodeId = "chapter4_intro"
+        ),
+
+        // === CHAPTER 4: THE BELL TOWER OF SOLARIA ===
+        DialogueNode(
+            id = "chapter4_intro",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "CHAPTER 4: THE BELL TOWER OF SOLARIA. You cross into the subterranean catacombs beneath the First Bell Tower. Vaulted stone pillars carved with sacred musical clefs hold up the monumental foundations. Yet eerie violet embers flicker among the ancient sarcophagi.",
+            choices = listOf(
+                DialogueChoice("ch4_investigate", "Examine the desecrated burial vaults", listOf("examine", "vaults", "burial", "sarcophagi", "investigate"), "ch4_crypt_cedric"),
+                DialogueChoice("ch4_call_dawn", "Chant a prayer of warding to the First Dawn", listOf("prayer", "warding", "dawn", "chant", "protect"), "ch4_crypt_cedric")
+            )
+        ),
+        DialogueNode(
+            id = "ch4_crypt_cedric",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            text = "This is the Mausoleum of the Sun-Chanters... Look at the central pedestal! The sacred Sun-Iron Bell Clapper was cast down here by the Mute Sovereign's disciples. A Bone Acolyte is conducting an unholy ritual over the relic!",
+            choices = listOf(
+                DialogueChoice("ch4_confront_acolyte", "Demand the desecrator surrender the holy clapper", listOf("demand", "surrender", "confront", "halt"), "ch4_crypt_confront"),
+                DialogueChoice("ch4_charge_acolyte", "Draw blade and ready a searing pyromancy blast", listOf("charge", "fireball", "attack", "blade", "strike"), "ch4_crypt_confront")
+            )
+        ),
+        DialogueNode(
+            id = "ch4_crypt_confront",
+            speaker = DialogueSpeaker.AETHEL,
+            side = SpeakerSide.LEFT,
+            text = "Unholy defiler! In the name of the Logos and the Dawn, release the clapper and return to the dust!",
+            nextNodeId = "ch4_crypt_battle_trigger"
+        ),
+        DialogueNode(
+            id = "ch4_crypt_battle_trigger",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "The Bone Acolyte raises its skeletal staff with a hollow hiss! Crypt legionnaires claw their way from granite tombs to defend the desecrated shrine. Strike with your voice and cleanse the mausoleum!",
+            triggerBattleEncounterId = "dungeon_descent"
+        ),
+        DialogueNode(
+            id = "ch4_crypt_victory",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            text = "The skeletal legion crumbles to dust! Look inside the altar vault — the Sun-Iron Bell Clapper! It radiates with the warmth of an ancient star. With this clapper, the Great Bell of Solaria will ring once more!",
+            nextNodeId = "ch4_tower_ascent"
+        ),
+        DialogueNode(
+            id = "ch4_tower_ascent",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "Bearing the heavy sun-iron clapper, you and Sir Cedric ascend the grand spiral staircase. Thousands of steps coil upward through the core of the tower until you emerge into the open-air summit — the high Bell Chamber.",
+            changeSceneId = SCENE_TOWER.id,
+            nextNodeId = "ch4_chamber_confrontation"
+        ),
+        DialogueNode(
+            id = "ch4_chamber_confrontation",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            text = "There she hangs... The Great Bell of Solaria! But the Sovereign's royal iron vanguard has seized the belfry! An ironclad captain and his archers block the bell ropes!",
+            choices = listOf(
+                DialogueChoice("ch4_vanguard_challenge", "Proclaim the return of the Logos and charge their phalanx", listOf("proclaim", "charge", "logos", "challenge", "fight"), "ch4_vanguard_charge"),
+                DialogueChoice("ch4_vanguard_smite", "Call upon Sir Cedric's holy aegis to break the line", listOf("aegis", "smite", "shield", "cedric", "break"), "ch4_vanguard_charge")
+            )
+        ),
+        DialogueNode(
+            id = "ch4_vanguard_charge",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            text = "Knights of the Mute Eye, your reign over this sacred belfry ends today! Invocator, let the thunder of our voices break their iron wills!",
+            nextNodeId = "ch4_tower_battle_trigger"
+        ),
+        DialogueNode(
+            id = "ch4_tower_battle_trigger",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "The Gate Captain and Iron Vanguard lock shields in a formidable fortress phalanx, covered by lethal snipers and a royal court warlock! Speak your ultimate chants and reclaim the First Bell Tower!",
+            triggerBattleEncounterId = "castle_horde"
+        ),
+        DialogueNode(
+            id = "ch4_tower_victory",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            text = "The garrison has fallen! The belfry is ours! Quick, Invocator — mount the Sun-Iron Clapper into the bronze bell's heart!",
+            nextNodeId = "ch4_bell_climax"
+        ),
+        DialogueNode(
+            id = "ch4_bell_climax",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "You hoist the glowing Sun-Iron Clapper into the colossal bronze bell. Together, you and Sir Cedric take hold of the velvet-wrapped ropes. Closing your eyes, you speak the sacred Invocation of Dawn: 'From flame unyielding, from darkness spoken—let the First Bell ring and silence be broken!'",
+            nextNodeId = "ch4_bell_ringing"
+        ),
+        DialogueNode(
+            id = "ch4_bell_ringing",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "BONGGGGGG! The Great Bell of Solaria peals across the realm with celestial majesty! Concentric rings of golden sound ripple through the mountain air. Below, the black obsidian vines suffocating Whispering Pines shatter into shimmering dust. Hundreds of petrified villagers awaken, drawing their first breath in tears of wonder!",
+            nextNodeId = "ch4_epilogue"
+        ),
+        DialogueNode(
+            id = "ch4_epilogue",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            text = "They are saved... The First Bell has chimed, and the eastern province is free! Yet our quest has only begun. Look southwest across the valley: the murky, toxic fog of the Rotting Marsh. The Second Bell Tower sleeps in the swamp, where the Grove Warden Lyra fights to protect the weeping willow. Whenever you are ready, Invocator, our next chapter awaits!",
+            choices = listOf(
+                DialogueChoice("ch4_reflect", "Gaze upon the liberated valley and rest in the sunrise", listOf("gaze", "valley", "rest", "sunrise", "peace"), "ch4_reflect_dialogue"),
+                DialogueChoice("ch4_march", "Vow to march southwest to the Rotting Marsh and save Lyra", listOf("march", "marsh", "lyra", "southwest", "vow"), "ch4_march_dialogue")
+            )
+        ),
+        DialogueNode(
+            id = "ch4_reflect_dialogue",
+            speaker = DialogueSpeaker.AETHEL,
+            side = SpeakerSide.LEFT,
+            text = "The golden morning sun reflects off the restored village roofs. The silence of this land is broken, Sir Cedric. We will not stop until every bell in Aethelgard chimes again.",
+            nextNodeId = "ch4_act1_complete"
+        ),
+        DialogueNode(
+            id = "ch4_march_dialogue",
+            speaker = DialogueSpeaker.AETHEL,
+            side = SpeakerSide.LEFT,
+            text = "Then we rest for the noon hour and set our course southwest. To the Rotting Marsh, to Lyra the Grove Warden, and to the Second Bell Tower!",
+            nextNodeId = "ch4_act1_complete"
+        ),
+        DialogueNode(
+            id = "ch4_act1_complete",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "ACT I CONCLUDED: THE FALLING SILENCE SHATTERED. You have liberated the eastern valleys and restored the First Great Bell of Solaria! Act II: The Severed Resonance and the journey to the Rotting Marsh will continue in the next chronicle.",
+            choices = listOf(
+                DialogueChoice("ch4_replay_bell", "Re-listen to the glorious chime of Solaria", listOf("relisten", "chime", "bell", "solaria"), "ch4_bell_ringing"),
+                DialogueChoice("ch4_view_epilogue", "Reflect with Sir Cedric upon the belfry", listOf("reflect", "cedric", "view", "belfry"), "ch4_epilogue")
+            )
         )
     ).associateBy { it.id }
 }

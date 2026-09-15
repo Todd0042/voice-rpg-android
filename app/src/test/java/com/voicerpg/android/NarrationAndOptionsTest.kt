@@ -265,27 +265,166 @@ class NarrationAndOptionsTest {
         // Advance into Chapter 3!
         storyViewModel.advanceDialogue()
         assertEquals("chapter3_intro", storyViewModel.state.value.currentNode.id)
-        assertEquals("The Whispering Caverns", storyViewModel.state.value.currentScene.name)
+        assertEquals("The Aqueducts of Solaria", storyViewModel.state.value.currentScene.name)
         assertTrue(storyViewModel.state.value.currentNode.text.contains("CHAPTER 3: THE ASCENT OF SOLARIA"))
 
-        // Unseal gate with Echo Chime
-        val chimeChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "ch3_chime" }
-        storyViewModel.selectChoice(chimeChoice)
-        assertEquals("ch3_gate_unsealed", storyViewModel.state.value.currentNode.id)
+        // Advance past Cedric's initial assessment to ch3_hub
+        storyViewModel.advanceDialogue()
+        assertEquals("ch3_cedric_assessment", storyViewModel.state.value.currentNode.id)
+        storyViewModel.advanceDialogue()
+        assertEquals("ch3_hub", storyViewModel.state.value.currentNode.id)
+        assertEquals(2, storyViewModel.state.value.currentNode.choices.size)
 
-        // Advance to Aqueduct Boss trigger
+        // --- CHAPTER 3 / OBJECTIVE 1: Scout Sentinels & Discover Acoustic Flaw ---
+        val scoutSentinelsChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "ch3_scout" }
+        assertEquals("ch3_sentinels_complete", scoutSentinelsChoice.completionFlag)
+        storyViewModel.selectChoice(scoutSentinelsChoice)
+        assertEquals("ch3_scout_approach", storyViewModel.state.value.currentNode.id)
+
+        // Listen from shadows
+        val listenChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "c_scout_listen" }
+        storyViewModel.selectChoice(listenChoice)
+        assertEquals("ch3_scout_listen", storyViewModel.state.value.currentNode.id)
+
+        // Advance to sentinel ambush
+        storyViewModel.advanceDialogue()
+        assertEquals("ch3_scout_ambush", storyViewModel.state.value.currentNode.id)
+        assertEquals("ch3_sentinels", storyViewModel.state.value.currentNode.triggerBattleEncounterId)
+
+        // Battle and defeat sentinels
+        storyViewModel.advanceDialogue()
+        assertEquals(GameScreen.COMBAT_ARENA, storyViewModel.state.value.gameScreen)
+        assertEquals("ch3_sentinels", storyViewModel.state.value.activeEncounter?.id)
+        storyViewModel.onCombatVictory()
+
+        assertEquals(GameScreen.STORY_EXPLORATION, storyViewModel.state.value.gameScreen)
+        assertEquals("ch3_sentinels_victory", storyViewModel.state.value.currentNode.id)
+        assertTrue(storyViewModel.state.value.narrativeFlags["ch3_sentinels_complete"] == true)
+
+        // Return to hub
+        storyViewModel.advanceDialogue() // to ch3_return_hub
+        assertEquals("ch3_return_hub", storyViewModel.state.value.currentNode.id)
+        storyViewModel.advanceDialogue() // back to ch3_hub
+        assertEquals("ch3_hub", storyViewModel.state.value.currentNode.id)
+
+        // Verify that completed sentinels choice is blocked from selection
+        val completedScoutChoice2 = storyViewModel.state.value.currentNode.choices.first { it.id == "ch3_scout" }
+        storyViewModel.selectChoice(completedScoutChoice2)
+        assertEquals("ch3_hub", storyViewModel.state.value.currentNode.id)
+
+        // --- CHAPTER 3 / OBJECTIVE 2: Channel Echo Chime & Shatter Death Wards ---
+        val chimeGateChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "ch3_chime" }
+        assertEquals("ch3_chime_complete", chimeGateChoice.completionFlag)
+        storyViewModel.selectChoice(chimeGateChoice)
+        assertEquals("ch3_chime_approach", storyViewModel.state.value.currentNode.id)
+
+        // Align chime
+        val alignChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "c_chime_align" }
+        storyViewModel.selectChoice(alignChoice)
+        assertEquals("ch3_chime_align", storyViewModel.state.value.currentNode.id)
+
+        // Advance through ward shattering
+        storyViewModel.advanceDialogue()
+        assertEquals("ch3_chime_shatter", storyViewModel.state.value.currentNode.id)
+        storyViewModel.advanceDialogue()
+        assertEquals("ch3_chime_complete_node", storyViewModel.state.value.currentNode.id)
+        assertTrue(storyViewModel.state.value.narrativeFlags["ch3_chime_complete"] == true)
+
+        // Advance to return hub
+        storyViewModel.advanceDialogue()
+        assertEquals("ch3_return_hub", storyViewModel.state.value.currentNode.id)
+
+        // --- BOTH CHAPTER 3 OBJECTIVES COMPLETE: Automatic Grand Breach & Boss Battle ---
+        storyViewModel.advanceDialogue()
+        assertEquals("ch3_all_completed", storyViewModel.state.value.currentNode.id)
+        assertTrue(storyViewModel.state.value.currentNode.text.contains("queen descends"))
+
+        // Advance to Broodmother boss fight
         storyViewModel.advanceDialogue()
         assertEquals("ch3_aqueduct_boss_trigger", storyViewModel.state.value.currentNode.id)
         assertEquals("cave_broodmother", storyViewModel.state.value.currentNode.triggerBattleEncounterId)
 
-        // Trigger battle and achieve victory
+        // Engage boss in arena and win
         storyViewModel.advanceDialogue()
         assertEquals(GameScreen.COMBAT_ARENA, storyViewModel.state.value.gameScreen)
         storyViewModel.onCombatVictory()
 
         assertEquals(GameScreen.STORY_EXPLORATION, storyViewModel.state.value.gameScreen)
-        assertEquals("ch3_victory_ascent", storyViewModel.state.value.currentNode.id)
-        assertTrue(storyViewModel.state.value.currentNode.text.contains("The First Bell Tower is within our grasp"))
+        assertEquals("ch3_boss_victory", storyViewModel.state.value.currentNode.id)
+
+        // Advance to Chapter 4 transition
+        storyViewModel.advanceDialogue()
+        assertEquals("ch3_to_ch4", storyViewModel.state.value.currentNode.id)
+        storyViewModel.advanceDialogue()
+
+        // --- CHAPTER 4: Ascent of Solaria Bell Tower ---
+        assertEquals("chapter4_intro", storyViewModel.state.value.currentNode.id)
+        assertEquals("scene_dungeon", storyViewModel.state.value.currentScene.id)
+        assertEquals("Crypt of the Foundation", storyViewModel.state.value.currentScene.name)
+
+        // Investigate crypt and confront Bone Acolyte
+        val investChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "ch4_investigate" }
+        storyViewModel.selectChoice(investChoice)
+        assertEquals("ch4_crypt_cedric", storyViewModel.state.value.currentNode.id)
+
+        val confrontChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "ch4_confront_acolyte" }
+        storyViewModel.selectChoice(confrontChoice)
+        assertEquals("ch4_crypt_confront", storyViewModel.state.value.currentNode.id)
+
+        // Battle Bone Acolyte and crypt guards
+        storyViewModel.advanceDialogue()
+        assertEquals("ch4_crypt_battle_trigger", storyViewModel.state.value.currentNode.id)
+        assertEquals("dungeon_descent", storyViewModel.state.value.currentNode.triggerBattleEncounterId)
+
+        storyViewModel.advanceDialogue()
+        assertEquals(GameScreen.COMBAT_ARENA, storyViewModel.state.value.gameScreen)
+        storyViewModel.onCombatVictory()
+
+        assertEquals("ch4_crypt_victory", storyViewModel.state.value.currentNode.id)
+        assertTrue(storyViewModel.state.value.currentNode.text.contains("Sun-Iron Bell Clapper"))
+
+        // Ascend to high Bell Chamber (castle scene)
+        storyViewModel.advanceDialogue()
+        assertEquals("ch4_tower_ascent", storyViewModel.state.value.currentNode.id)
+        storyViewModel.advanceDialogue()
+        assertEquals("ch4_chamber_confrontation", storyViewModel.state.value.currentNode.id)
+        assertEquals("scene_tower", storyViewModel.state.value.currentScene.id)
+        assertEquals("The Solaria Bell Chamber", storyViewModel.state.value.currentScene.name)
+
+        // Confront castle vanguard
+        val challengeChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "ch4_vanguard_challenge" }
+        storyViewModel.selectChoice(challengeChoice)
+        assertEquals("ch4_vanguard_charge", storyViewModel.state.value.currentNode.id)
+
+        // Battle garrison horde
+        storyViewModel.advanceDialogue()
+        assertEquals("ch4_tower_battle_trigger", storyViewModel.state.value.currentNode.id)
+        assertEquals("castle_horde", storyViewModel.state.value.currentNode.triggerBattleEncounterId)
+
+        storyViewModel.advanceDialogue()
+        assertEquals(GameScreen.COMBAT_ARENA, storyViewModel.state.value.gameScreen)
+        storyViewModel.onCombatVictory()
+
+        assertEquals("ch4_tower_victory", storyViewModel.state.value.currentNode.id)
+
+        // Climax: Ring the First Great Bell of Solaria!
+        storyViewModel.advanceDialogue()
+        assertEquals("ch4_bell_climax", storyViewModel.state.value.currentNode.id)
+        storyViewModel.advanceDialogue()
+        assertEquals("ch4_bell_ringing", storyViewModel.state.value.currentNode.id)
+        assertTrue(storyViewModel.state.value.currentNode.text.contains("BONGGGGGG"))
+
+        // Epilogue
+        storyViewModel.advanceDialogue()
+        assertEquals("ch4_epilogue", storyViewModel.state.value.currentNode.id)
+        val reflectChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "ch4_reflect" }
+        storyViewModel.selectChoice(reflectChoice)
+        assertEquals("ch4_reflect_dialogue", storyViewModel.state.value.currentNode.id)
+
+        // Final completion screen
+        storyViewModel.advanceDialogue()
+        assertEquals("ch4_act1_complete", storyViewModel.state.value.currentNode.id)
+        assertTrue(storyViewModel.state.value.currentNode.text.contains("ACT I CONCLUDED"))
     }
 
     @Test

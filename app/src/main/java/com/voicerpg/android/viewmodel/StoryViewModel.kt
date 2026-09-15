@@ -69,6 +69,14 @@ class StoryViewModel(
                 }
             }
 
+            if (restoredNode.id == "chapter3_intro" || restoredNode.id == "ch3_hub") {
+                val ch3BothComplete = existingSave.narrativeFlags["ch3_sentinels_complete"] == true &&
+                        existingSave.narrativeFlags["ch3_chime_complete"] == true
+                if (ch3BothComplete) {
+                    StoryScript.ALL_NODES["ch3_all_completed"]?.let { restoredNode = it }
+                }
+            }
+
             _state.value = StoryState(
                 currentScene = restoredScene,
                 currentNode = restoredNode,
@@ -142,6 +150,9 @@ class StoryViewModel(
                 applyNodeTransition(nextNode)
             }
         } else if (node.choices.isEmpty()) {
+            if (node.id.startsWith("ch3_") || node.id.startsWith("ch4_") || node.id == "ch4_act1_complete") {
+                return
+            }
             val fallbackNode = StoryScript.ALL_NODES["camp_intro"] ?: StoryScript.ALL_NODES["crossroads_intro"]
             if (fallbackNode != null) {
                 applyNodeTransition(fallbackNode)
@@ -189,6 +200,15 @@ class StoryViewModel(
             }
         }
 
+        // If transitioning to chapter3_intro or ch3_hub, check if both objectives are completed
+        if (effectiveNode.id == "chapter3_intro" || effectiveNode.id == "ch3_hub") {
+            val ch3BothComplete = updatedFlags["ch3_sentinels_complete"] == true &&
+                    updatedFlags["ch3_chime_complete"] == true
+            if (ch3BothComplete) {
+                StoryScript.ALL_NODES["ch3_all_completed"]?.let { effectiveNode = it }
+            }
+        }
+
         val sceneIdToUse = effectiveNode.changeSceneId ?: _state.value.currentScene.id
         val targetScene = StoryScript.ALL_SCENES[sceneIdToUse] ?: _state.value.currentScene
 
@@ -210,10 +230,12 @@ class StoryViewModel(
         val encounter = when (encounterId) {
             "prologue_solo" -> StoryEncounters.PROLOGUE_SOLO
             "forest_ambush" -> StoryEncounters.FOREST_AMBUSH
+            "blight_trackers" -> StoryEncounters.BLIGHT_TRACKERS
+            "ch3_sentinels" -> StoryEncounters.CH3_SENTINELS
             "cave_broodmother" -> StoryEncounters.CAVE_BROODMOTHER
-            "swamp_behemoth" -> StoryEncounters.SWAMP_BEHEMOTH
             "dungeon_descent" -> StoryEncounters.DUNGEON_DESCENT
             "castle_horde" -> StoryEncounters.CASTLE_HORDE
+            "swamp_behemoth" -> StoryEncounters.SWAMP_BEHEMOTH
             else -> StoryEncounters.ALL_ENCOUNTERS.firstOrNull { it.id == encounterId } ?: StoryEncounters.PROLOGUE_SOLO
         }
         speechManager.cancel()
@@ -231,7 +253,10 @@ class StoryViewModel(
             "prologue_solo" -> "village_post_battle"
             "forest_ambush" -> "crossroads_post_battle"
             "blight_trackers" -> "camp_scout_victory"
-            "cave_broodmother" -> "ch3_victory_ascent"
+            "ch3_sentinels" -> "ch3_sentinels_victory"
+            "cave_broodmother" -> "ch3_boss_victory"
+            "dungeon_descent" -> "ch4_crypt_victory"
+            "castle_horde" -> "ch4_tower_victory"
             "swamp_behemoth" -> "marsh_post_battle"
             else -> null
         }
