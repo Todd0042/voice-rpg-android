@@ -13,7 +13,10 @@ import com.voicerpg.android.model.PartyMember
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withTimeoutOrNull
 import java.util.Locale
+import kotlin.coroutines.resume
 
 /**
  * Audio-first Screenless / Pocket Mode Combat Narrator.
@@ -499,6 +502,8 @@ class CombatNarrator(
 
         if (!preserveVoice) {
             // Reset to Narrator voice for system / tactical announcements
+            tts?.setPitch(1.0f)
+            tts?.setSpeechRate(_speechRate.value)
             narratorVoice?.let {
                 try {
                     tts?.voice = it
@@ -508,7 +513,10 @@ class CombatNarrator(
 
         val utteranceId = "combat_tts_${System.currentTimeMillis()}"
         activeUtteranceId = utteranceId
+        val prevCb = pendingSpeechOnDone
         pendingSpeechOnDone = onDone
+        prevCb?.invoke()
+        _isSpeaking.value = true
 
         val params = Bundle().apply {
             putFloat(TextToSpeech.Engine.KEY_PARAM_VOLUME, 1.0f)
@@ -531,13 +539,36 @@ class CombatNarrator(
         }
     }
 
+    suspend fun speakSuspend(
+        text: String,
+        force: Boolean = false,
+        preserveVoice: Boolean = false,
+        timeoutMs: Long = 8000L
+    ) {
+        if (!force && !_isEyesFreeMode.value) return
+        if (tts == null || !isTtsInitialized) return
+        withTimeoutOrNull(timeoutMs) {
+            suspendCancellableCoroutine<Unit> { cont ->
+                speak(text, force = force, preserveVoice = preserveVoice) {
+                    if (cont.isActive) cont.resume(Unit)
+                }
+            }
+        }
+    }
+
     fun stop() {
-        activeUtteranceId = null
+        val cb = pendingSpeechOnDone
         pendingSpeechOnDone = null
+        activeUtteranceId = null
         try {
             tts?.stop()
         } catch (_: Exception) {}
         _isSpeaking.value = false
+        cb?.invoke()
+    }
+
+    internal fun setSpeakingForTesting(speaking: Boolean) {
+        _isSpeaking.value = speaking
     }
 
     // =========================================================================
@@ -560,6 +591,18 @@ class CombatNarrator(
         speak(text, force = true, onDone = onDone)
     }
 
+    suspend fun narratePlayerTurnSuspend(hero: PartyMember, enemies: List<Enemy>, timeoutMs: Long = 8000L) {
+        if (!_isEyesFreeMode.value) return
+        if (tts == null || !isTtsInitialized) return
+        withTimeoutOrNull(timeoutMs) {
+            suspendCancellableCoroutine<Unit> { cont ->
+                narratePlayerTurn(hero, enemies) {
+                    if (cont.isActive) cont.resume(Unit)
+                }
+            }
+        }
+    }
+
     fun narrateSpellCast(
         heroName: String,
         spellName: String,
@@ -567,9 +610,13 @@ class CombatNarrator(
         amount: Int,
         isHeal: Boolean,
         tierTitle: String?,
-        isDefeated: Boolean = false
+        isDefeated: Boolean = false,
+        onDone: (() -> Unit)? = null
     ) {
-        if (!_isEyesFreeMode.value) return
+        if (!_isEyesFreeMode.value) {
+            onDone?.invoke()
+            return
+        }
         val prefix = if (tierTitle != null && (tierTitle.contains("Transcendental", ignoreCase = true) || tierTitle.contains("Mythic", ignoreCase = true))) {
             "$tierTitle resonance! "
         } else ""
@@ -581,28 +628,86 @@ class CombatNarrator(
         }
 
         val defeatText = if (isDefeated) " $targetName is defeated!" else ""
-        speak("$action$defeatText")
+        speak("$action$defeatText", force = true, onDone = onDone)
+    }
+
+    suspend fun narrateSpellCastSuspend(
+        heroName: String,
+        spellName: String,
+        targetName: String,
+        amount: Int,
+        isHeal: Boolean,
+        tierTitle: String?,
+        isDefeated: Boolean = false,
+        timeoutMs: Long = 8000L
+    ) {
+        if (!_isEyesFreeMode.value) return
+        if (tts == null || !isTtsInitialized) return
+        withTimeoutOrNull(timeoutMs) {
+            suspendCancellableCoroutine<Unit> { cont ->
+                narrateSpellCast(heroName, spellName, targetName, amount, isHeal, tierTitle, isDefeated) {
+                    if (cont.isActive) cont.resume(Unit)
+                }
+            }
+        }
     }
 
     fun narrateEnemyAction(
         enemyName: String,
         targetHeroName: String,
         damage: Int,
-        isFallen: Boolean = false
+        isFallen: Boolean = false,
+        onDone: (() -> Unit)? = null
     ) {
-        if (!_isEyesFreeMode.value) return
+        if (!_isEyesFreeMode.value) {
+            onDone?.invoke()
+            return
+        }
         val fallenDesc = if (isFallen) " $targetHeroName has fallen!" else ""
-        speak("$enemyName attacks $targetHeroName for $damage damage.$fallenDesc")
+        speak("$enemyName attacks $targetHeroName for $damage damage.$fallenDesc", force = true, onDone = onDone)
     }
 
-    fun narrateReinforcements(count: Int, enemyNames: List<String>) {
+    suspend fun narrateEnemyActionSuspend(
+        enemyName: String,
+        targetHeroName: String,
+        damage: Int,
+        isFallen: Boolean = false,
+        timeoutMs: Long = 8000L
+    ) {
         if (!_isEyesFreeMode.value) return
+        if (tts == null || !isTtsInitialized) return
+        withTimeoutOrNull(timeoutMs) {
+            suspendCancellableCoroutine<Unit> { cont ->
+                narrateEnemyAction(enemyName, targetHeroName, damage, isFallen) {
+                    if (cont.isActive) cont.resume(Unit)
+                }
+            }
+        }
+    }
+
+    fun narrateReinforcements(count: Int, enemyNames: List<String>, onDone: (() -> Unit)? = null) {
+        if (!_isEyesFreeMode.value) {
+            onDone?.invoke()
+            return
+        }
         val text = if (count == 1) {
             "Reinforcement arrived! ${enemyNames.firstOrNull() ?: "An enemy"} joined the battle."
         } else {
             "Reinforcements arrived! $count enemies joined the battle."
         }
-        speak(text)
+        speak(text, force = true, onDone = onDone)
+    }
+
+    suspend fun narrateReinforcementsSuspend(count: Int, enemyNames: List<String>, timeoutMs: Long = 8000L) {
+        if (!_isEyesFreeMode.value) return
+        if (tts == null || !isTtsInitialized) return
+        withTimeoutOrNull(timeoutMs) {
+            suspendCancellableCoroutine<Unit> { cont ->
+                narrateReinforcements(count, enemyNames) {
+                    if (cont.isActive) cont.resume(Unit)
+                }
+            }
+        }
     }
 
     fun narrateStatus(party: List<PartyMember>, enemies: List<Enemy>, onDone: (() -> Unit)? = null) {
@@ -652,9 +757,28 @@ class CombatNarrator(
         speak(text, force = true, onDone = onDone)
     }
 
+    suspend fun narrateConclusionSuspend(isVictory: Boolean, timeoutMs: Long = 8000L) {
+        if (!_isEyesFreeMode.value) return
+        if (tts == null || !isTtsInitialized) return
+        withTimeoutOrNull(timeoutMs) {
+            suspendCancellableCoroutine<Unit> { cont ->
+                narrateConclusion(isVictory) {
+                    if (cont.isActive) cont.resume(Unit)
+                }
+            }
+        }
+    }
+
     fun destroy() {
-        tts?.stop()
-        tts?.shutdown()
+        val cb = pendingSpeechOnDone
+        pendingSpeechOnDone = null
+        activeUtteranceId = null
+        try {
+            tts?.stop()
+            tts?.shutdown()
+        } catch (_: Exception) {}
+        _isSpeaking.value = false
+        cb?.invoke()
         tts = null
     }
 }

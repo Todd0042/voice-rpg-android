@@ -152,6 +152,9 @@ class CombatViewModel(
             while (true) {
                 delay(40)
                 if (_state.value.phase == CombatPhase.ATB_WAITING) {
+                    if (combatNarrator.isEyesFreeMode.value && combatNarrator.isSpeaking.value) {
+                        continue
+                    }
                     tickAtb()
                 }
             }
@@ -284,7 +287,15 @@ class CombatViewModel(
                 )
                 summonReinforcements(listOf(minion))
 
-                delay(700)
+                if (combatNarrator.isEyesFreeMode.value) {
+                    val waitStart = System.currentTimeMillis()
+                    while (combatNarrator.isSpeaking.value && (System.currentTimeMillis() - waitStart < 7000L)) {
+                        delay(50)
+                    }
+                    delay(300)
+                } else {
+                    delay(700)
+                }
                 checkAndTransitionNextTurn()
                 return@launch
             }
@@ -292,12 +303,6 @@ class CombatViewModel(
             val targetHero = aliveHeroes.random()
             val damage = (enemy.baseAttack * (Random.nextFloat() * 0.25f + 0.85f)).toInt()
             val isHeroFallen = (targetHero.currentHp - damage) <= 0
-            combatNarrator.narrateEnemyAction(
-                enemyName = enemy.name,
-                targetHeroName = targetHero.name,
-                damage = damage,
-                isFallen = isHeroFallen
-            )
 
             val school = if (enemy.id == "shaman") SpellSchool.SHADOW else SpellSchool.PHYSICAL
             spellVfxEngine.launch(
@@ -369,6 +374,14 @@ class CombatViewModel(
                 }
             )
 
+            // In Eyes-Free Pocket Mode, narrate enemy attack and PAUSE until voice narration completes
+            combatNarrator.narrateEnemyActionSuspend(
+                enemyName = enemy.name,
+                targetHeroName = targetHero.name,
+                damage = damage,
+                isFallen = isHeroFallen
+            )
+
             // Check defeat
             if (_state.value.party.none { it.isAlive }) {
                 _state.value = _state.value.copy(phase = CombatPhase.BATTLE_LOST)
@@ -383,7 +396,11 @@ class CombatViewModel(
                 return@launch
             }
 
-            delay(250)
+            if (combatNarrator.isEyesFreeMode.value) {
+                delay(300)
+            } else {
+                delay(250)
+            }
 
             // Option A: Zephyr mid-battle recruitment in Chapter 8
             if (currentEncounterId == "ch8_executioner_ambush" && !isZephyrRecruitedMidBattle && _state.value.party.none { it.id == "zephyr" }) {
@@ -396,6 +413,19 @@ class CombatViewModel(
     }
 
     private fun checkAndTransitionNextTurn() {
+        activeScope.launch {
+            if (combatNarrator.isEyesFreeMode.value && combatNarrator.isSpeaking.value) {
+                val waitStart = System.currentTimeMillis()
+                while (combatNarrator.isSpeaking.value && (System.currentTimeMillis() - waitStart < 7000L)) {
+                    delay(50)
+                }
+                delay(200)
+            }
+            performTurnTransition()
+        }
+    }
+
+    private fun performTurnTransition() {
         val currentParty = _state.value.party
         val currentEnemies = _state.value.enemies
 
@@ -403,8 +433,23 @@ class CombatViewModel(
         val malakor = currentEnemies.firstOrNull { it.id == "malakor" && it.isAlive }
         if (currentEncounterId == "ch16_malakor_finale" && malakor != null && malakor.currentHp <= 450 && !isPhase3Triggered) {
             triggerPhase3DeathOfVoice()
+            if (combatNarrator.isEyesFreeMode.value) {
+                activeScope.launch {
+                    val waitStart = System.currentTimeMillis()
+                    while (combatNarrator.isSpeaking.value && (System.currentTimeMillis() - waitStart < 7000L)) {
+                        delay(50)
+                    }
+                    delay(200)
+                    proceedAfterTurnCheck(currentParty, currentEnemies)
+                }
+                return
+            }
         }
 
+        proceedAfterTurnCheck(currentParty, currentEnemies)
+    }
+
+    private fun proceedAfterTurnCheck(currentParty: List<PartyMember>, currentEnemies: List<Enemy>) {
         val readyHeroes = currentParty.filter { it.isAlive && it.isTurnReady }
         val readyEnemies = currentEnemies.filter { it.isAlive && it.isTurnReady }
 
@@ -586,7 +631,12 @@ class CombatViewModel(
                 delay(1000)
                 _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts.filter { it.id != fct.id })
             }
-            delay(300)
+            if (combatNarrator.isEyesFreeMode.value) {
+                combatNarrator.speakSuspend("${activeHero.name} braces and defends!", force = true)
+                delay(200)
+            } else {
+                delay(300)
+            }
             checkAndTransitionNextTurn()
         }
     }
@@ -976,7 +1026,11 @@ class CombatViewModel(
                 applyDamageToEnemies(activeHero, parsed.spell, parsed.target, parsed.targetEnemyId, finalAmount, resonance.tier)
             }
 
-            delay(700)
+            if (combatNarrator.isEyesFreeMode.value) {
+                delay(300)
+            } else {
+                delay(700)
+            }
 
             // 5. Reset active hero's ATB gauge to 0 and record lastActedHeroId for round-robin rotation
             lastActedHeroId = activeHero.id
@@ -1015,7 +1069,7 @@ class CombatViewModel(
         }
     }
 
-    private fun applyHealAction(
+    private suspend fun applyHealAction(
         caster: PartyMember,
         spell: Spell,
         target: TargetSelection,
@@ -1068,7 +1122,7 @@ class CombatViewModel(
         )
 
         val targetDesc = if (spell.hitsAll) "the fellowship" else targetsToHeal.joinToString(", ") { it.name }
-        combatNarrator.narrateSpellCast(
+        combatNarrator.narrateSpellCastSuspend(
             heroName = caster.name,
             spellName = spell.name,
             targetName = targetDesc,
@@ -1087,7 +1141,7 @@ class CombatViewModel(
         }
     }
 
-    private fun applyDamageToEnemies(
+    private suspend fun applyDamageToEnemies(
         caster: PartyMember,
         spell: Spell,
         target: TargetSelection,
@@ -1134,7 +1188,7 @@ class CombatViewModel(
 
         val anyDefeated = updatedEnemies.any { targetList.any { t -> t.id == it.id } && !it.isAlive }
         val enemyTargetDesc = if (target == TargetSelection.ALL_ENEMIES) "all enemies" else targetList.joinToString(", ") { it.name }
-        combatNarrator.narrateSpellCast(
+        combatNarrator.narrateSpellCastSuspend(
             heroName = caster.name,
             spellName = spell.name,
             targetName = enemyTargetDesc,

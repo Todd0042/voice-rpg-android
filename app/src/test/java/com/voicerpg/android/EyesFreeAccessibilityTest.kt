@@ -10,6 +10,8 @@ import com.voicerpg.android.model.MetaCommand
 import com.voicerpg.android.viewmodel.CombatViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -151,5 +153,66 @@ class EyesFreeAccessibilityTest {
         val initialAuto = dummySpeech.isAutoListen.value
         viewModel.processIncantation("auto listen")
         assertEquals(!initialAuto, dummySpeech.isAutoListen.value)
+    }
+
+    @Test
+    fun testCombatNarratorSpeakingStateAndTestingHelper() {
+        assertFalse(dummyNarrator.isSpeaking.value)
+        dummyNarrator.setSpeakingForTesting(true)
+        assertTrue(dummyNarrator.isSpeaking.value)
+        dummyNarrator.setSpeakingForTesting(false)
+        assertFalse(dummyNarrator.isSpeaking.value)
+    }
+
+    @Test
+    fun testNarrateSuspendMethodsReturnCleanlyWhenHeadless() = runBlocking {
+        // When running in unit tests without hardware TTS, suspend functions return immediately without hanging
+        dummyNarrator.setEyesFreeMode(true)
+        dummyNarrator.speakSuspend("Testing speech suspend")
+        dummyNarrator.narrateEnemyActionSuspend("Blighted Orc", "Aethel", 25, false)
+        dummyNarrator.narrateSpellCastSuspend("Aethel", "Fireball", "Blighted Orc", 65, false, "Solar")
+        dummyNarrator.narrateReinforcementsSuspend(1, listOf("Minion"))
+        dummyNarrator.narrateConclusionSuspend(true)
+        assertFalse(dummyNarrator.isSpeaking.value)
+    }
+
+    @Test
+    fun testAtbLoopPausesWhenEyesFreeModeAndSpeakingActive() = runBlocking {
+        dummyNarrator.setEyesFreeMode(true)
+        dummyNarrator.setSpeakingForTesting(true)
+
+        // Capture initial gauge
+        val initialHeroGauge = viewModel.state.value.party[0].atbGauge
+
+        // Wait 150ms while narrator is simulated speaking in eyes-free mode
+        delay(150)
+
+        // ATB gauges should NOT have advanced because combatNarrator.isSpeaking is true in eyes-free mode
+        val newHeroGauge = viewModel.state.value.party[0].atbGauge
+        assertEquals(initialHeroGauge, newHeroGauge, 0.001f)
+
+        // Now clear speaking
+        dummyNarrator.setSpeakingForTesting(false)
+        delay(150)
+
+        // Gauges should now advance
+        val resumedHeroGauge = viewModel.state.value.party[0].atbGauge
+        assertTrue("ATB gauges should advance once speaking completes", resumedHeroGauge > initialHeroGauge)
+    }
+
+    @Test
+    fun testAtbLoopDoesNotPauseWhenEyesFreeModeIsDisabled() = runBlocking {
+        dummyNarrator.setEyesFreeMode(false)
+        dummyNarrator.setSpeakingForTesting(true)
+
+        // Capture initial gauge
+        val initialHeroGauge = viewModel.state.value.party[0].atbGauge
+
+        // Wait 150ms while speaking is true but eyes-free mode is OFF
+        delay(150)
+
+        // In normal mode (eyes-free OFF), ATB continues fast and fluidly without pause
+        val newHeroGauge = viewModel.state.value.party[0].atbGauge
+        assertTrue("ATB gauges should advance when eyes-free mode is disabled", newHeroGauge > initialHeroGauge)
     }
 }
