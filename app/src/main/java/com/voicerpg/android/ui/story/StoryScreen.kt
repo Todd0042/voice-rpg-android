@@ -347,6 +347,7 @@ fun StoryScreen(
                                 storyViewModel.advanceDialogue()
                             }
                         },
+                        isEyesFreeMode = isEyesFreeMode,
                         modifier = Modifier.fillMaxWidth()
                     )
 
@@ -457,6 +458,7 @@ fun StoryScreen(
                                 storyViewModel.advanceDialogue()
                             }
                         },
+                        isEyesFreeMode = isEyesFreeMode,
                         modifier = Modifier.fillMaxWidth()
                     )
 
@@ -702,6 +704,7 @@ private fun ShadowWispBust(
 private fun RetroSpeechBubble(
     node: DialogueNode,
     onTapToAdvance: () -> Unit,
+    isEyesFreeMode: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val speakerColor = node.speaker.themeColor
@@ -769,7 +772,9 @@ private fun RetroSpeechBubble(
                 if (node.choices.isEmpty()) {
                     val promptText = when {
                         node.triggerBattleEncounterId != null -> "⚔️ TO BATTLE"
+                        isEyesFreeMode && node.nextNodeId != null -> "⏩ AUTO NEXT (1.5s)"
                         node.nextNodeId != null -> "▼ NEXT"
+                        isEyesFreeMode -> "⏩ AUTO CAMP (1.5s)"
                         else -> "⭐ NEXT (CAMP)"
                     }
                     Text(

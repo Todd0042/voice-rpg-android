@@ -257,7 +257,7 @@ fun OptionsDialog(
                 // Toggle: Screenless / Pocket Mode
                 OptionToggleRow(
                     title = "🎧 Screenless Pocket Mode",
-                    subtitle = "Spoken combat narration for turns, hits, and enemy actions. Full eyes-free play.",
+                    subtitle = "Hands-free & eyes-free play: spoken combat narration and autoplays non-branching dialogue after a 1.5s delay.",
                     voiceHint = "Voice command: \"Pocket mode\" or \"Eyes free\"",
                     checked = isEyesFreeMode,
                     activeColor = Color(0xFF64B5F6),

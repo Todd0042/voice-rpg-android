@@ -65,7 +65,10 @@ class MainActivity : ComponentActivity() {
         )
 
         // Connect options modal triggers between story and combat
-        storyViewModel.onOpenOptions = { combatViewModel.openOptions() }
+        storyViewModel.onOpenOptions = {
+            storyViewModel.cancelPendingAutoAdvance()
+            combatViewModel.openOptions()
+        }
         storyViewModel.onCloseOptions = { combatViewModel.closeOptions() }
 
         checkAudioPermission()

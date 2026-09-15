@@ -15,6 +15,7 @@ import com.voicerpg.android.model.Spell
 import com.voicerpg.android.model.SpellSchool
 import com.voicerpg.android.model.TargetSelection
 import com.voicerpg.android.viewmodel.CombatViewModel
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -38,6 +39,11 @@ class DynamicEncounterTest {
             resonanceEngine = ResonanceEngine(NoveltyCache()),
             scopeOverride = testScope
         )
+    }
+
+    @After
+    fun tearDown() {
+        viewModel.cleanup()
     }
 
     @Test

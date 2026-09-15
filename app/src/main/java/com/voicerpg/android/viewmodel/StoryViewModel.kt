@@ -20,6 +20,7 @@ import com.voicerpg.android.model.PlayerCustomization
 import com.voicerpg.android.model.SavedCharacterStats
 import com.voicerpg.android.model.StoryScene
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -54,7 +55,57 @@ class StoryViewModel(
     private val _state = MutableStateFlow(StoryState())
     val state: StateFlow<StoryState> = _state.asStateFlow()
 
+    private var pendingAutoAdvanceJob: Job? = null
+
+    fun cancelPendingAutoAdvance() {
+        pendingAutoAdvanceJob?.cancel()
+        pendingAutoAdvanceJob = null
+    }
+
+    fun canAdvanceDialogue(): Boolean {
+        val node = _state.value.currentNode
+        if (node.choices.isNotEmpty()) return false
+        if (node.triggerBattleEncounterId != null) return false
+        if (node.nextNodeId != null) return StoryScript.ALL_NODES.containsKey(node.nextNodeId)
+        if (node.id.startsWith("ch3_") || node.id.startsWith("ch4_") || node.id.startsWith("ch5_") ||
+            node.id.startsWith("ch6_") || node.id.startsWith("ch7_") || node.id.startsWith("ch8_") ||
+            node.id.startsWith("ch9_") || node.id.startsWith("ch10_") || node.id.startsWith("ch11_") ||
+            node.id.startsWith("ch12_") || node.id.startsWith("ch13_") || node.id.startsWith("ch14_") ||
+            node.id.startsWith("ch15_") || node.id.startsWith("ch16_") || node.id.startsWith("epilogue_") ||
+            node.id == "ch4_act1_complete"
+        ) {
+            return false
+        }
+        return StoryScript.ALL_NODES.containsKey("camp_intro") || StoryScript.ALL_NODES.containsKey("crossroads_intro")
+    }
+
+    fun schedulePocketModeAutoAdvance(node: DialogueNode) {
+        cancelPendingAutoAdvance()
+        if (!combatNarrator.isEyesFreeMode.value || !canAdvanceDialogue()) return
+        pendingAutoAdvanceJob = activeScope.launch {
+            delay(1500)
+            if (combatNarrator.isEyesFreeMode.value &&
+                _state.value.currentNode.id == node.id &&
+                _state.value.gameScreen == GameScreen.STORY_EXPLORATION &&
+                canAdvanceDialogue()
+            ) {
+                advanceDialogue()
+            }
+        }
+    }
+
     init {
+        // Observe Screenless Pocket Mode toggles: cancel or start auto-advance reactively
+        activeScope.launch {
+            combatNarrator.isEyesFreeMode.collect { isEyesFree ->
+                if (!isEyesFree) {
+                    cancelPendingAutoAdvance()
+                } else if (_state.value.gameScreen == GameScreen.STORY_EXPLORATION && canAdvanceDialogue() && !combatNarrator.isSpeaking.value) {
+                    schedulePocketModeAutoAdvance(_state.value.currentNode)
+                }
+            }
+        }
+
         // Load persistent game save on boot
         val existingSave = saveManager.load()
         if (existingSave != null) {
@@ -93,6 +144,7 @@ class StoryViewModel(
      * Initializes a fresh game from Character Creation.
      */
     fun startNewGame(customization: PlayerCustomization) {
+        cancelPendingAutoAdvance()
         val initialSave = saveManager.createInitialSave(customization)
         _state.value = StoryState(
             currentScene = StoryScript.SCENE_COTTAGE,
@@ -110,6 +162,7 @@ class StoryViewModel(
     }
 
     fun resetGame() {
+        cancelPendingAutoAdvance()
         saveManager.deleteSave()
         _state.value = StoryState(
             gameScreen = GameScreen.CHARACTER_CREATION
@@ -117,6 +170,7 @@ class StoryViewModel(
     }
 
     fun advanceDialogue() {
+        cancelPendingAutoAdvance()
         combatNarrator.stop()
         val node = _state.value.currentNode
         if (node.choices.isNotEmpty()) {
@@ -146,6 +200,7 @@ class StoryViewModel(
     }
 
     fun selectChoice(choice: DialogueChoice) {
+        cancelPendingAutoAdvance()
         if (choice.completionFlag != null && _state.value.narrativeFlags[choice.completionFlag] == true) {
             combatNarrator.speak("That objective has already been completed. Please select a remaining task.", force = true)
             return
@@ -369,6 +424,7 @@ class StoryViewModel(
     var onCloseOptions: (() -> Unit)? = null
 
     fun triggerEncounter(encounterId: String) {
+        cancelPendingAutoAdvance()
         val encounter = when (encounterId) {
             "prologue_solo" -> StoryEncounters.PROLOGUE_SOLO
             "forest_ambush" -> StoryEncounters.FOREST_AMBUSH
@@ -400,6 +456,7 @@ class StoryViewModel(
     }
 
     fun onCombatVictory() {
+        cancelPendingAutoAdvance()
         val lastNode = _state.value.currentNode
         val encounterId = lastNode.triggerBattleEncounterId ?: _state.value.activeEncounter?.id ?: "unknown"
         val postBattleNodeId = when (encounterId) {
@@ -578,6 +635,7 @@ class StoryViewModel(
     }
 
     private fun narrateCurrentNode() {
+        cancelPendingAutoAdvance()
         if (_state.value.gameScreen != GameScreen.STORY_EXPLORATION) return
         val node = _state.value.currentNode
         val uncompletedChoices = node.choices.filter { choice ->
@@ -588,7 +646,12 @@ class StoryViewModel(
             text = node.text,
             choices = uncompletedChoices
         ) {
-            if (speechManager.isAutoListen.value) {
+            val isPocketMode = combatNarrator.isEyesFreeMode.value
+            val canAuto = canAdvanceDialogue()
+
+            if (isPocketMode && canAuto) {
+                schedulePocketModeAutoAdvance(node)
+            } else if (speechManager.isAutoListen.value) {
                 activeScope.launch {
                     delay(120)
                     speechManager.startListening { utterance ->
@@ -597,5 +660,10 @@ class StoryViewModel(
                 }
             }
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        cancelPendingAutoAdvance()
     }
 }

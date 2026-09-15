@@ -1287,10 +1287,14 @@ class CombatViewModel(
         startAtbLoop()
     }
 
-    override fun onCleared() {
-        super.onCleared()
+    fun cleanup() {
         atbJob?.cancel()
         speechManager.destroy()
         combatNarrator.destroy()
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        cleanup()
     }
 }

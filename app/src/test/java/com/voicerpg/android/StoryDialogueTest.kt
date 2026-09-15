@@ -9,7 +9,9 @@ import com.voicerpg.android.model.SpeakerSide
 import com.voicerpg.android.viewmodel.StoryViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -578,4 +580,70 @@ class StoryDialogueTest {
         assertEquals("epilogue_credits", storyViewModel.state.value.currentNode.id)
         assertTrue(storyViewModel.state.value.currentNode.text.contains("CONGRATULATIONS"))
     }
+
+    @After
+    fun tearDown() {
+        storyViewModel.cancelPendingAutoAdvance()
+    }
+
+    @Test
+    fun testScreenlessPocketModeAutoAdvanceOnDialogueWithoutChoices() {
+        // Move to cottage_voice (no choices, nextNodeId = cottage_sparks)
+        val voiceNode = StoryScript.ALL_NODES["cottage_voice"]!!
+        storyViewModel.selectChoice(com.voicerpg.android.model.DialogueChoice("to_voice", "To Voice", emptyList(), voiceNode.id))
+
+        assertEquals("cottage_voice", storyViewModel.state.value.currentNode.id)
+        assertTrue(storyViewModel.canAdvanceDialogue())
+
+        // Enable Screenless Pocket Mode
+        dummyNarrator.toggleEyesFreeMode()
+        assertTrue(dummyNarrator.isEyesFreeMode.value)
+
+        // Give the 1.5s auto advance job time to complete
+        Thread.sleep(1700)
+
+        // Dialogue must have automatically advanced to cottage_sparks
+        assertEquals("cottage_sparks", storyViewModel.state.value.currentNode.id)
+    }
+
+    @Test
+    fun testScreenlessPocketModeDoesNotAutoAdvanceWhenChoicesPresent() {
+        // cottage_intro has 3 choices
+        assertEquals("cottage_intro", storyViewModel.state.value.currentNode.id)
+        assertFalse(storyViewModel.canAdvanceDialogue())
+
+        // Enable Screenless Pocket Mode
+        dummyNarrator.toggleEyesFreeMode()
+        assertTrue(dummyNarrator.isEyesFreeMode.value)
+
+        // Wait beyond 1.5s
+        Thread.sleep(1700)
+
+        // It must NOT advance because user decision is required
+        assertEquals("cottage_intro", storyViewModel.state.value.currentNode.id)
+    }
+
+    @Test
+    fun testScreenlessPocketModeAutoAdvanceCancelledOnUserAction() {
+        val voiceNode = StoryScript.ALL_NODES["cottage_voice"]!!
+        storyViewModel.selectChoice(com.voicerpg.android.model.DialogueChoice("to_voice", "To Voice", emptyList(), voiceNode.id))
+        assertEquals("cottage_voice", storyViewModel.state.value.currentNode.id)
+
+        // Enable Pocket Mode which triggers auto-advance countdown
+        dummyNarrator.toggleEyesFreeMode()
+        assertTrue(dummyNarrator.isEyesFreeMode.value)
+
+        // Ensure background collector scheduled the job
+        Thread.sleep(100)
+
+        // Cancel pending job (simulating options menu open or user cancel)
+        storyViewModel.cancelPendingAutoAdvance()
+
+        // Wait beyond 1.5s
+        Thread.sleep(1700)
+
+        // Dialogue must remain at cottage_voice because auto-advance was cancelled
+        assertEquals("cottage_voice", storyViewModel.state.value.currentNode.id)
+    }
 }
+
