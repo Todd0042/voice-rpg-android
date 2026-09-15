@@ -110,8 +110,16 @@ class MainActivity : ComponentActivity() {
                             AudioSetupScreen(
                                 combatNarrator = combatNarrator,
                                 speechManager = speechManager,
+                                isFromGame = storyState.previousScreen != null,
+                                onBack = {
+                                    storyViewModel.returnFromAudioSetup()
+                                },
                                 onProceed = {
-                                    storyViewModel.proceedToCharacterCreation()
+                                    if (storyState.previousScreen != null) {
+                                        storyViewModel.returnFromAudioSetup()
+                                    } else {
+                                        storyViewModel.proceedToCharacterCreation()
+                                    }
                                 }
                             )
                         }
@@ -185,6 +193,10 @@ class MainActivity : ComponentActivity() {
                         },
                         onOpenVoiceSettings = {
                             combatNarrator.openVoiceSettings(this@MainActivity)
+                        },
+                        onOpenVoiceAssignment = {
+                            combatViewModel.closeOptions()
+                            storyViewModel.openAudioSetup()
                         },
                         onClose = { combatViewModel.closeOptions() }
                     )

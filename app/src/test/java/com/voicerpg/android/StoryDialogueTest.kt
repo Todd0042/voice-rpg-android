@@ -645,5 +645,35 @@ class StoryDialogueTest {
         // Dialogue must remain at cottage_voice because auto-advance was cancelled
         assertEquals("cottage_voice", storyViewModel.state.value.currentNode.id)
     }
+
+    @Test
+    fun testOpenAndReturnFromAudioSetup() {
+        assertEquals(GameScreen.STORY_EXPLORATION, storyViewModel.state.value.gameScreen)
+        assertNull(storyViewModel.state.value.previousScreen)
+
+        // Open audio setup from in-game options
+        storyViewModel.openAudioSetup()
+        assertEquals(GameScreen.AUDIO_SETUP, storyViewModel.state.value.gameScreen)
+        assertEquals(GameScreen.STORY_EXPLORATION, storyViewModel.state.value.previousScreen)
+
+        // Return from audio setup back to game
+        storyViewModel.returnFromAudioSetup()
+        assertEquals(GameScreen.STORY_EXPLORATION, storyViewModel.state.value.gameScreen)
+        assertNull(storyViewModel.state.value.previousScreen)
+    }
+
+    @Test
+    fun testVoiceCommandOpensAudioSetup() {
+        assertEquals(GameScreen.STORY_EXPLORATION, storyViewModel.state.value.gameScreen)
+
+        // Utter voice command to assign voices
+        storyViewModel.handleStoryVoiceInput("assign voices")
+        assertEquals(GameScreen.AUDIO_SETUP, storyViewModel.state.value.gameScreen)
+        assertEquals(GameScreen.STORY_EXPLORATION, storyViewModel.state.value.previousScreen)
+
+        // Return
+        storyViewModel.returnFromAudioSetup()
+        assertEquals(GameScreen.STORY_EXPLORATION, storyViewModel.state.value.gameScreen)
+    }
 }
 

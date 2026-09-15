@@ -73,6 +73,8 @@ fun AudioSetupScreen(
     combatNarrator: CombatNarrator,
     speechManager: SpeechManager,
     onProceed: () -> Unit,
+    isFromGame: Boolean = false,
+    onBack: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -113,10 +115,11 @@ fun AudioSetupScreen(
         val lower = utterance.lowercase().trim()
         if (lower.isBlank()) return
 
-        // 1. Proceed to Character Creation
+        // 1. Proceed to Character Creation / Return to Game
         val proceedKeywords = listOf(
             "proceed", "continue", "next", "character creation", "create character",
-            "ready", "embark", "awaken", "start", "let's go", "lets go", "confirm", "forward"
+            "ready", "embark", "awaken", "start", "let's go", "lets go", "confirm", "forward",
+            "return", "back", "return to game", "resume", "done", "close"
         )
         if (proceedKeywords.any { lower.contains(it) }) {
             speechManager.cancel()
@@ -229,21 +232,77 @@ fun AudioSetupScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(horizontal = 16.dp, vertical = 12.dp)
-                .verticalScroll(rememberScrollState()),
+                .padding(horizontal = 16.dp, vertical = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Header
+            // Pinned Top Return Navigation (when opened from Options in-game)
+            if (isFromGame || onBack != null) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 6.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(RetroPanel)
+                            .border(1.dp, LogosGold, RoundedCornerShape(6.dp))
+                            .clickable {
+                                speechManager.cancel()
+                                (onBack ?: onProceed).invoke()
+                            }
+                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                    ) {
+                        Text(
+                            text = "◀ RETURN TO GAME",
+                            color = LogosGold,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .size(28.dp)
+                            .clip(CircleShape)
+                            .background(RetroPanel)
+                            .border(1.dp, RetroBorder, CircleShape)
+                            .clickable {
+                                speechManager.cancel()
+                                (onBack ?: onProceed).invoke()
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "✖",
+                            color = Color.White,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Header
+                Text(
+                    text = if (isFromGame) "🎧 COMPANION VOICES & RESONANCE" else "🎧 AURAL RESONANCE SETUP",
+                    color = LogosGold,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Black,
+                    fontFamily = FontFamily.Monospace,
+                    modifier = Modifier.shadow(8.dp, spotColor = LogosGlow)
+                )
             Text(
-                text = "🎧 AURAL RESONANCE SETUP",
-                color = LogosGold,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Black,
-                fontFamily = FontFamily.Monospace,
-                modifier = Modifier.shadow(8.dp, spotColor = LogosGlow)
-            )
-            Text(
-                text = "Configure Companion Voices & Voice Control",
+                text = if (isFromGame) "Live Voice Customization & Speech Settings" else "Configure Companion Voices & Voice Control",
                 color = Color.LightGray,
                 fontSize = 11.sp,
                 fontFamily = FontFamily.Monospace
@@ -643,7 +702,7 @@ fun AudioSetupScreen(
             Spacer(modifier = Modifier.height(20.dp))
 
             // =============================================================
-            // Proceed to Character Creation Button
+            // Proceed to Character Creation / Return to Game Button
             // =============================================================
             Button(
                 onClick = {
@@ -660,7 +719,7 @@ fun AudioSetupScreen(
                     .height(48.dp)
             ) {
                 Text(
-                    text = "PROCEED TO CHARACTER CREATION ➔",
+                    text = if (isFromGame) "◀ RETURN TO GAME ➔" else "PROCEED TO CHARACTER CREATION ➔",
                     fontFamily = FontFamily.Monospace,
                     fontWeight = FontWeight.Black,
                     fontSize = 13.sp
@@ -676,7 +735,7 @@ fun AudioSetupScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "🎤 Say 'Proceed' or 'Install voices'",
+                    text = if (isFromGame) "🎤 Say 'Return', 'Switch Cedric', or 'Install voices'" else "🎤 Say 'Proceed' or 'Install voices'",
                     color = Color.Gray,
                     fontSize = 10.sp,
                     fontFamily = FontFamily.Monospace
@@ -709,6 +768,7 @@ fun AudioSetupScreen(
             Spacer(modifier = Modifier.height(16.dp))
         }
     }
+    }
 }
 
 @Composable
@@ -725,28 +785,33 @@ private fun CompanionVoiceBadge(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
+        val displayName = if (speaker.id == "malakor") "Malakor" else speaker.name
+        val displayTitle = if (speaker.id == "malakor") "Inquisitor" else speaker.title
         Column(modifier = Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = speaker.name,
+                    text = displayName,
                     color = speaker.themeColor,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
-                    fontFamily = FontFamily.Monospace
+                    fontFamily = FontFamily.Monospace,
+                    maxLines = 1
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
-                    text = "(${speaker.title})",
+                    text = "($displayTitle)",
                     color = Color.Gray,
                     fontSize = 9.sp,
-                    fontFamily = FontFamily.Monospace
+                    fontFamily = FontFamily.Monospace,
+                    maxLines = 1
                 )
             }
             Text(
                 text = if (assignedVoiceName != null) "Voice Model: $assignedVoiceName" else "Default System Voice",
                 color = Color(0xFF90CAF9),
                 fontSize = 9.sp,
-                fontFamily = FontFamily.Monospace
+                fontFamily = FontFamily.Monospace,
+                maxLines = 1
             )
         }
 

@@ -57,6 +57,7 @@ fun OptionsDialog(
     onToggleAutoListen: () -> Unit,
     onToggleChimeMute: () -> Unit,
     onOpenVoiceSettings: (() -> Unit)? = null,
+    onOpenVoiceAssignment: (() -> Unit)? = null,
     onClose: () -> Unit
 ) {
     if (!isOpen) return
@@ -284,6 +285,51 @@ fun OptionsDialog(
                     }
                 }
 
+                if (onOpenVoiceAssignment != null) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(RetroPanel.copy(alpha = 0.8f))
+                            .border(1.dp, Color(0xFF64B5F6), RoundedCornerShape(8.dp))
+                            .clickable { onOpenVoiceAssignment() }
+                            .padding(10.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "🎭 Assign & Customize Companion Voices",
+                                    color = Color(0xFF90CAF9),
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = FontFamily.Monospace
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "Audition character quotes, cycle voice models for Sir Cedric, Lyra, Zephyr, and others without restarting your game.",
+                                    color = Color.LightGray,
+                                    fontSize = 10.sp,
+                                    lineHeight = 13.sp,
+                                    fontFamily = FontFamily.Monospace
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "ASSIGN ➔",
+                                color = Color(0xFF90CAF9),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+                    }
+                }
+
                 Spacer(modifier = Modifier.height(14.dp))
 
                 // =============================================================
@@ -367,6 +413,7 @@ fun OptionsDialog(
                         VoiceCommandItem(command = "🛡️ \"Party\" / \"Allies\"", desc = "Checks health & state of fellowship")
                         VoiceCommandItem(command = "🎧 \"Pocket Mode\"", desc = "Toggles audio-guided combat")
                         VoiceCommandItem(command = "👂 \"Auto Listen\"", desc = "Toggles hands-free turn mic on/off")
+                        VoiceCommandItem(command = "🎭 \"Assign Voices\"", desc = "Opens companion voice customization screen")
                         VoiceCommandItem(command = "⚙️ \"Options\" / \"Close\"", desc = "Opens or closes this settings screen")
                         VoiceCommandItem(command = "❓ \"Help\"", desc = "Spoken audio overview of voice commands")
                     }

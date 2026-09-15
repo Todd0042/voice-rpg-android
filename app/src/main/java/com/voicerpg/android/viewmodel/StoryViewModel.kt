@@ -32,6 +32,7 @@ data class StoryState(
     val currentScene: StoryScene = StoryScript.SCENE_COTTAGE,
     val currentNode: DialogueNode = StoryScript.ALL_NODES["cottage_intro"]!!,
     val gameScreen: GameScreen = GameScreen.AUDIO_SETUP,
+    val previousScreen: GameScreen? = null,
     val activeEncounter: EncounterDefinition? = null,
     val player: PlayerCustomization = PlayerCustomization(),
     val decisionsMade: List<String> = emptyList(),
@@ -566,9 +567,37 @@ class StoryViewModel(
         narrateCurrentNode()
     }
 
+    fun openAudioSetup() {
+        cancelPendingAutoAdvance()
+        combatNarrator.stop()
+        speechManager.cancel()
+        _state.value = _state.value.copy(
+            previousScreen = _state.value.gameScreen,
+            gameScreen = GameScreen.AUDIO_SETUP
+        )
+    }
+
+    fun returnFromAudioSetup() {
+        val returnTarget = _state.value.previousScreen ?: GameScreen.STORY_EXPLORATION
+        _state.value = _state.value.copy(
+            previousScreen = null,
+            gameScreen = returnTarget
+        )
+        persistCurrentState()
+        if (returnTarget == GameScreen.STORY_EXPLORATION) {
+            narrateCurrentNode()
+        }
+    }
+
     fun handleStoryVoiceInput(utterance: String) {
         val lower = utterance.lowercase().trim()
         val node = _state.value.currentNode
+
+        // Intercept direct companion voice assignment voice command
+        if (lower.contains("assign voice") || lower.contains("companion voice") || lower.contains("customize voice")) {
+            openAudioSetup()
+            return
+        }
 
         // 0. Intercept Meta Voice Commands (Options, Narration, Choice Reading, Pocket Mode)
         val peek = IntentParser.parse(utterance, emptyList(), emptyList(), emptyList())
