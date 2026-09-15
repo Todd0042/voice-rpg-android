@@ -4,6 +4,8 @@ import android.content.Context
 import android.os.Bundle
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
+import com.voicerpg.android.model.DialogueChoice
+import com.voicerpg.android.model.DialogueSpeaker
 import com.voicerpg.android.model.Enemy
 import com.voicerpg.android.model.PartyMember
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,6 +29,18 @@ class CombatNarrator(
 
     private val _isEyesFreeMode = MutableStateFlow(false)
     val isEyesFreeMode: StateFlow<Boolean> = _isEyesFreeMode.asStateFlow()
+
+    private val _isNarrationEnabled = MutableStateFlow(true)
+    val isNarrationEnabled: StateFlow<Boolean> = _isNarrationEnabled.asStateFlow()
+
+    private val _isReadChoicesEnabled = MutableStateFlow(true)
+    val isReadChoicesEnabled: StateFlow<Boolean> = _isReadChoicesEnabled.asStateFlow()
+
+    private val _speechRate = MutableStateFlow(1.05f)
+    val speechRate: StateFlow<Float> = _speechRate.asStateFlow()
+
+    private val _isCharacterPitchEnabled = MutableStateFlow(true)
+    val isCharacterPitchEnabled: StateFlow<Boolean> = _isCharacterPitchEnabled.asStateFlow()
 
     private val _isSpeaking = MutableStateFlow(false)
     val isSpeaking: StateFlow<Boolean> = _isSpeaking.asStateFlow()
@@ -81,6 +95,99 @@ class CombatNarrator(
     fun toggleEyesFreeMode(): Boolean {
         _isEyesFreeMode.value = !_isEyesFreeMode.value
         return _isEyesFreeMode.value
+    }
+
+    fun setNarrationEnabled(enabled: Boolean) {
+        _isNarrationEnabled.value = enabled
+        if (!enabled) stop()
+    }
+
+    fun toggleNarration(): Boolean {
+        _isNarrationEnabled.value = !_isNarrationEnabled.value
+        if (!_isNarrationEnabled.value) stop()
+        return _isNarrationEnabled.value
+    }
+
+    fun setReadChoicesEnabled(enabled: Boolean) {
+        _isReadChoicesEnabled.value = enabled
+    }
+
+    fun toggleReadChoices(): Boolean {
+        _isReadChoicesEnabled.value = !_isReadChoicesEnabled.value
+        return _isReadChoicesEnabled.value
+    }
+
+    fun setSpeechRate(rate: Float) {
+        _speechRate.value = rate
+        tts?.setSpeechRate(rate)
+    }
+
+    fun setCharacterPitchEnabled(enabled: Boolean) {
+        _isCharacterPitchEnabled.value = enabled
+    }
+
+    /**
+     * Narrates a story dialogue node, including the speaker line and optionally
+     * reading available choices/options aloud.
+     */
+    fun narrateDialogue(
+        speaker: DialogueSpeaker,
+        text: String,
+        choices: List<DialogueChoice> = emptyList(),
+        onDone: () -> Unit = {}
+    ) {
+        // If narration is turned off and we are not in Eyes-Free mode, skip TTS
+        if (!_isNarrationEnabled.value && !_isEyesFreeMode.value) {
+            onDone()
+            return
+        }
+
+        if (tts == null || !isTtsInitialized) {
+            onDone()
+            return
+        }
+
+        // Apply character vocal inflection/pitch if enabled
+        if (_isCharacterPitchEnabled.value) {
+            when (speaker) {
+                DialogueSpeaker.CEDRIC -> {
+                    tts?.setPitch(0.82f) // Deep baritone noble knight
+                    tts?.setSpeechRate(_speechRate.value * 0.95f)
+                }
+                DialogueSpeaker.AETHEL -> {
+                    tts?.setPitch(1.08f) // Clear, spirited invocator
+                    tts?.setSpeechRate(_speechRate.value)
+                }
+                DialogueSpeaker.SHADOW_WISP -> {
+                    tts?.setPitch(0.70f) // Raspy sibilant phantom
+                    tts?.setSpeechRate(_speechRate.value * 0.88f)
+                }
+                DialogueSpeaker.NARRATOR -> {
+                    tts?.setPitch(1.0f) // Measured storyteller cadence
+                    tts?.setSpeechRate(_speechRate.value)
+                }
+            }
+        } else {
+            tts?.setPitch(1.0f)
+            tts?.setSpeechRate(_speechRate.value)
+        }
+
+        val cleanedText = text.replace("...", ". ").trim()
+        val speakerPrefix = if (speaker == DialogueSpeaker.NARRATOR) "" else "${speaker.name} says: "
+
+        val fullScript = StringBuilder()
+        fullScript.append("$speakerPrefix$cleanedText")
+
+        // Read choices aloud if setting enabled
+        if (_isReadChoicesEnabled.value && choices.isNotEmpty()) {
+            fullScript.append(". Your options are: ")
+            choices.forEachIndexed { index, choice ->
+                fullScript.append("Option ${index + 1}: ${choice.text}. ")
+            }
+            fullScript.append("What is your command?")
+        }
+
+        speak(fullScript.toString(), force = true, onDone = onDone)
     }
 
     /**

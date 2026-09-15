@@ -535,8 +535,13 @@ private fun RetroSpeechBubble(
                 }
 
                 if (node.choices.isEmpty()) {
+                    val promptText = when {
+                        node.triggerBattleEncounterId != null -> "⚔️ TO BATTLE"
+                        node.nextNodeId != null -> "▼ NEXT"
+                        else -> "⭐ NEXT (CAMP)"
+                    }
                     Text(
-                        text = "▼ NEXT",
+                        text = promptText,
                         color = LogosGold.copy(alpha = arrowAlpha),
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,

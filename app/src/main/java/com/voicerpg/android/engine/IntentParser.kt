@@ -38,6 +38,12 @@ object IntentParser {
             lower.contains("auto listen") || lower.contains("hands free") || lower.contains("auto mic") ||
                     lower.contains("automatic listening") -> MetaCommand.TOGGLE_AUTO_LISTEN
 
+            lower.contains("toggle narration") || lower == "narration" || lower.contains("narration on") ||
+                    lower.contains("narration off") || lower.contains("read dialogue") || lower.contains("toggle speech") -> MetaCommand.TOGGLE_NARRATION
+
+            lower.contains("read choices") || lower.contains("toggle choices") || lower.contains("read options") ||
+                    lower.contains("toggle options reading") || lower.contains("stop reading choices") -> MetaCommand.TOGGLE_READ_CHOICES
+
             lower == "options" || lower == "settings" || lower == "menu" || lower.contains("open options") ||
                     lower.contains("open settings") || lower.contains("show options") -> MetaCommand.OPEN_OPTIONS
 

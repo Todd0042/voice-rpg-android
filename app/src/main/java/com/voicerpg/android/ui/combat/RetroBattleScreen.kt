@@ -250,18 +250,6 @@ fun RetroBattleScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
             }
-
-            // Options & Pocket Accessibility Modal
-            OptionsDialog(
-                isOpen = state.isOptionsOpen,
-                isEyesFreeMode = state.isEyesFreeMode,
-                isAutoListen = isAutoListen,
-                isChimeMuted = isChimeMuted,
-                onToggleEyesFreeMode = { viewModel.toggleEyesFreeMode() },
-                onToggleAutoListen = { viewModel.speechManager.toggleAutoListen() },
-                onToggleChimeMute = { viewModel.speechManager.toggleChimeMute() },
-                onClose = { viewModel.closeOptions() }
-            )
         }
     }
 }

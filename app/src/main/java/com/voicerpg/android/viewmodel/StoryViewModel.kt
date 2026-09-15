@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.voicerpg.android.audio.CombatNarrator
 import com.voicerpg.android.audio.SpeechManager
+import com.voicerpg.android.engine.IntentParser
 import com.voicerpg.android.engine.SaveManager
 import com.voicerpg.android.engine.StoryEncounters
 import com.voicerpg.android.engine.StoryScript
@@ -12,6 +13,7 @@ import com.voicerpg.android.model.DialogueNode
 import com.voicerpg.android.model.EncounterDefinition
 import com.voicerpg.android.model.GameSaveData
 import com.voicerpg.android.model.GameScreen
+import com.voicerpg.android.model.MetaCommand
 import com.voicerpg.android.model.PartyMember
 import com.voicerpg.android.model.PlayerCustomization
 import com.voicerpg.android.model.SavedCharacterStats
@@ -70,6 +72,12 @@ class StoryViewModel(
                 partyStats = existingSave.partyStats
             )
             combatNarrator.setEyesFreeMode(existingSave.isEyesFreeMode)
+            combatNarrator.setNarrationEnabled(existingSave.isNarrationEnabled)
+            combatNarrator.setReadChoicesEnabled(existingSave.isReadChoicesEnabled)
+            combatNarrator.setSpeechRate(existingSave.speechRate)
+            combatNarrator.setCharacterPitchEnabled(existingSave.isCharacterPitchEnabled)
+            speechManager.setAutoListen(existingSave.isAutoListen)
+            speechManager.setChimeMuted(existingSave.isChimeMuted)
             narrateCurrentNode()
         } else {
             // First time player: start at Character Creation
@@ -107,6 +115,7 @@ class StoryViewModel(
     }
 
     fun advanceDialogue() {
+        combatNarrator.stop()
         val node = _state.value.currentNode
         if (node.choices.isNotEmpty()) {
             return
@@ -123,10 +132,16 @@ class StoryViewModel(
             if (nextNode != null) {
                 applyNodeTransition(nextNode)
             }
+        } else if (node.choices.isEmpty()) {
+            val fallbackNode = StoryScript.ALL_NODES["camp_intro"] ?: StoryScript.ALL_NODES["crossroads_intro"]
+            if (fallbackNode != null) {
+                applyNodeTransition(fallbackNode)
+            }
         }
     }
 
     fun selectChoice(choice: DialogueChoice) {
+        combatNarrator.stop()
         val nextNode = StoryScript.ALL_NODES[choice.nextNodeId]
         if (nextNode != null) {
             val updatedDecisions = _state.value.decisionsMade + choice.id
@@ -152,13 +167,21 @@ class StoryViewModel(
         narrateCurrentNode()
     }
 
+    var onOpenOptions: (() -> Unit)? = null
+    var onCloseOptions: (() -> Unit)? = null
+
     fun triggerEncounter(encounterId: String) {
         val encounter = when (encounterId) {
             "prologue_solo" -> StoryEncounters.PROLOGUE_SOLO
             "forest_ambush" -> StoryEncounters.FOREST_AMBUSH
-            else -> StoryEncounters.PROLOGUE_SOLO
+            "cave_broodmother" -> StoryEncounters.CAVE_BROODMOTHER
+            "swamp_behemoth" -> StoryEncounters.SWAMP_BEHEMOTH
+            "dungeon_descent" -> StoryEncounters.DUNGEON_DESCENT
+            "castle_horde" -> StoryEncounters.CASTLE_HORDE
+            else -> StoryEncounters.ALL_ENCOUNTERS.firstOrNull { it.id == encounterId } ?: StoryEncounters.PROLOGUE_SOLO
         }
         speechManager.cancel()
+        combatNarrator.stop()
         _state.value = _state.value.copy(
             gameScreen = GameScreen.COMBAT_ARENA,
             activeEncounter = encounter
@@ -171,6 +194,8 @@ class StoryViewModel(
         val postBattleNodeId = when (encounterId) {
             "prologue_solo" -> "village_post_battle"
             "forest_ambush" -> "crossroads_post_battle"
+            "cave_broodmother" -> "cavern_post_battle"
+            "swamp_behemoth" -> "marsh_post_battle"
             else -> null
         }
 
@@ -213,7 +238,8 @@ class StoryViewModel(
 
     fun persistCurrentState() {
         val s = _state.value
-        val saveData = GameSaveData(
+        val currentSave = saveManager.load() ?: GameSaveData()
+        val updatedSave = currentSave.copy(
             player = s.player,
             currentSceneId = s.currentScene.id,
             currentNodeId = s.currentNode.id,
@@ -224,12 +250,17 @@ class StoryViewModel(
             achievements = s.achievements,
             isEyesFreeMode = combatNarrator.isEyesFreeMode.value,
             isAutoListen = speechManager.isAutoListen.value,
-            isChimeMuted = speechManager.isChimeMuted.value
+            isChimeMuted = speechManager.isChimeMuted.value,
+            isNarrationEnabled = combatNarrator.isNarrationEnabled.value,
+            isReadChoicesEnabled = combatNarrator.isReadChoicesEnabled.value,
+            speechRate = combatNarrator.speechRate.value,
+            isCharacterPitchEnabled = combatNarrator.isCharacterPitchEnabled.value
         )
-        saveManager.save(saveData)
+        saveManager.save(updatedSave)
     }
 
     fun switchToCombat() {
+        combatNarrator.stop()
         _state.value = _state.value.copy(gameScreen = GameScreen.COMBAT_ARENA)
     }
 
@@ -241,6 +272,53 @@ class StoryViewModel(
     fun handleStoryVoiceInput(utterance: String) {
         val lower = utterance.lowercase().trim()
         val node = _state.value.currentNode
+
+        // 0. Intercept Meta Voice Commands (Options, Narration, Choice Reading, Pocket Mode)
+        val peek = IntentParser.parse(utterance, emptyList(), emptyList(), emptyList())
+        when (peek.metaCommand) {
+            MetaCommand.OPEN_OPTIONS -> {
+                onOpenOptions?.invoke()
+                return
+            }
+            MetaCommand.CLOSE_OPTIONS -> {
+                onCloseOptions?.invoke()
+                return
+            }
+            MetaCommand.TOGGLE_NARRATION -> {
+                val enabled = combatNarrator.toggleNarration()
+                val status = if (enabled) "Story dialogue narration enabled." else "Story dialogue narration muted."
+                combatNarrator.speak(status, force = true)
+                persistCurrentState()
+                return
+            }
+            MetaCommand.TOGGLE_READ_CHOICES -> {
+                val enabled = combatNarrator.toggleReadChoices()
+                val status = if (enabled) "Choice reading enabled." else "Choice reading disabled."
+                combatNarrator.speak(status, force = true)
+                persistCurrentState()
+                return
+            }
+            MetaCommand.TOGGLE_EYES_FREE -> {
+                val enabled = combatNarrator.toggleEyesFreeMode()
+                val status = if (enabled) "Eyes free mode enabled." else "Eyes free mode disabled."
+                combatNarrator.speak(status, force = true)
+                persistCurrentState()
+                return
+            }
+            MetaCommand.TOGGLE_AUTO_LISTEN -> {
+                speechManager.toggleAutoListen()
+                val enabled = speechManager.isAutoListen.value
+                val status = if (enabled) "Hands free auto listen enabled." else "Auto listen disabled."
+                combatNarrator.speak(status, force = true)
+                persistCurrentState()
+                return
+            }
+            MetaCommand.HELP -> {
+                combatNarrator.speak("Say 'Next' to advance dialogue. Say a choice keyword to select it. Say 'Options' for settings. Say 'Narration' to toggle dialogue speech. Say 'Read choices' to toggle options reading.", force = true)
+                return
+            }
+            else -> Unit
+        }
 
         // 1. Advance command
         if (lower == "next" || lower == "continue" || lower == "proceed" || lower.contains("go on")) {
@@ -274,9 +352,11 @@ class StoryViewModel(
     private fun narrateCurrentNode() {
         if (_state.value.gameScreen != GameScreen.STORY_EXPLORATION) return
         val node = _state.value.currentNode
-        val textToSpeak = "${node.speaker.name}: ${node.text}"
-
-        combatNarrator.speak(textToSpeak, force = combatNarrator.isEyesFreeMode.value) {
+        combatNarrator.narrateDialogue(
+            speaker = node.speaker,
+            text = node.text,
+            choices = node.choices
+        ) {
             if (speechManager.isAutoListen.value) {
                 activeScope.launch {
                     delay(120)

@@ -619,6 +619,38 @@ class CombatViewModel(
                     _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts.filter { it.id != fct.id })
                 }
             }
+            MetaCommand.TOGGLE_NARRATION -> {
+                val enabled = combatNarrator.toggleNarration()
+                val status = if (enabled) "Story narration enabled." else "Story narration muted."
+                combatNarrator.speak(status, force = true)
+                val fct = FloatingCombatText(
+                    text = if (enabled) "Narration: ON 📖" else "Narration: OFF 🔇",
+                    color = Color(0xFFFFD54F),
+                    startX = 500f,
+                    startY = 400f
+                )
+                _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts + fct)
+                activeScope.launch {
+                    delay(1500)
+                    _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts.filter { it.id != fct.id })
+                }
+            }
+            MetaCommand.TOGGLE_READ_CHOICES -> {
+                val enabled = combatNarrator.toggleReadChoices()
+                val status = if (enabled) "Choice reading enabled." else "Choice reading disabled."
+                combatNarrator.speak(status, force = true)
+                val fct = FloatingCombatText(
+                    text = if (enabled) "Read Choices: ON 🔢" else "Read Choices: OFF 🔇",
+                    color = Color(0xFF80D8FF),
+                    startX = 500f,
+                    startY = 400f
+                )
+                _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts + fct)
+                activeScope.launch {
+                    delay(1500)
+                    _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts.filter { it.id != fct.id })
+                }
+            }
             MetaCommand.OPEN_OPTIONS -> {
                 openOptions()
             }

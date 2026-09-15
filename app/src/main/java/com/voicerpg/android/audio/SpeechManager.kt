@@ -64,8 +64,16 @@ class SpeechManager(private val context: Context? = null) {
         _isChimeMuted.value = !_isChimeMuted.value
     }
 
+    fun setChimeMuted(muted: Boolean) {
+        _isChimeMuted.value = muted
+    }
+
     fun toggleAutoListen() {
         _isAutoListen.value = !_isAutoListen.value
+    }
+
+    fun setAutoListen(enabled: Boolean) {
+        _isAutoListen.value = enabled
     }
 
     /**

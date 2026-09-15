@@ -38,10 +38,40 @@ object StoryScript {
         ambientDescription = "Ancient pines tower over a weathered sun shrine."
     )
 
+    val SCENE_CAMP = StoryScene(
+        id = "scene_camp",
+        name = "Camp of the Fellowship",
+        chapterTitle = "Chapter 2: Embers in the Gloom",
+        backgroundAsset = "story/forest_crossroads.jpg",
+        initialNodeId = "camp_intro",
+        ambientDescription = "Warm embers dance in the night air beside the ancient sun shrine."
+    )
+
+    val SCENE_CAVE = StoryScene(
+        id = "scene_cave",
+        name = "The Whispering Caverns",
+        chapterTitle = "Chapter 2: The Sunken Grotto",
+        backgroundAsset = "environments/cave.jpg",
+        initialNodeId = "cavern_entry",
+        ambientDescription = "Bioluminescent azure crystals hum faintly along damp limestone walls."
+    )
+
+    val SCENE_SWAMP = StoryScene(
+        id = "scene_swamp",
+        name = "The Rotting Marsh",
+        chapterTitle = "Chapter 2: The Sunken Bog",
+        backgroundAsset = "environments/swamp.jpg",
+        initialNodeId = "marsh_entry",
+        ambientDescription = "Thick emerald mist drifts over black mire and gnarled roots."
+    )
+
     val ALL_SCENES = mapOf(
         SCENE_COTTAGE.id to SCENE_COTTAGE,
         SCENE_VILLAGE.id to SCENE_VILLAGE,
-        SCENE_CROSSROADS.id to SCENE_CROSSROADS
+        SCENE_CROSSROADS.id to SCENE_CROSSROADS,
+        SCENE_CAMP.id to SCENE_CAMP,
+        SCENE_CAVE.id to SCENE_CAVE,
+        SCENE_SWAMP.id to SCENE_SWAMP
     )
 
     // -------------------------------------------------------------------------
@@ -227,7 +257,113 @@ object StoryScript {
             speaker = DialogueSpeaker.AETHEL,
             side = SpeakerSide.LEFT,
             text = "The Fellowship of Echoes begins today. To the Bell Tower!",
-            nextNodeId = null
+            nextNodeId = "crossroads_camp_trans"
+        ),
+        DialogueNode(
+            id = "crossroads_camp_trans",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "As twilight settles over the whispering woods, you and Sir Cedric strike camp near the weathered sun shrine. A warm campfire crackles between you, keeping the biting chill of the Blight at bay.",
+            changeSceneId = SCENE_CAMP.id,
+            nextNodeId = "camp_intro"
+        ),
+        DialogueNode(
+            id = "camp_intro",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            text = "Rest your vocal cords, friend. Tomorrow we cross into the Sunken Hollows. Before we sleep, what weighs upon your mind?",
+            choices = listOf(
+                DialogueChoice("c_lore", "Ask about the Silent Blight and Mute Sovereign", listOf("blight", "silence", "sovereign", "lore"), "camp_lore_blight"),
+                DialogueChoice("c_towers", "Inquire about the Four Bell Towers", listOf("tower", "towers", "bells", "chime"), "camp_lore_towers"),
+                DialogueChoice("c_rest", "Rest by the fire to restore health and mana", listOf("rest", "sleep", "fire", "restore"), "camp_rest")
+            )
+        ),
+        DialogueNode(
+            id = "camp_lore_blight",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            text = "Ten cycles ago, the Mute Sovereign descended upon the High Sanctum with an absolute Void that devoured all sound. Those caught in its wake turned to hollow obsidian glass. Only those with the Logos harmonic in their blood can speak.",
+            nextNodeId = "camp_next_morning"
+        ),
+        DialogueNode(
+            id = "camp_lore_towers",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            text = "The Four Great Bell Towers were forged by the Primordial Chanters. Each bell carries a sacred acoustic frequency that purges the silence. The first tower crowns the Sunken Hollows, past the Whispering Caverns.",
+            nextNodeId = "camp_next_morning"
+        ),
+        DialogueNode(
+            id = "camp_rest",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "You sit in quiet meditation by the dancing embers. The resonance in your chest warms and stabilizes. Your spirit and vocal power are renewed for the trials ahead.",
+            nextNodeId = "camp_next_morning"
+        ),
+        DialogueNode(
+            id = "camp_next_morning",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "Dawn breaks over the jagged forest canopy. A fork in the trail lies ahead: the damp mouth of the Whispering Caverns descends underground, while an overgrown path leads toward the mist-covered marsh.",
+            choices = listOf(
+                DialogueChoice("c_cavern", "Descend into the Whispering Caverns", listOf("cavern", "cave", "descend", "underground"), "cavern_entry"),
+                DialogueChoice("c_marsh", "Traverse the Rotting Marsh", listOf("marsh", "swamp", "bog", "mire"), "marsh_entry")
+            )
+        ),
+        // Cavern Path
+        DialogueNode(
+            id = "cavern_entry",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            text = "The air in these caves carries a faint crystalline hum. Watch your step... blighted crawlers lurk in the shadows.",
+            changeSceneId = SCENE_CAVE.id,
+            nextNodeId = "cavern_exploration"
+        ),
+        DialogueNode(
+            id = "cavern_exploration",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "Bioluminescent azure crystals cling to the stalactites above, pulsing in rhythm with your breathing. Ahead lies the subterranean aqueduct to the Bell Tower, but a chittering horror blocks the passage!",
+            triggerBattleEncounterId = "cave_broodmother"
+        ),
+        DialogueNode(
+            id = "cavern_post_battle",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            text = "The broodmother has fallen! Look ahead — the subterranean aqueducts rise before us, carving a path directly into the Bell Tower's foundations!",
+            nextNodeId = "chapter2_conclusion"
+        ),
+        // Marsh Path
+        DialogueNode(
+            id = "marsh_entry",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            text = "The Rotting Marsh... keep to the dry moss mounds. The water here is foul with the Blight's mute venom.",
+            changeSceneId = SCENE_SWAMP.id,
+            nextNodeId = "marsh_exploration"
+        ),
+        DialogueNode(
+            id = "marsh_exploration",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "Thick emerald fog drifts across weeping willow branches. Suddenly, the bog churns as a towering Bog Behemoth surges from the mire with razor leeches!",
+            triggerBattleEncounterId = "swamp_behemoth"
+        ),
+        DialogueNode(
+            id = "marsh_post_battle",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            text = "A valiant victory! The corrupted willow weeping has ceased. The causeway to the First Bell Tower is open!",
+            nextNodeId = "chapter2_conclusion"
+        ),
+        DialogueNode(
+            id = "chapter2_conclusion",
+            speaker = DialogueSpeaker.AETHEL,
+            side = SpeakerSide.LEFT,
+            text = "We stand at the threshold of the First Bell Tower. Let our voices awaken the bell and break the silence of Aethelgard!",
+            choices = listOf(
+                DialogueChoice("c_replay_camp", "Return to camp and reflect", listOf("camp", "reflect", "rest", "return"), "camp_intro"),
+                DialogueChoice("c_replay_branch", "Explore the other fork in the trail", listOf("fork", "explore", "other", "trail"), "camp_next_morning")
+            )
         )
     ).associateBy { it.id }
 }

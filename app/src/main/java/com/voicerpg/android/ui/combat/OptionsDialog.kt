@@ -43,9 +43,17 @@ import com.voicerpg.android.ui.theme.RetroPanel
 fun OptionsDialog(
     isOpen: Boolean,
     isEyesFreeMode: Boolean,
+    isNarrationEnabled: Boolean,
+    isReadChoicesEnabled: Boolean,
+    isCharacterPitchEnabled: Boolean,
+    speechRate: Float,
     isAutoListen: Boolean,
     isChimeMuted: Boolean,
     onToggleEyesFreeMode: () -> Unit,
+    onToggleNarration: () -> Unit,
+    onToggleReadChoices: () -> Unit,
+    onToggleCharacterPitch: () -> Unit,
+    onSpeechRateChange: (Float) -> Unit,
     onToggleAutoListen: () -> Unit,
     onToggleChimeMute: () -> Unit,
     onClose: () -> Unit
@@ -57,7 +65,7 @@ fun OptionsDialog(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(12.dp))
-                .background(RetroBlack.copy(alpha = 0.95f))
+                .background(RetroBlack.copy(alpha = 0.96f))
                 .border(2.dp, RetroBorderGold, RoundedCornerShape(12.dp))
                 .padding(16.dp)
         ) {
@@ -75,14 +83,14 @@ fun OptionsDialog(
                 ) {
                     Column {
                         Text(
-                            text = "⚙️ TACTICAL OPTIONS",
+                            text = "⚙️ GAME & AUDIO OPTIONS",
                             color = LogosGold,
-                            fontSize = 16.sp,
+                            fontSize = 15.sp,
                             fontWeight = FontWeight.Black,
                             fontFamily = FontFamily.Monospace
                         )
                         Text(
-                            text = "Voice-Controlled • Pocket Accessibility",
+                            text = "Voice-Controlled • Narration • Pocket Mode",
                             color = Color.LightGray,
                             fontSize = 10.sp,
                             fontFamily = FontFamily.Monospace
@@ -110,9 +118,11 @@ fun OptionsDialog(
 
                 Spacer(modifier = Modifier.height(14.dp))
 
-                // Section 1: Accessibility & Audio Toggles
+                // =============================================================
+                // Section 1: Story & Dialogue Narration
+                // =============================================================
                 Text(
-                    text = "ACCESSIBILITY & SPEECH",
+                    text = "📖 STORY & DIALOGUE NARRATION",
                     color = LogosGlow,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
@@ -122,10 +132,132 @@ fun OptionsDialog(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Toggle 1: Screenless / Pocket Mode
+                // Toggle: Read Dialogue Aloud
+                OptionToggleRow(
+                    title = "📖 Read Dialogue Aloud",
+                    subtitle = "Phone reads story narration and character voices aloud (screen on or off).",
+                    voiceHint = "Voice command: \"Toggle narration\" or \"Narration\"",
+                    checked = isNarrationEnabled,
+                    activeColor = Color(0xFFFFD54F),
+                    onCheckedChange = { onToggleNarration() }
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Toggle: Read Dialogue Choices
+                OptionToggleRow(
+                    title = "🔢 Read Dialogue Choices",
+                    subtitle = "Speaks available response options after the dialogue line finishes.",
+                    voiceHint = "Voice command: \"Read choices\" or \"Toggle choices\"",
+                    checked = isReadChoicesEnabled,
+                    activeColor = Color(0xFF80D8FF),
+                    onCheckedChange = { onToggleReadChoices() }
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Toggle: Character Voice Pitch Modulation
+                OptionToggleRow(
+                    title = "🎭 Character Voice Pitch",
+                    subtitle = "Modulates pitch per character (Cedric deep knight, Aethel spirited, Wisps raspy).",
+                    voiceHint = "Dynamic pitch shifting",
+                    checked = isCharacterPitchEnabled,
+                    activeColor = Color(0xFFCE93D8),
+                    onCheckedChange = { onToggleCharacterPitch() }
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Speech Speed Selector
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(RetroPanel.copy(alpha = 0.8f))
+                        .border(1.dp, RetroBorder, RoundedCornerShape(8.dp))
+                        .padding(10.dp)
+                ) {
+                    Column {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "⚡ Speech Speed",
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 12.sp,
+                                fontFamily = FontFamily.Monospace
+                            )
+                            Text(
+                                text = "%.2fx".format(speechRate),
+                                color = LogosGold,
+                                fontWeight = FontWeight.Black,
+                                fontSize = 11.sp,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            listOf(
+                                0.90f to "0.9x Relaxed",
+                                1.05f to "1.05x Normal",
+                                1.25f to "1.25x Fast"
+                            ).forEach { (rate, label) ->
+                                val isSelected = kotlin.math.abs(speechRate - rate) < 0.08f
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(if (isSelected) LogosGold else RetroBlack)
+                                        .border(
+                                            1.dp,
+                                            if (isSelected) LogosGold else RetroBorder,
+                                            RoundedCornerShape(6.dp)
+                                        )
+                                        .clickable { onSpeechRateChange(rate) }
+                                        .padding(vertical = 6.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = label,
+                                        color = if (isSelected) RetroBlack else Color.LightGray,
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = FontFamily.Monospace
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // =============================================================
+                // Section 2: Pocket & Hands-Free Accessibility
+                // =============================================================
+                Text(
+                    text = "🎧 POCKET & ACCESSIBILITY",
+                    color = LogosGlow,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Monospace,
+                    modifier = Modifier.align(Alignment.Start)
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Toggle: Screenless / Pocket Mode
                 OptionToggleRow(
                     title = "🎧 Screenless Pocket Mode",
-                    subtitle = "Spoken combat narration for turns, hits, and enemy actions. Ideal for phone in pocket or visually impaired play.",
+                    subtitle = "Spoken combat narration for turns, hits, and enemy actions. Full eyes-free play.",
                     voiceHint = "Voice command: \"Pocket mode\" or \"Eyes free\"",
                     checked = isEyesFreeMode,
                     activeColor = Color(0xFF64B5F6),
@@ -134,10 +266,10 @@ fun OptionsDialog(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Toggle 2: Hands-Free Auto Listen
+                // Toggle: Hands-Free Auto Listen
                 OptionToggleRow(
                     title = "👂 Hands-Free Auto-Listen",
-                    subtitle = "Automatically opens microphone on player turn after narrator speaks. No screen touch needed.",
+                    subtitle = "Automatically opens microphone after narrator finishes speaking. Zero touch needed.",
                     voiceHint = "Voice command: \"Auto listen\" or \"Hands free\"",
                     checked = isAutoListen,
                     activeColor = Color(0xFF81C784),
@@ -146,10 +278,10 @@ fun OptionsDialog(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Toggle 3: Chime Mute
+                // Toggle: Chime Mute
                 OptionToggleRow(
                     title = "🔔 Microphone Chime Mute",
-                    subtitle = "Silences system mic start/stop beeps for stealthy, uninterrupted chanting.",
+                    subtitle = "Silences system mic beeps for stealthy, uninterrupted chanting.",
                     voiceHint = "Default: Muted",
                     checked = isChimeMuted,
                     activeColor = LogosGold,
@@ -158,7 +290,9 @@ fun OptionsDialog(
 
                 Spacer(modifier = Modifier.height(14.dp))
 
-                // Section 2: Voice Command Reference Card
+                // =============================================================
+                // Section 3: Voice Command Cheat Sheet
+                // =============================================================
                 Text(
                     text = "VOICE COMMAND CHEAT SHEET",
                     color = LogosGlow,
@@ -179,10 +313,13 @@ fun OptionsDialog(
                         .padding(10.dp)
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        VoiceCommandItem(command = "📖 \"Narration\"", desc = "Toggles dialogue reading on/off")
+                        VoiceCommandItem(command = "🔢 \"Read Choices\"", desc = "Toggles reading choices on/off")
+                        VoiceCommandItem(command = "⏭️ \"Next\" / \"Continue\"", desc = "Advances story dialogue")
                         VoiceCommandItem(command = "📢 \"Status\" / \"Report\"", desc = "Announces HP of party & living enemies")
-                        VoiceCommandItem(command = "👁️ \"Enemies\" / \"Targets\"", desc = "Scans foes and states current targeted enemy")
-                        VoiceCommandItem(command = "🛡️ \"Party\" / \"Allies\"", desc = "Checks health & state of all fellowship heroes")
-                        VoiceCommandItem(command = "🎧 \"Pocket Mode\"", desc = "Toggles audio narration on/off")
+                        VoiceCommandItem(command = "👁️ \"Enemies\" / \"Targets\"", desc = "Scans foes and states targeted enemy")
+                        VoiceCommandItem(command = "🛡️ \"Party\" / \"Allies\"", desc = "Checks health & state of fellowship")
+                        VoiceCommandItem(command = "🎧 \"Pocket Mode\"", desc = "Toggles audio-guided combat")
                         VoiceCommandItem(command = "👂 \"Auto Listen\"", desc = "Toggles hands-free turn mic on/off")
                         VoiceCommandItem(command = "⚙️ \"Options\" / \"Close\"", desc = "Opens or closes this settings screen")
                         VoiceCommandItem(command = "❓ \"Help\"", desc = "Spoken audio overview of voice commands")
@@ -202,7 +339,7 @@ fun OptionsDialog(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        text = "RESUME BATTLE",
+                        text = "RESUME GAME",
                         fontWeight = FontWeight.Bold,
                         fontFamily = FontFamily.Monospace,
                         fontSize = 13.sp
@@ -253,13 +390,13 @@ private fun OptionToggleRow(
                     text = subtitle,
                     color = Color.LightGray,
                     fontSize = 10.sp,
-                    fontFamily = FontFamily.Monospace,
-                    lineHeight = 13.sp
+                    lineHeight = 13.sp,
+                    fontFamily = FontFamily.Monospace
                 )
-                Spacer(modifier = Modifier.height(3.dp))
+                Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = voiceHint,
-                    color = activeColor.copy(alpha = 0.9f),
+                    color = Color(0xFF80D8FF),
                     fontSize = 9.sp,
                     fontFamily = FontFamily.Monospace
                 )
@@ -271,10 +408,10 @@ private fun OptionToggleRow(
                 checked = checked,
                 onCheckedChange = { onCheckedChange() },
                 colors = SwitchDefaults.colors(
-                    checkedThumbColor = RetroBlack,
+                    checkedThumbColor = Color.White,
                     checkedTrackColor = activeColor,
                     uncheckedThumbColor = Color.Gray,
-                    uncheckedTrackColor = RetroPanel
+                    uncheckedTrackColor = Color(0xFF1E1E28)
                 )
             )
         }
@@ -282,10 +419,14 @@ private fun OptionToggleRow(
 }
 
 @Composable
-private fun VoiceCommandItem(command: String, desc: String) {
+private fun VoiceCommandItem(
+    command: String,
+    desc: String
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
             text = command,
