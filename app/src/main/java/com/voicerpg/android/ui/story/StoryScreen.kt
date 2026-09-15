@@ -44,11 +44,15 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import android.content.res.Configuration
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.voicerpg.android.model.DialogueChoice
@@ -81,15 +85,57 @@ fun StoryScreen(
     val isChimeMuted by storyViewModel.speechManager.isChimeMuted.collectAsState()
 
     val context = LocalContext.current
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
     val backgroundBitmap = remember(storyState.currentScene.backgroundAsset) {
         StoryAssetLoader.loadBitmap(context, storyState.currentScene.backgroundAsset)
     }
     val aethelBitmap = remember {
         StoryAssetLoader.loadBitmap(context, "portraits/aethel.jpg")
     }
-    val cedricBitmap = remember {
-        StoryAssetLoader.loadBitmap(context, "portraits/cedric.jpg")
+
+    val currentNode = storyState.currentNode
+    val isAethelSpeaking = (currentNode.speaker == DialogueSpeaker.AETHEL || currentNode.side == SpeakerSide.LEFT)
+
+    val rightSpeaker: DialogueSpeaker? = remember(currentNode.id, currentNode.speaker.id, storyState.currentScene.name) {
+        when {
+            currentNode.speaker != DialogueSpeaker.AETHEL && currentNode.speaker != DialogueSpeaker.NARRATOR -> {
+                currentNode.speaker
+            }
+            storyState.currentScene.chapterTitle.contains("Prologue", ignoreCase = true) ||
+            storyState.currentScene.name.contains("Cottage", ignoreCase = true) -> {
+                null
+            }
+            currentNode.id.contains("lyra", ignoreCase = true) ||
+            storyState.partyStats.any { it.id == "lyra" } ||
+            storyState.currentScene.chapterTitle.contains("Chapter 5", ignoreCase = true) ||
+            storyState.currentScene.chapterTitle.contains("Chapter 6", ignoreCase = true) -> {
+                DialogueSpeaker.LYRA
+            }
+            currentNode.id.contains("zephyr", ignoreCase = true) ||
+            storyState.partyStats.any { it.id == "zephyr" } ||
+            storyState.currentScene.chapterTitle.contains("Chapter 7", ignoreCase = true) ||
+            storyState.currentScene.chapterTitle.contains("Chapter 8", ignoreCase = true) -> {
+                DialogueSpeaker.ZEPHYR
+            }
+            currentNode.id.contains("malakor", ignoreCase = true) ||
+            storyState.partyStats.any { it.id == "malakor" } ||
+            storyState.currentScene.chapterTitle.contains("Chapter 9", ignoreCase = true) ||
+            storyState.currentScene.chapterTitle.contains("Chapter 10", ignoreCase = true) -> {
+                DialogueSpeaker.MALAKOR
+            }
+            else -> {
+                DialogueSpeaker.CEDRIC
+            }
+        }
     }
+
+    val rightBitmap = remember(rightSpeaker?.portraitAsset) {
+        rightSpeaker?.portraitAsset?.let { StoryAssetLoader.loadBitmap(context, it) }
+    }
+
+    val isRightSpeaking = rightSpeaker != null && (currentNode.speaker == rightSpeaker || currentNode.side == SpeakerSide.RIGHT)
 
     // Gentle breathing & bobbing animation for speaking busts
     val infiniteTransition = rememberInfiniteTransition(label = "BustBobbing")
@@ -113,7 +159,7 @@ fun StoryScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            // 1. Room / Exploration Scene Background Image
+            // 1. Room / Exploration Scene Background Image (Widescreen 16:9)
             if (backgroundBitmap != null) {
                 Image(
                     bitmap = backgroundBitmap,
@@ -129,7 +175,7 @@ fun StoryScreen(
                 )
             }
 
-            // Atmospheric dark vignette and CRT scanline overlay
+            // Atmospheric dark vignette
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -137,8 +183,8 @@ fun StoryScreen(
                         Brush.verticalGradient(
                             colors = listOf(
                                 Color(0xCC08080C),
-                                Color(0x3308080C),
-                                Color(0x3308080C),
+                                Color(0x2208080C),
+                                Color(0x2208080C),
                                 Color(0xE608080C)
                             )
                         )
@@ -150,7 +196,7 @@ fun StoryScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .align(Alignment.TopCenter)
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                    .padding(horizontal = 12.dp, vertical = if (isLandscape) 4.dp else 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.Top
             ) {
@@ -158,32 +204,32 @@ fun StoryScreen(
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .defaultMinSize(minHeight = 60.dp)
+                        .defaultMinSize(minHeight = if (isLandscape) 44.dp else 60.dp)
                         .clip(RoundedCornerShape(8.dp))
                         .background(RetroPanel.copy(alpha = 0.92f))
                         .border(1.dp, RetroBorder, RoundedCornerShape(8.dp))
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                        .padding(horizontal = 12.dp, vertical = if (isLandscape) 4.dp else 8.dp),
                     contentAlignment = Alignment.CenterStart
                 ) {
                     Column(
                         modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(3.dp)
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
                         Text(
                             text = storyState.currentScene.chapterTitle.uppercase(),
                             color = LogosGold,
-                            fontSize = 11.sp,
+                            fontSize = if (isLandscape) 10.sp else 11.sp,
                             fontWeight = FontWeight.Black,
                             fontFamily = FontFamily.Monospace,
                             softWrap = true,
-                            maxLines = 2,
+                            maxLines = if (isLandscape) 1 else 2,
                             overflow = TextOverflow.Ellipsis,
                             lineHeight = 14.sp
                         )
                         Text(
                             text = "📍 ${storyState.currentScene.name}",
                             color = Color.LightGray,
-                            fontSize = 10.sp,
+                            fontSize = 9.sp,
                             fontFamily = FontFamily.Monospace,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -201,7 +247,7 @@ fun StoryScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(28.dp)
+                            .height(if (isLandscape) 24.dp else 28.dp)
                             .clip(RoundedCornerShape(6.dp))
                             .background(if (isEyesFreeMode) Color(0xFF1565C0) else RetroPanel.copy(alpha = 0.92f))
                             .border(1.dp, if (isEyesFreeMode) Color(0xFF64B5F6) else RetroBorder, RoundedCornerShape(6.dp))
@@ -222,7 +268,7 @@ fun StoryScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(28.dp)
+                            .height(if (isLandscape) 24.dp else 28.dp)
                             .clip(RoundedCornerShape(6.dp))
                             .background(Color(0xFF37474F).copy(alpha = 0.92f))
                             .border(1.dp, Color(0xFF78909C), RoundedCornerShape(6.dp))
@@ -241,136 +287,280 @@ fun StoryScreen(
                 }
             }
 
-            // 3. Characters on Left and Right Sides of Screen with minimal breathing animation
-            val currentNode = storyState.currentNode
-            val isAethelSpeaking = currentNode.side == SpeakerSide.LEFT
-            val isRightSpeaking = currentNode.side == SpeakerSide.RIGHT
-
-            // Left Character (Aethel)
-            CharacterPortraitBust(
-                bitmap = aethelBitmap,
-                speaker = DialogueSpeaker.AETHEL,
-                isSpeaking = isAethelSpeaking,
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .offset(x = 12.dp, y = (-70 + (if (isAethelSpeaking) floatY else 0f)).dp)
-            )
-
-            // Right Character (Companion / NPC - e.g. Sir Cedric or Shadow Wisp)
-            if (currentNode.speaker == DialogueSpeaker.CEDRIC || currentNode.id.contains("cedric") || currentNode.id.contains("crossroads") || currentNode.id.startsWith("camp_") || currentNode.id.startsWith("ch3_") || currentNode.id.startsWith("ch4_") || currentNode.id.startsWith("chapter3") || currentNode.id.startsWith("chapter4")) {
-                CharacterPortraitBust(
-                    bitmap = cedricBitmap,
-                    speaker = DialogueSpeaker.CEDRIC,
-                    isSpeaking = isRightSpeaking,
+            // 3. Characters & Dialogue Presentation (Responsive Portrait vs Landscape)
+            if (!isLandscape) {
+                // ==================== PORTRAIT ORIENTATION ====================
+                Column(
                     modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .offset(x = (-12).dp, y = (-70 + (if (isRightSpeaking) floatY else 0f)).dp)
-                )
-            } else if (currentNode.speaker == DialogueSpeaker.SHADOW_WISP) {
-                // Eerie Shadow Wisp Silhouette on the right side
-                ShadowWispBust(
-                    isSpeaking = isRightSpeaking,
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .offset(x = (-16).dp, y = (-75 + floatY).dp)
-                )
-            }
-
-            // 4. Retro Dialogue Chat Bubble & Choices
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .align(Alignment.BottomCenter)
-                    .padding(horizontal = 12.dp, vertical = 14.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                RetroSpeechBubble(
-                    node = currentNode,
-                    onTapToAdvance = {
-                        if (currentNode.choices.isEmpty()) {
-                            storyViewModel.advanceDialogue()
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Choice Buttons (if node has branching choices)
-                if (currentNode.choices.isNotEmpty()) {
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                        .fillMaxWidth()
+                        .align(Alignment.BottomCenter)
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    // Character Portraits Row (Resting cleanly right on top of the speech bubble)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 4.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.Bottom
                     ) {
-                        currentNode.choices.forEachIndexed { index, choice ->
-                            val isCompleted = choice.completionFlag != null && storyState.narrativeFlags[choice.completionFlag] == true
-                            DialogueChoiceItem(
-                                index = index + 1,
-                                choice = choice,
-                                isCompleted = isCompleted,
-                                onSelect = { storyViewModel.selectChoice(choice) }
+                        // Left Character (Aethel)
+                        CharacterPortraitBust(
+                            bitmap = aethelBitmap,
+                            speaker = DialogueSpeaker.AETHEL,
+                            isSpeaking = isAethelSpeaking,
+                            sizeDp = 96.dp,
+                            modifier = Modifier.offset(y = (if (isAethelSpeaking) floatY else 0f).dp)
+                        )
+
+                        // Right Character (Companion / NPC)
+                        if (rightSpeaker != null) {
+                            if (rightSpeaker == DialogueSpeaker.SHADOW_WISP) {
+                                ShadowWispBust(
+                                    isSpeaking = isRightSpeaking,
+                                    sizeDp = 86.dp,
+                                    modifier = Modifier.offset(y = (if (isRightSpeaking) floatY else 0f).dp)
+                                )
+                            } else {
+                                CharacterPortraitBust(
+                                    bitmap = rightBitmap,
+                                    speaker = rightSpeaker,
+                                    isSpeaking = isRightSpeaking,
+                                    sizeDp = 96.dp,
+                                    modifier = Modifier.offset(y = (if (isRightSpeaking) floatY else 0f).dp)
+                                )
+                            }
+                        } else {
+                            // Empty spacer to keep left character nicely aligned
+                            Spacer(modifier = Modifier.width(96.dp))
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(3.dp))
+
+                    // Retro Speech Bubble
+                    RetroSpeechBubble(
+                        node = currentNode,
+                        onTapToAdvance = {
+                            if (currentNode.choices.isEmpty()) {
+                                storyViewModel.advanceDialogue()
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    // Choice Buttons (if node has branching choices)
+                    if (currentNode.choices.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            currentNode.choices.forEachIndexed { index, choice ->
+                                val isCompleted = choice.completionFlag != null && storyState.narrativeFlags[choice.completionFlag] == true
+                                DialogueChoiceItem(
+                                    index = index + 1,
+                                    choice = choice,
+                                    isCompleted = isCompleted,
+                                    onSelect = { storyViewModel.selectChoice(choice) }
+                                )
+                            }
+                        }
+                    }
+
+                    // Battle Trigger Prompt if node triggers combat
+                    if (currentNode.triggerBattleEncounterId != null) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Button(
+                            onClick = { storyViewModel.advanceDialogue() },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFFD32F2F),
+                                contentColor = Color.White
+                            ),
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = "⚔️ COMMENCE BATTLE (TAP OR SAY 'FIREBALL')",
+                                fontFamily = FontFamily.Monospace,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 12.sp
                             )
                         }
                     }
-                }
 
-                // Battle Trigger Prompt if node triggers combat
-                if (currentNode.triggerBattleEncounterId != null) {
-                    Button(
-                        onClick = { storyViewModel.advanceDialogue() },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFD32F2F),
-                            contentColor = Color.White
-                        ),
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 4.dp)
-                    ) {
-                        Text(
-                            text = "⚔️ COMMENCE BATTLE (TAP OR SAY 'FIREBALL')",
-                            fontFamily = FontFamily.Monospace,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 12.sp
+                    // Ambient Audio & Voice Mic Prompt Indicator Bar
+                    Spacer(modifier = Modifier.height(4.dp))
+                    VoiceInputPromptBar(
+                        hasChoices = currentNode.choices.isNotEmpty(),
+                        speechState = speechState,
+                        onStartListening = {
+                            storyViewModel.speechManager.startListening { utterance ->
+                                storyViewModel.handleStoryVoiceInput(utterance)
+                            }
+                        }
+                    )
+                }
+            } else {
+                // ==================== LANDSCAPE ORIENTATION (Full Widescreen JRPG Layout) ====================
+                // Left Flank: Protagonist Bust standing proudly on the left
+                CharacterPortraitBust(
+                    bitmap = aethelBitmap,
+                    speaker = DialogueSpeaker.AETHEL,
+                    isSpeaking = isAethelSpeaking,
+                    sizeDp = 110.dp,
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(start = 14.dp, bottom = 8.dp)
+                        .offset(y = (if (isAethelSpeaking) floatY else 0f).dp)
+                )
+
+                // Right Flank: Companion / NPC Bust standing on the right
+                if (rightSpeaker != null) {
+                    if (rightSpeaker == DialogueSpeaker.SHADOW_WISP) {
+                        ShadowWispBust(
+                            isSpeaking = isRightSpeaking,
+                            sizeDp = 100.dp,
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .padding(end = 14.dp, bottom = 8.dp)
+                                .offset(y = (if (isRightSpeaking) floatY else 0f).dp)
+                        )
+                    } else {
+                        CharacterPortraitBust(
+                            bitmap = rightBitmap,
+                            speaker = rightSpeaker,
+                            isSpeaking = isRightSpeaking,
+                            sizeDp = 110.dp,
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .padding(end = 14.dp, bottom = 8.dp)
+                                .offset(y = (if (isRightSpeaking) floatY else 0f).dp)
                         )
                     }
                 }
 
-                // Ambient Audio & Voice Mic Prompt Indicator Bar
-                Spacer(modifier = Modifier.height(4.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                // Center Stage: Dialogue Bubble & Choices positioned neatly between characters
+                Column(
+                    modifier = Modifier
+                        .padding(start = 130.dp, end = if (rightSpeaker != null) 130.dp else 16.dp, bottom = 6.dp)
+                        .widthIn(max = 600.dp)
+                        .align(Alignment.BottomCenter),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(
-                        text = if (currentNode.choices.isEmpty()) "Tap or say 'Next' to continue" else "Tap choice or speak your decision",
-                        color = Color.Gray,
-                        fontSize = 9.sp,
-                        fontFamily = FontFamily.Monospace
+                    // Retro Speech Bubble
+                    RetroSpeechBubble(
+                        node = currentNode,
+                        onTapToAdvance = {
+                            if (currentNode.choices.isEmpty()) {
+                                storyViewModel.advanceDialogue()
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
                     )
 
-                    // Hands-free Mic Quick Tap
-                    Box(
-                        modifier = Modifier
-                            .clip(CircleShape)
-                            .background(if (speechState is com.voicerpg.android.audio.SpeechState.Listening) Color(0xFFEF5350) else RetroPanel)
-                            .border(1.dp, LogosGold, CircleShape)
-                            .clickable {
-                                storyViewModel.speechManager.startListening { utterance ->
-                                    storyViewModel.handleStoryVoiceInput(utterance)
+                    // Choice Buttons in Landscape: Side-by-side or compact 2-row grid to preserve artwork space
+                    if (currentNode.choices.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        if (currentNode.choices.size == 2) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                currentNode.choices.forEachIndexed { index, choice ->
+                                    val isCompleted = choice.completionFlag != null && storyState.narrativeFlags[choice.completionFlag] == true
+                                    DialogueChoiceItem(
+                                        index = index + 1,
+                                        choice = choice,
+                                        isCompleted = isCompleted,
+                                        onSelect = { storyViewModel.selectChoice(choice) },
+                                        modifier = Modifier.weight(1f)
+                                    )
                                 }
                             }
-                            .padding(horizontal = 8.dp, vertical = 4.dp)
-                    ) {
-                        Text(
-                            text = if (speechState is com.voicerpg.android.audio.SpeechState.Listening) "🎙️ LISTENING..." else "🎤 SPEAK",
-                            color = LogosGold,
-                            fontSize = 9.sp,
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = FontFamily.Monospace
-                        )
+                        } else if (currentNode.choices.size == 3) {
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    for (i in 0..1) {
+                                        val choice = currentNode.choices[i]
+                                        val isCompleted = choice.completionFlag != null && storyState.narrativeFlags[choice.completionFlag] == true
+                                        DialogueChoiceItem(
+                                            index = i + 1,
+                                            choice = choice,
+                                            isCompleted = isCompleted,
+                                            onSelect = { storyViewModel.selectChoice(choice) },
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                    }
+                                }
+                                val choice3 = currentNode.choices[2]
+                                val isCompleted = choice3.completionFlag != null && storyState.narrativeFlags[choice3.completionFlag] == true
+                                DialogueChoiceItem(
+                                    index = 3,
+                                    choice = choice3,
+                                    isCompleted = isCompleted,
+                                    onSelect = { storyViewModel.selectChoice(choice3) },
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+                        } else {
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                currentNode.choices.forEachIndexed { index, choice ->
+                                    val isCompleted = choice.completionFlag != null && storyState.narrativeFlags[choice.completionFlag] == true
+                                    DialogueChoiceItem(
+                                        index = index + 1,
+                                        choice = choice,
+                                        isCompleted = isCompleted,
+                                        onSelect = { storyViewModel.selectChoice(choice) },
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
+                            }
+                        }
                     }
+
+                    // Battle Trigger Prompt if node triggers combat
+                    if (currentNode.triggerBattleEncounterId != null) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Button(
+                            onClick = { storyViewModel.advanceDialogue() },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFFD32F2F),
+                                contentColor = Color.White
+                            ),
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = "⚔️ COMMENCE BATTLE (TAP OR SAY 'FIREBALL')",
+                                fontFamily = FontFamily.Monospace,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 11.sp
+                            )
+                        }
+                    }
+
+                    // Ambient Audio & Voice Mic Prompt Indicator Bar
+                    Spacer(modifier = Modifier.height(2.dp))
+                    VoiceInputPromptBar(
+                        hasChoices = currentNode.choices.isNotEmpty(),
+                        speechState = speechState,
+                        onStartListening = {
+                            storyViewModel.speechManager.startListening { utterance ->
+                                storyViewModel.handleStoryVoiceInput(utterance)
+                            }
+                        }
+                    )
                 }
             }
         }
@@ -385,10 +575,11 @@ private fun CharacterPortraitBust(
     bitmap: ImageBitmap?,
     speaker: DialogueSpeaker,
     isSpeaking: Boolean,
+    sizeDp: Dp = 100.dp,
     modifier: Modifier = Modifier
 ) {
-    val scale = if (isSpeaking) 1.05f else 0.95f
-    val alpha = if (isSpeaking) 1.0f else 0.60f
+    val scale = if (isSpeaking) 1.04f else 0.96f
+    val alpha = if (isSpeaking) 1.0f else 0.70f
     val borderColor = if (isSpeaking) speaker.themeColor else RetroBorder
 
     Column(
@@ -399,7 +590,7 @@ private fun CharacterPortraitBust(
     ) {
         Box(
             modifier = Modifier
-                .size(105.dp)
+                .size(sizeDp)
                 .shadow(if (isSpeaking) 12.dp else 4.dp, RoundedCornerShape(12.dp), spotColor = speaker.themeColor)
                 .clip(RoundedCornerShape(12.dp))
                 .background(Color(0xFF0F0F1A))
@@ -430,7 +621,7 @@ private fun CharacterPortraitBust(
             }
         }
 
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(3.dp))
 
         // Name Tag
         Box(
@@ -457,10 +648,11 @@ private fun CharacterPortraitBust(
 @Composable
 private fun ShadowWispBust(
     isSpeaking: Boolean,
+    sizeDp: Dp = 90.dp,
     modifier: Modifier = Modifier
 ) {
-    val scale = if (isSpeaking) 1.05f else 0.95f
-    val alpha = if (isSpeaking) 1.0f else 0.65f
+    val scale = if (isSpeaking) 1.04f else 0.96f
+    val alpha = if (isSpeaking) 1.0f else 0.70f
 
     Column(
         modifier = modifier
@@ -470,7 +662,7 @@ private fun ShadowWispBust(
     ) {
         Box(
             modifier = Modifier
-                .size(95.dp)
+                .size(sizeDp)
                 .shadow(8.dp, CircleShape, spotColor = Color(0xFF7E57C2))
                 .clip(CircleShape)
                 .background(Color(0xCC1A0033))
@@ -479,11 +671,11 @@ private fun ShadowWispBust(
         ) {
             Text(
                 text = "👁️",
-                fontSize = 36.sp
+                fontSize = 32.sp
             )
         }
 
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(3.dp))
 
         Box(
             modifier = Modifier
@@ -513,6 +705,10 @@ private fun RetroSpeechBubble(
     modifier: Modifier = Modifier
 ) {
     val speakerColor = node.speaker.themeColor
+    val context = LocalContext.current
+    val speakerBitmap = remember(node.speaker.portraitAsset) {
+        node.speaker.portraitAsset?.let { StoryAssetLoader.loadBitmap(context, it) }
+    }
 
     // Subtle breathing pulse for advance arrow
     val infiniteTransition = rememberInfiniteTransition(label = "ArrowPulse")
@@ -532,16 +728,28 @@ private fun RetroSpeechBubble(
             .background(Color(0xF00D0D18))
             .border(2.dp, if (node.side == SpeakerSide.CENTER_NARRATOR) LogosGold else speakerColor.copy(alpha = 0.85f), RoundedCornerShape(12.dp))
             .clickable { onTapToAdvance() }
-            .padding(14.dp)
+            .padding(horizontal = 12.dp, vertical = 10.dp)
     ) {
         Column {
-            // Speaker Name Badge Header
+            // Speaker Name Badge Header with optional mini portrait circle
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (speakerBitmap != null) {
+                        Image(
+                            bitmap = speakerBitmap,
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .size(20.dp)
+                                .clip(CircleShape)
+                                .border(1.dp, speakerColor, CircleShape)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                    }
                     Text(
                         text = "💬 ${node.speaker.name.uppercase()}",
                         color = speakerColor,
@@ -553,7 +761,7 @@ private fun RetroSpeechBubble(
                     Text(
                         text = "• ${node.speaker.title}",
                         color = Color.Gray,
-                        fontSize = 10.sp,
+                        fontSize = 9.sp,
                         fontFamily = FontFamily.Monospace
                     )
                 }
@@ -574,16 +782,58 @@ private fun RetroSpeechBubble(
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
             // Spoken Dialogue Content
             Text(
                 text = node.text,
                 color = Color.White,
-                fontSize = 13.sp,
+                fontSize = 12.sp,
                 fontFamily = FontFamily.Monospace,
-                lineHeight = 18.sp,
+                lineHeight = 17.sp,
                 fontWeight = FontWeight.Normal
+            )
+        }
+    }
+}
+
+/**
+ * Ambient Audio & Voice Mic Prompt Indicator Bar
+ */
+@Composable
+private fun VoiceInputPromptBar(
+    hasChoices: Boolean,
+    speechState: com.voicerpg.android.audio.SpeechState,
+    onStartListening: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = if (!hasChoices) "Tap or say 'Next' to continue" else "Tap choice or speak your decision",
+            color = Color.Gray,
+            fontSize = 9.sp,
+            fontFamily = FontFamily.Monospace
+        )
+
+        // Hands-free Mic Quick Tap
+        Box(
+            modifier = Modifier
+                .clip(CircleShape)
+                .background(if (speechState is com.voicerpg.android.audio.SpeechState.Listening) Color(0xFFEF5350) else RetroPanel)
+                .border(1.dp, LogosGold, CircleShape)
+                .clickable { onStartListening() }
+                .padding(horizontal = 8.dp, vertical = 4.dp)
+        ) {
+            Text(
+                text = if (speechState is com.voicerpg.android.audio.SpeechState.Listening) "🎙️ LISTENING..." else "🎤 SPEAK",
+                color = LogosGold,
+                fontSize = 9.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = FontFamily.Monospace
             )
         }
     }
@@ -597,7 +847,8 @@ private fun DialogueChoiceItem(
     index: Int,
     choice: DialogueChoice,
     isCompleted: Boolean = false,
-    onSelect: () -> Unit
+    onSelect: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val backgroundColor = if (isCompleted) Color(0xCC1A1C23) else RetroPanel.copy(alpha = 0.95f)
     val borderColor = if (isCompleted) Color(0xFF37474F) else RetroBorderGold
@@ -605,13 +856,12 @@ private fun DialogueChoiceItem(
     val indexColor = if (isCompleted) Color(0xFF546E7A) else LogosGold
 
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
+        modifier = modifier
             .clip(RoundedCornerShape(8.dp))
             .background(backgroundColor)
             .border(1.dp, borderColor, RoundedCornerShape(8.dp))
             .then(if (!isCompleted) Modifier.clickable { onSelect() } else Modifier)
-            .padding(horizontal = 12.dp, vertical = 8.dp)
+            .padding(horizontal = 10.dp, vertical = 7.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -629,13 +879,15 @@ private fun DialogueChoiceItem(
                     fontWeight = FontWeight.Bold,
                     fontFamily = FontFamily.Monospace
                 )
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(6.dp))
                 Text(
                     text = choice.text,
                     color = textColor,
-                    fontSize = 12.sp,
+                    fontSize = 11.sp,
                     fontFamily = FontFamily.Monospace,
-                    fontWeight = FontWeight.Medium
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
 
@@ -645,12 +897,12 @@ private fun DialogueChoiceItem(
                         .clip(RoundedCornerShape(4.dp))
                         .background(Color(0x334CAF50))
                         .border(1.dp, Color(0xFF4CAF50), RoundedCornerShape(4.dp))
-                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                        .padding(horizontal = 5.dp, vertical = 2.dp)
                 ) {
                     Text(
-                        text = "✓ COMPLETED",
+                        text = "✓ DONE",
                         color = Color(0xFF81C784),
-                        fontSize = 9.sp,
+                        fontSize = 8.sp,
                         fontFamily = FontFamily.Monospace,
                         fontWeight = FontWeight.Bold
                     )
@@ -662,7 +914,7 @@ private fun DialogueChoiceItem(
                     Text(
                         text = "Say \"$keywordHint\"",
                         color = Color(0xFF80D8FF),
-                        fontSize = 9.sp,
+                        fontSize = 8.sp,
                         fontFamily = FontFamily.Monospace,
                         fontWeight = FontWeight.Bold
                     )
