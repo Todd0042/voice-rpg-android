@@ -1,6 +1,7 @@
 package com.voicerpg.android.audio
 
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
@@ -34,11 +35,16 @@ class CombatNarrator(
     private var cedricVoice: Voice? = null
     private var aethelVoice: Voice? = null
     private var lyraVoice: Voice? = null
+    private var zephyrVoice: Voice? = null
+    private var malakorVoice: Voice? = null
     private var shadowWispVoice: Voice? = null
     private var narratorVoice: Voice? = null
 
     private val _availableVoiceCount = MutableStateFlow(0)
     val availableVoiceCount: StateFlow<Int> = _availableVoiceCount.asStateFlow()
+
+    private val _installedVoiceCount = MutableStateFlow(0)
+    val installedVoiceCount: StateFlow<Int> = _installedVoiceCount.asStateFlow()
 
     private val _isEyesFreeMode = MutableStateFlow(false)
     val isEyesFreeMode: StateFlow<Boolean> = _isEyesFreeMode.asStateFlow()
@@ -143,6 +149,7 @@ class CombatNarrator(
 
             // Only consider voices that are verified to be installed and available offline on this device
             val installedVoices = voices.filter { isVoiceInstalledAndUsable(engine, it) }
+            _installedVoiceCount.value = installedVoices.size
 
             val installedEnglishVoices = installedVoices.filter {
                 it.locale.language.equals(Locale.ENGLISH.language, ignoreCase = true)
@@ -180,10 +187,28 @@ class CombatNarrator(
                 } else {
                     defaultVoice
                 }
+
+                zephyrVoice = if (maleVoices.size > 2) {
+                    maleVoices[2]
+                } else if (femaleVoices.size > 2) {
+                    femaleVoices[2]
+                } else {
+                    defaultVoice
+                }
+
+                malakorVoice = if (maleVoices.size > 3) {
+                    maleVoices[3]
+                } else if (maleVoices.size > 1) {
+                    maleVoices[1]
+                } else {
+                    defaultVoice
+                }
             } else {
                 cedricVoice = defaultVoice
                 aethelVoice = defaultVoice
                 lyraVoice = defaultVoice
+                zephyrVoice = defaultVoice
+                malakorVoice = defaultVoice
                 narratorVoice = defaultVoice
                 shadowWispVoice = defaultVoice
             }
@@ -191,6 +216,8 @@ class CombatNarrator(
             cedricVoice = defaultVoice
             aethelVoice = defaultVoice
             lyraVoice = defaultVoice
+            zephyrVoice = defaultVoice
+            malakorVoice = defaultVoice
             narratorVoice = defaultVoice
             shadowWispVoice = defaultVoice
         }
@@ -236,10 +263,42 @@ class CombatNarrator(
 
     fun getInstalledVoices(): Set<Voice> = tts?.voices ?: emptySet()
 
+    fun refreshInstalledVoices() {
+        tts?.let { engine ->
+            assignCharacterVoices(engine)
+        }
+    }
+
+    fun openVoiceSettings(context: Context) {
+        val installIntent = Intent(TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        }
+        val ttsSettingsIntent = Intent("com.android.settings.TTS_SETTINGS").apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        }
+        val generalSettingsIntent = Intent(android.provider.Settings.ACTION_SETTINGS).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        }
+
+        try {
+            context.startActivity(installIntent)
+        } catch (_: Exception) {
+            try {
+                context.startActivity(ttsSettingsIntent)
+            } catch (_: Exception) {
+                try {
+                    context.startActivity(generalSettingsIntent)
+                } catch (_: Exception) {}
+            }
+        }
+    }
+
     fun getVoiceForSpeaker(speaker: DialogueSpeaker): Voice? = when (speaker.id) {
         DialogueSpeaker.CEDRIC.id -> cedricVoice
         DialogueSpeaker.AETHEL.id -> aethelVoice
         DialogueSpeaker.LYRA.id -> lyraVoice
+        DialogueSpeaker.ZEPHYR.id -> zephyrVoice
+        DialogueSpeaker.MALAKOR.id -> malakorVoice
         DialogueSpeaker.SHADOW_WISP.id -> shadowWispVoice
         DialogueSpeaker.NARRATOR.id -> narratorVoice
         else -> narratorVoice
@@ -250,6 +309,8 @@ class CombatNarrator(
             DialogueSpeaker.CEDRIC.id -> cedricVoice = voice
             DialogueSpeaker.AETHEL.id -> aethelVoice = voice
             DialogueSpeaker.LYRA.id -> lyraVoice = voice
+            DialogueSpeaker.ZEPHYR.id -> zephyrVoice = voice
+            DialogueSpeaker.MALAKOR.id -> malakorVoice = voice
             DialogueSpeaker.SHADOW_WISP.id -> shadowWispVoice = voice
             DialogueSpeaker.NARRATOR.id -> narratorVoice = voice
             else -> narratorVoice = voice
@@ -303,6 +364,14 @@ class CombatNarrator(
                 DialogueSpeaker.LYRA.id -> {
                     tts?.setPitch(1.20f) // Lyrical, soothing grove warden
                     tts?.setSpeechRate(_speechRate.value * 0.98f)
+                }
+                DialogueSpeaker.ZEPHYR.id -> {
+                    tts?.setPitch(0.95f) // Jaunty, agile rogue
+                    tts?.setSpeechRate(_speechRate.value * 1.05f)
+                }
+                DialogueSpeaker.MALAKOR.id -> {
+                    tts?.setPitch(0.72f) // Dark, brooding inquisitor
+                    tts?.setSpeechRate(_speechRate.value * 0.90f)
                 }
                 DialogueSpeaker.SHADOW_WISP.id -> {
                     tts?.setPitch(0.70f) // Raspy sibilant phantom

@@ -508,5 +508,38 @@ class NarrationAndOptionsTest {
         narrator.stop()
         assertFalse(narrator.isSpeaking.value)
     }
+
+    @Test
+    fun testAudioSetupScreenAndCompanionVoiceState() {
+        // Verify installedVoiceCount flow exists and starts at 0 in headless test
+        assertEquals(0, narrator.installedVoiceCount.value)
+        assertEquals(0, narrator.availableVoiceCount.value)
+
+        // Rescan / refresh voices runs gracefully
+        narrator.refreshInstalledVoices()
+        assertEquals(0, narrator.installedVoiceCount.value)
+
+        // Verify speaker mapping returns null safely without throwing
+        assertEquals(null, narrator.getVoiceForSpeaker(DialogueSpeaker.ZEPHYR))
+        assertEquals(null, narrator.getVoiceForSpeaker(DialogueSpeaker.MALAKOR))
+        assertEquals(null, narrator.getVoiceForSpeaker(DialogueSpeaker.LYRA))
+
+        // Verify fresh story state begins at AUDIO_SETUP
+        val freshVm = StoryViewModel(
+            speechManager = speechManager,
+            combatNarrator = narrator,
+            saveManager = SaveManager(context = null),
+            scopeOverride = CoroutineScope(Dispatchers.Default)
+        )
+        assertEquals(GameScreen.AUDIO_SETUP, freshVm.state.value.gameScreen)
+
+        // Player proceeds to CHARACTER_CREATION
+        freshVm.proceedToCharacterCreation()
+        assertEquals(GameScreen.CHARACTER_CREATION, freshVm.state.value.gameScreen)
+
+        // Reset returns to AUDIO_SETUP
+        freshVm.resetGame()
+        assertEquals(GameScreen.AUDIO_SETUP, freshVm.state.value.gameScreen)
+    }
 }
 

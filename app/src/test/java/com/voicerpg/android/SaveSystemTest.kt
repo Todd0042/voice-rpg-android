@@ -146,7 +146,7 @@ class SaveSystemTest {
     }
 
     @Test
-    fun testStoryViewModelFirstLaunchRoutesToCharacterCreation() {
+    fun testStoryViewModelFirstLaunchRoutesToAudioSetupAndProceedsToCharacterCreation() {
         val testScope = CoroutineScope(Dispatchers.Default)
         val storyVm = StoryViewModel(
             speechManager = speechManager,
@@ -155,6 +155,8 @@ class SaveSystemTest {
             scopeOverride = testScope
         )
 
+        assertEquals(GameScreen.AUDIO_SETUP, storyVm.state.value.gameScreen)
+        storyVm.proceedToCharacterCreation()
         assertEquals(GameScreen.CHARACTER_CREATION, storyVm.state.value.gameScreen)
     }
 

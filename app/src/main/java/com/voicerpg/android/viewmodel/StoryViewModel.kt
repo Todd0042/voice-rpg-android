@@ -31,7 +31,7 @@ import kotlinx.coroutines.launch
 data class StoryState(
     val currentScene: StoryScene = StoryScript.SCENE_COTTAGE,
     val currentNode: DialogueNode = StoryScript.ALL_NODES["cottage_intro"]!!,
-    val gameScreen: GameScreen = GameScreen.CHARACTER_CREATION,
+    val gameScreen: GameScreen = GameScreen.AUDIO_SETUP,
     val activeEncounter: EncounterDefinition? = null,
     val player: PlayerCustomization = PlayerCustomization(),
     val decisionsMade: List<String> = emptyList(),
@@ -134,11 +134,20 @@ class StoryViewModel(
             speechManager.setChimeMuted(existingSave.isChimeMuted)
             narrateCurrentNode()
         } else {
-            // First time player: start at Character Creation
+            // First time player: start at Audio Setup
             _state.value = StoryState(
-                gameScreen = GameScreen.CHARACTER_CREATION
+                gameScreen = GameScreen.AUDIO_SETUP
             )
         }
+    }
+
+    /**
+     * Proceeds from initial Audio Setup to Character Creation.
+     */
+    fun proceedToCharacterCreation() {
+        _state.value = _state.value.copy(
+            gameScreen = GameScreen.CHARACTER_CREATION
+        )
     }
 
     /**
@@ -166,7 +175,7 @@ class StoryViewModel(
         cancelPendingAutoAdvance()
         saveManager.deleteSave()
         _state.value = StoryState(
-            gameScreen = GameScreen.CHARACTER_CREATION
+            gameScreen = GameScreen.AUDIO_SETUP
         )
     }
 

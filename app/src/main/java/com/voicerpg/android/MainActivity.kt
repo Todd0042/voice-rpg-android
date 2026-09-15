@@ -20,6 +20,7 @@ import com.voicerpg.android.model.GameScreen
 import com.voicerpg.android.ui.combat.OptionsDialog
 import com.voicerpg.android.ui.combat.RetroBattleScreen
 import com.voicerpg.android.ui.creation.CharacterCreationScreen
+import com.voicerpg.android.ui.setup.AudioSetupScreen
 import com.voicerpg.android.ui.story.StoryScreen
 import com.voicerpg.android.ui.theme.VoiceRPGTheme
 import com.voicerpg.android.viewmodel.CombatViewModel
@@ -105,6 +106,15 @@ class MainActivity : ComponentActivity() {
             VoiceRPGTheme {
                 Box(modifier = Modifier.fillMaxSize()) {
                     when (storyState.gameScreen) {
+                        GameScreen.AUDIO_SETUP -> {
+                            AudioSetupScreen(
+                                combatNarrator = combatNarrator,
+                                speechManager = speechManager,
+                                onProceed = {
+                                    storyViewModel.proceedToCharacterCreation()
+                                }
+                            )
+                        }
                         GameScreen.CHARACTER_CREATION -> {
                             CharacterCreationScreen(
                                 initialCustomization = storyState.player,
@@ -172,6 +182,9 @@ class MainActivity : ComponentActivity() {
                         onToggleChimeMute = {
                             speechManager.toggleChimeMute()
                             storyViewModel.persistCurrentState()
+                        },
+                        onOpenVoiceSettings = {
+                            combatNarrator.openVoiceSettings(this@MainActivity)
                         },
                         onClose = { combatViewModel.closeOptions() }
                     )

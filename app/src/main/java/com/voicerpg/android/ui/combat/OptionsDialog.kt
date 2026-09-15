@@ -56,6 +56,7 @@ fun OptionsDialog(
     onSpeechRateChange: (Float) -> Unit,
     onToggleAutoListen: () -> Unit,
     onToggleChimeMute: () -> Unit,
+    onOpenVoiceSettings: (() -> Unit)? = null,
     onClose: () -> Unit
 ) {
     if (!isOpen) return
@@ -234,6 +235,51 @@ fun OptionsDialog(
                                     )
                                 }
                             }
+                        }
+                    }
+                }
+
+                if (onOpenVoiceSettings != null) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(RetroPanel.copy(alpha = 0.8f))
+                            .border(1.dp, RetroBorderGold, RoundedCornerShape(8.dp))
+                            .clickable { onOpenVoiceSettings() }
+                            .padding(10.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "🎙️ Install Companion Voices",
+                                    color = LogosGold,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = FontFamily.Monospace
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "Open system Text-to-Speech settings to download additional English voices for Sir Cedric, Lyra, Zephyr, and Malakor.",
+                                    color = Color.LightGray,
+                                    fontSize = 10.sp,
+                                    lineHeight = 13.sp,
+                                    fontFamily = FontFamily.Monospace
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "OPEN ➔",
+                                color = LogosGold,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = FontFamily.Monospace
+                            )
                         }
                     }
                 }
