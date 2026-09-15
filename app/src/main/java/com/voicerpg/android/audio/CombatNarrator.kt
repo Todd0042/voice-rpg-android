@@ -164,10 +164,10 @@ class CombatNarrator(
             android.util.Log.d("VoiceRPG_TTS", "Installed: ${installedVoices.size}, Physical English: ${englishPhysicalVoices.size}")
 
             // Google TTS & third-party voice classification tokens:
-            // Female codes: sfg (Voice 1), iom (Voice 3), tpd (Voice 5), tpf (Voice 7), gba, gbb, gbd, aua, auc, or "female"
-            // Male codes: iob (Voice 2), iog (Voice 4), tpc (Voice 6), iol (Voice 8), rjs, gbc, gbg, aub, aud, or "male"
-            val femaleTokens = listOf("female", "#f", "-f-", "_female", "sfg", "iom", "tpd", "tpf", "gba", "gbb", "gbd", "aua", "auc")
-            val maleTokens = listOf("male", "#m", "-m-", "_male", "iob", "iog", "tpc", "iol", "rjs", "gbc", "gbg", "aub", "aud")
+            // Female codes: sfg (Voice 1), iom (Voice 3), tpd (Voice 5), tpf (Voice 7), gba, gbb, gbd, gbg, aua, auc, or "female"
+            // Male codes: iob (Voice 2), iog (Voice 4), tpc (Voice 6), iol (Voice 8), rjs, gbc, aub, aud, or "male"
+            val femaleTokens = listOf("female", "#f", "-f-", "_female", "sfg", "iom", "tpd", "tpf", "gba", "gbb", "gbd", "gbg", "aua", "auc")
+            val maleTokens = listOf("male", "#m", "-m-", "_male", "iob", "iog", "tpc", "iol", "rjs", "gbc", "aub", "aud")
 
             val femaleVoices = englishPhysicalVoices.filter { v ->
                 val lower = v.name.lowercase(Locale.ROOT)
@@ -197,12 +197,44 @@ class CombatNarrator(
             }
 
             narratorVoice = britishStoryteller ?: defaultVoice
-            cedricVoice = distinctMalePool.firstOrNull() ?: defaultVoice
-            aethelVoice = femalePool.firstOrNull() ?: defaultVoice
-            lyraVoice = femalePool.getOrNull(1) ?: femalePool.firstOrNull() ?: defaultVoice
-            zephyrVoice = distinctMalePool.getOrNull(1) ?: distinctMalePool.firstOrNull() ?: defaultVoice
-            malakorVoice = distinctMalePool.getOrNull(2) ?: distinctMalePool.getOrNull(1) ?: defaultVoice
-            shadowWispVoice = distinctMalePool.getOrNull(3) ?: distinctMalePool.lastOrNull() ?: defaultVoice
+
+            // Sir Cedric is a noble knight templar: prioritize deep, resonant US baritone male (iob or iog)
+            val cedricCandidate = distinctMalePool.firstOrNull { it.name.contains("iob") }
+                ?: distinctMalePool.firstOrNull { it.name.contains("iog") }
+                ?: distinctMalePool.firstOrNull { it.name.contains("gbc") }
+                ?: distinctMalePool.firstOrNull() ?: defaultVoice
+            cedricVoice = cedricCandidate
+
+            val remainingMaleAfterCedric = distinctMalePool.filter { it != cedricCandidate }
+
+            // Zephyr: swift agile rogue
+            zephyrVoice = remainingMaleAfterCedric.firstOrNull { it.name.contains("tpc") }
+                ?: remainingMaleAfterCedric.firstOrNull() ?: defaultVoice
+
+            val remainingMaleAfterZephyr = remainingMaleAfterCedric.filter { it != zephyrVoice }
+
+            // Malakor: dark brooding voidwalker inquisitor
+            malakorVoice = remainingMaleAfterZephyr.firstOrNull { it.name.contains("iog") }
+                ?: remainingMaleAfterZephyr.firstOrNull { it.name.contains("aub") }
+                ?: remainingMaleAfterZephyr.firstOrNull() ?: defaultVoice
+
+            val remainingMaleAfterMalakor = remainingMaleAfterZephyr.filter { it != malakorVoice }
+
+            // Shadow Wisp: raspy sibilant shade
+            shadowWispVoice = remainingMaleAfterMalakor.firstOrNull { it.name.contains("iol") }
+                ?: remainingMaleAfterMalakor.firstOrNull() ?: defaultVoice
+
+            // Aethel: spirited elemental invocator (female)
+            aethelVoice = femalePool.firstOrNull { it.name.contains("gba") }
+                ?: femalePool.firstOrNull { it.name.contains("sfg") }
+                ?: femalePool.firstOrNull() ?: defaultVoice
+
+            val remainingFemaleAfterAethel = femalePool.filter { it != aethelVoice }
+
+            // Lyra: lyrical soothing woodland grove warden (female)
+            lyraVoice = remainingFemaleAfterAethel.firstOrNull { it.name.contains("tpf") }
+                ?: remainingFemaleAfterAethel.firstOrNull { it.name.contains("iom") }
+                ?: remainingFemaleAfterAethel.firstOrNull() ?: defaultVoice
 
             android.util.Log.d("VoiceRPG_TTS", "Assigned Cedric: ${cedricVoice?.name}")
             android.util.Log.d("VoiceRPG_TTS", "Assigned Aethel: ${aethelVoice?.name}")
@@ -327,9 +359,35 @@ class CombatNarrator(
             DialogueSpeaker.SHADOW_WISP.id -> "The shadows will consume all who dare enter."
             else -> "The chronicle of Aethelgard unfolds with every step."
         }
-        narrateDialogue(speaker, samplePhrase, emptyList()) {
+        narrateDialogue(speaker, samplePhrase, emptyList(), force = true) {
             onDone?.invoke()
         }
+    }
+
+    fun getInstalledPhysicalVoices(): List<Voice> {
+        val engine = tts ?: return emptyList()
+        val voices = engine.voices ?: return emptyList()
+        val installed = voices.filter { isVoiceInstalledAndUsable(engine, it) }
+        val physical = installed.filter { v ->
+            !v.name.endsWith("-language", ignoreCase = true) &&
+                    !(v.features?.contains("legacySetLanguageVoice") ?: false)
+        }.ifEmpty { installed }
+        val english = physical.filter {
+            it.locale.language.equals(Locale.ENGLISH.language, ignoreCase = true)
+        }.ifEmpty { physical }
+        return english.sortedBy { it.name }
+    }
+
+    fun cycleSpeakerVoice(speaker: DialogueSpeaker, onDone: (() -> Unit)? = null): Voice? {
+        val physicalVoices = getInstalledPhysicalVoices()
+        if (physicalVoices.isEmpty()) return null
+        val current = getVoiceForSpeaker(speaker)
+        val currentIndex = physicalVoices.indexOfFirst { it.name == current?.name }
+        val nextIndex = if (currentIndex >= 0) (currentIndex + 1) % physicalVoices.size else 0
+        val nextVoice = physicalVoices[nextIndex]
+        setSpeakerVoice(speaker, nextVoice)
+        previewSpeakerVoice(speaker, onDone)
+        return nextVoice
     }
 
     /**
@@ -340,10 +398,11 @@ class CombatNarrator(
         speaker: DialogueSpeaker,
         text: String,
         choices: List<DialogueChoice> = emptyList(),
+        force: Boolean = false,
         onDone: () -> Unit = {}
     ) {
-        // If narration is turned off and we are not in Eyes-Free mode, skip TTS
-        if (!_isNarrationEnabled.value && !_isEyesFreeMode.value) {
+        // If narration is turned off and we are not in Eyes-Free mode, skip TTS (unless forced)
+        if (!force && !_isNarrationEnabled.value && !_isEyesFreeMode.value) {
             onDone()
             return
         }

@@ -29,7 +29,10 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -87,6 +90,7 @@ fun AudioSetupScreen(
     val speechRate by combatNarrator.speechRate.collectAsState()
     val availableVoiceCount by combatNarrator.availableVoiceCount.collectAsState()
     val installedVoiceCount by combatNarrator.installedVoiceCount.collectAsState()
+    var voiceUpdateKey by remember { mutableStateOf(0) }
 
     // Auto-refresh voices when returning from Android TTS settings
     DisposableEffect(lifecycleOwner) {
@@ -133,7 +137,25 @@ fun AudioSetupScreen(
             return
         }
 
-        // 4. Preview / sample companion voices
+        // 4. Cycle / Switch companion voices
+        if (lower.contains("cycle") || lower.contains("switch") || lower.contains("change voice") || lower.contains("next voice")) {
+            val targetSpeaker = when {
+                lower.contains("cedric") -> DialogueSpeaker.CEDRIC
+                lower.contains("lyra") -> DialogueSpeaker.LYRA
+                lower.contains("aethel") -> DialogueSpeaker.AETHEL
+                lower.contains("zephyr") -> DialogueSpeaker.ZEPHYR
+                lower.contains("malakor") -> DialogueSpeaker.MALAKOR
+                lower.contains("narrator") || lower.contains("storyteller") -> DialogueSpeaker.NARRATOR
+                else -> null
+            }
+            if (targetSpeaker != null) {
+                combatNarrator.cycleSpeakerVoice(targetSpeaker)
+                voiceUpdateKey++
+                return
+            }
+        }
+
+        // 5. Preview / sample companion voices
         if (lower.contains("cedric")) {
             combatNarrator.previewSpeakerVoice(DialogueSpeaker.CEDRIC)
             return
@@ -259,36 +281,60 @@ fun AudioSetupScreen(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // Companion voice breakdown with live assigned model and preview button
+                    // Companion voice breakdown with live assigned model, audition preview, and cycle switch
                     CompanionVoiceBadge(
                         speaker = DialogueSpeaker.CEDRIC,
-                        assignedVoiceName = combatNarrator.getVoiceForSpeaker(DialogueSpeaker.CEDRIC)?.name,
-                        onPreview = { combatNarrator.previewSpeakerVoice(DialogueSpeaker.CEDRIC) }
+                        assignedVoiceName = remember(voiceUpdateKey, installedVoiceCount) { combatNarrator.getVoiceForSpeaker(DialogueSpeaker.CEDRIC)?.name },
+                        onPreview = { combatNarrator.previewSpeakerVoice(DialogueSpeaker.CEDRIC) },
+                        onCycle = {
+                            combatNarrator.cycleSpeakerVoice(DialogueSpeaker.CEDRIC)
+                            voiceUpdateKey++
+                        }
                     )
                     CompanionVoiceBadge(
                         speaker = DialogueSpeaker.LYRA,
-                        assignedVoiceName = combatNarrator.getVoiceForSpeaker(DialogueSpeaker.LYRA)?.name,
-                        onPreview = { combatNarrator.previewSpeakerVoice(DialogueSpeaker.LYRA) }
+                        assignedVoiceName = remember(voiceUpdateKey, installedVoiceCount) { combatNarrator.getVoiceForSpeaker(DialogueSpeaker.LYRA)?.name },
+                        onPreview = { combatNarrator.previewSpeakerVoice(DialogueSpeaker.LYRA) },
+                        onCycle = {
+                            combatNarrator.cycleSpeakerVoice(DialogueSpeaker.LYRA)
+                            voiceUpdateKey++
+                        }
                     )
                     CompanionVoiceBadge(
                         speaker = DialogueSpeaker.AETHEL,
-                        assignedVoiceName = combatNarrator.getVoiceForSpeaker(DialogueSpeaker.AETHEL)?.name,
-                        onPreview = { combatNarrator.previewSpeakerVoice(DialogueSpeaker.AETHEL) }
+                        assignedVoiceName = remember(voiceUpdateKey, installedVoiceCount) { combatNarrator.getVoiceForSpeaker(DialogueSpeaker.AETHEL)?.name },
+                        onPreview = { combatNarrator.previewSpeakerVoice(DialogueSpeaker.AETHEL) },
+                        onCycle = {
+                            combatNarrator.cycleSpeakerVoice(DialogueSpeaker.AETHEL)
+                            voiceUpdateKey++
+                        }
                     )
                     CompanionVoiceBadge(
                         speaker = DialogueSpeaker.ZEPHYR,
-                        assignedVoiceName = combatNarrator.getVoiceForSpeaker(DialogueSpeaker.ZEPHYR)?.name,
-                        onPreview = { combatNarrator.previewSpeakerVoice(DialogueSpeaker.ZEPHYR) }
+                        assignedVoiceName = remember(voiceUpdateKey, installedVoiceCount) { combatNarrator.getVoiceForSpeaker(DialogueSpeaker.ZEPHYR)?.name },
+                        onPreview = { combatNarrator.previewSpeakerVoice(DialogueSpeaker.ZEPHYR) },
+                        onCycle = {
+                            combatNarrator.cycleSpeakerVoice(DialogueSpeaker.ZEPHYR)
+                            voiceUpdateKey++
+                        }
                     )
                     CompanionVoiceBadge(
                         speaker = DialogueSpeaker.MALAKOR,
-                        assignedVoiceName = combatNarrator.getVoiceForSpeaker(DialogueSpeaker.MALAKOR)?.name,
-                        onPreview = { combatNarrator.previewSpeakerVoice(DialogueSpeaker.MALAKOR) }
+                        assignedVoiceName = remember(voiceUpdateKey, installedVoiceCount) { combatNarrator.getVoiceForSpeaker(DialogueSpeaker.MALAKOR)?.name },
+                        onPreview = { combatNarrator.previewSpeakerVoice(DialogueSpeaker.MALAKOR) },
+                        onCycle = {
+                            combatNarrator.cycleSpeakerVoice(DialogueSpeaker.MALAKOR)
+                            voiceUpdateKey++
+                        }
                     )
                     CompanionVoiceBadge(
                         speaker = DialogueSpeaker.NARRATOR,
-                        assignedVoiceName = combatNarrator.getVoiceForSpeaker(DialogueSpeaker.NARRATOR)?.name,
-                        onPreview = { combatNarrator.previewSpeakerVoice(DialogueSpeaker.NARRATOR) }
+                        assignedVoiceName = remember(voiceUpdateKey, installedVoiceCount) { combatNarrator.getVoiceForSpeaker(DialogueSpeaker.NARRATOR)?.name },
+                        onPreview = { combatNarrator.previewSpeakerVoice(DialogueSpeaker.NARRATOR) },
+                        onCycle = {
+                            combatNarrator.cycleSpeakerVoice(DialogueSpeaker.NARRATOR)
+                            voiceUpdateKey++
+                        }
                     )
 
                     Spacer(modifier = Modifier.height(10.dp))
@@ -302,7 +348,7 @@ fun AudioSetupScreen(
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "✦ Tap \"▶ SAMPLE\" on any companion above to hear their assigned voice in action.",
+                        text = "✦ Tap \"▶ SAMPLE\" to audition, or \"⇄ SWITCH\" to cycle through your device's installed voices for any character!",
                         color = LogosGold,
                         fontSize = 9.sp,
                         fontFamily = FontFamily.Monospace
@@ -669,7 +715,8 @@ fun AudioSetupScreen(
 private fun CompanionVoiceBadge(
     speaker: DialogueSpeaker,
     assignedVoiceName: String?,
-    onPreview: () -> Unit
+    onPreview: () -> Unit,
+    onCycle: (() -> Unit)? = null
 ) {
     Row(
         modifier = Modifier
@@ -705,21 +752,45 @@ private fun CompanionVoiceBadge(
 
         Spacer(modifier = Modifier.width(6.dp))
 
-        Box(
-            modifier = Modifier
-                .clip(RoundedCornerShape(6.dp))
-                .background(RetroPanel)
-                .border(1.dp, speaker.themeColor.copy(alpha = 0.8f), RoundedCornerShape(6.dp))
-                .clickable { onPreview() }
-                .padding(horizontal = 8.dp, vertical = 4.dp)
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "▶ SAMPLE",
-                color = speaker.themeColor,
-                fontSize = 9.sp,
-                fontWeight = FontWeight.Bold,
-                fontFamily = FontFamily.Monospace
-            )
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(RetroPanel)
+                    .border(1.dp, speaker.themeColor.copy(alpha = 0.8f), RoundedCornerShape(6.dp))
+                    .clickable { onPreview() }
+                    .padding(horizontal = 6.dp, vertical = 4.dp)
+            ) {
+                Text(
+                    text = "▶ SAMPLE",
+                    color = speaker.themeColor,
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Monospace
+                )
+            }
+
+            if (onCycle != null) {
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(RetroPanel)
+                        .border(1.dp, LogosGold.copy(alpha = 0.8f), RoundedCornerShape(6.dp))
+                        .clickable { onCycle() }
+                        .padding(horizontal = 6.dp, vertical = 4.dp)
+                ) {
+                    Text(
+                        text = "⇄ SWITCH",
+                        color = LogosGold,
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.Monospace
+                    )
+                }
+            }
         }
     }
 }
