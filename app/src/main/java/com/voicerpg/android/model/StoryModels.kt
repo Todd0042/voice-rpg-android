@@ -56,6 +56,15 @@ data class DialogueSpeaker(
             themeColor = ShadowPurple,
             ttsPitch = 0.70f
         )
+
+        val LYRA = DialogueSpeaker(
+            id = "lyra",
+            name = "Lyra",
+            title = "Grove Warden",
+            portraitAsset = "portraits/lyra.jpg",
+            themeColor = Color(0xFFA5D6A7),
+            ttsPitch = 1.20f
+        )
     }
 }
 

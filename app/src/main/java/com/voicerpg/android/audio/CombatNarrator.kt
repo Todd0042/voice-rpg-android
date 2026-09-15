@@ -32,6 +32,7 @@ class CombatNarrator(
     private var defaultVoice: Voice? = null
     private var cedricVoice: Voice? = null
     private var aethelVoice: Voice? = null
+    private var lyraVoice: Voice? = null
     private var shadowWispVoice: Voice? = null
     private var narratorVoice: Voice? = null
 
@@ -137,9 +138,13 @@ class CombatNarrator(
                     ?: englishVoices.firstOrNull { it != cedricVoice }
                     ?: defaultVoice
 
+                lyraVoice = femaleVoices.getOrNull(1)
+                    ?: englishVoices.firstOrNull { it != cedricVoice && it != aethelVoice }
+                    ?: aethelVoice
+
                 narratorVoice = defaultVoice ?: englishVoices.firstOrNull()
 
-                shadowWispVoice = englishVoices.firstOrNull { it != cedricVoice && it != aethelVoice }
+                shadowWispVoice = englishVoices.firstOrNull { it != cedricVoice && it != aethelVoice && it != lyraVoice }
                     ?: cedricVoice
             }
         } catch (_: Exception) {
@@ -190,6 +195,7 @@ class CombatNarrator(
     fun getVoiceForSpeaker(speaker: DialogueSpeaker): Voice? = when (speaker.id) {
         DialogueSpeaker.CEDRIC.id -> cedricVoice
         DialogueSpeaker.AETHEL.id -> aethelVoice
+        DialogueSpeaker.LYRA.id -> lyraVoice
         DialogueSpeaker.SHADOW_WISP.id -> shadowWispVoice
         DialogueSpeaker.NARRATOR.id -> narratorVoice
         else -> narratorVoice
@@ -199,6 +205,7 @@ class CombatNarrator(
         when (speaker.id) {
             DialogueSpeaker.CEDRIC.id -> cedricVoice = voice
             DialogueSpeaker.AETHEL.id -> aethelVoice = voice
+            DialogueSpeaker.LYRA.id -> lyraVoice = voice
             DialogueSpeaker.SHADOW_WISP.id -> shadowWispVoice = voice
             DialogueSpeaker.NARRATOR.id -> narratorVoice = voice
             else -> narratorVoice = voice
@@ -244,6 +251,10 @@ class CombatNarrator(
                 DialogueSpeaker.AETHEL.id -> {
                     tts?.setPitch(1.08f) // Clear, spirited invocator
                     tts?.setSpeechRate(_speechRate.value)
+                }
+                DialogueSpeaker.LYRA.id -> {
+                    tts?.setPitch(1.20f) // Lyrical, soothing grove warden
+                    tts?.setSpeechRate(_speechRate.value * 0.98f)
                 }
                 DialogueSpeaker.SHADOW_WISP.id -> {
                     tts?.setPitch(0.70f) // Raspy sibilant phantom

@@ -133,4 +133,149 @@ class StoryDialogueTest {
         assertEquals("crossroads_cedric_reply_mage", storyViewModel.state.value.currentNode.id)
         assertTrue(storyViewModel.state.value.currentNode.text.contains("Awakened Invocator"))
     }
+
+    @Test
+    fun testChapter5BriarCageRescueFlow() {
+        // Jump directly to Chapter 5 Intro
+        val ch5Intro = StoryScript.ALL_NODES["ch5_intro"]!!
+        val jumpChoice = com.voicerpg.android.model.DialogueChoice("jump_ch5", "Jump to Ch 5", emptyList(), ch5Intro.id)
+        storyViewModel.selectChoice(jumpChoice)
+
+        var state = storyViewModel.state.value
+        assertEquals("scene_marsh_fane", state.currentScene.id)
+        assertEquals("ch5_intro", state.currentNode.id)
+        assertTrue(state.currentNode.text.contains("ACT II: THE SEVERED RESONANCE"))
+
+        // Advance to tracks and then hub
+        storyViewModel.advanceDialogue()
+        assertEquals("ch5_tracks", storyViewModel.state.value.currentNode.id)
+        storyViewModel.advanceDialogue()
+        assertEquals("ch5_hub", storyViewModel.state.value.currentNode.id)
+        assertEquals(3, storyViewModel.state.value.currentNode.choices.size)
+
+        // Sub-story 1: Scout creek
+        val scoutChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "ch5_creek_choice" }
+        storyViewModel.selectChoice(scoutChoice)
+        assertEquals("ch5_scout_creek", storyViewModel.state.value.currentNode.id)
+        assertTrue(storyViewModel.state.value.narrativeFlags["ch5_creek_scouted"] == true)
+
+        // Return to hub and inspect wards
+        storyViewModel.advanceDialogue()
+        assertEquals("ch5_hub", storyViewModel.state.value.currentNode.id)
+        val wardsChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "ch5_wards_choice" }
+        storyViewModel.selectChoice(wardsChoice)
+        assertEquals("ch5_examine_wards", storyViewModel.state.value.currentNode.id)
+        assertTrue(storyViewModel.state.value.narrativeFlags["ch5_wards_examined"] == true)
+
+        // Return to hub: both are complete, so it transitions to ch5_all_completed
+        storyViewModel.advanceDialogue()
+        state = storyViewModel.state.value
+        assertEquals("ch5_all_completed", state.currentNode.id)
+        assertTrue(state.currentNode.text.contains("briars", ignoreCase = true))
+
+        // Launch rescue assault battle
+        val assaultChoice = state.currentNode.choices.first { it.id == "ch5_assault_ready" }
+        storyViewModel.selectChoice(assaultChoice)
+        assertEquals("ch5_rescue_assault", storyViewModel.state.value.currentNode.id)
+        storyViewModel.advanceDialogue()
+
+        // Verify combat screen & encounter
+        assertEquals(GameScreen.COMBAT_ARENA, storyViewModel.state.value.gameScreen)
+        assertEquals("marsh_rescue", storyViewModel.state.value.activeEncounter?.id)
+        assertEquals(2, storyViewModel.state.value.activeEncounter?.initialParty?.size)
+
+        // Post-combat victory
+        storyViewModel.onCombatVictory()
+        assertEquals(GameScreen.STORY_EXPLORATION, storyViewModel.state.value.gameScreen)
+        assertEquals("ch5_rescue_victory", storyViewModel.state.value.currentNode.id)
+        assertTrue(storyViewModel.state.value.currentNode.text.contains("cage shatters"))
+
+        // Advance through Lyra dialog
+        storyViewModel.advanceDialogue()
+        assertEquals("ch5_lyra_unbound", storyViewModel.state.value.currentNode.id)
+        storyViewModel.advanceDialogue()
+        assertEquals("ch5_lyra_first_words", storyViewModel.state.value.currentNode.id)
+        assertEquals("Lyra", storyViewModel.state.value.currentNode.speaker.name)
+
+        storyViewModel.advanceDialogue()
+        assertEquals("ch5_cedric_introduces", storyViewModel.state.value.currentNode.id)
+        storyViewModel.advanceDialogue()
+        assertEquals("ch5_lyra_explains_crisis", storyViewModel.state.value.currentNode.id)
+        storyViewModel.advanceDialogue()
+        assertEquals("ch5_rest_sanctuary", storyViewModel.state.value.currentNode.id)
+        storyViewModel.advanceDialogue()
+        assertEquals("ch5_complete", storyViewModel.state.value.currentNode.id)
+        assertTrue(storyViewModel.state.value.currentNode.choices.any { it.id == "ch6_start" })
+    }
+
+    @Test
+    fun testChapter6LyraRecruitmentAndWillowCleansingFlow() {
+        // Jump directly to Chapter 6 start choice from Chapter 5 completion
+        val ch6Choice = com.voicerpg.android.model.DialogueChoice("ch6_start", "Start Ch 6", emptyList(), "ch6_intro")
+        storyViewModel.selectChoice(ch6Choice)
+
+        var state = storyViewModel.state.value
+        assertEquals("scene_willow_sanctuary", state.currentScene.id)
+        assertEquals("ch6_intro", state.currentNode.id)
+
+        // Oath ceremony
+        storyViewModel.advanceDialogue()
+        assertEquals("ch6_oath_ceremony", storyViewModel.state.value.currentNode.id)
+        storyViewModel.advanceDialogue()
+        assertEquals("ch6_oath_words", storyViewModel.state.value.currentNode.id)
+
+        // Lyra officially joins party
+        storyViewModel.advanceDialogue()
+        state = storyViewModel.state.value
+        assertEquals("ch6_party_joins", state.currentNode.id)
+        assertTrue(state.narrativeFlags["lyra_recruited"] == true)
+        assertEquals(3, state.partyStats.size)
+        assertTrue(state.partyStats.any { it.id == "lyra" })
+
+        // Enter Ch 6 hub
+        storyViewModel.advanceDialogue()
+        assertEquals("ch6_hub", storyViewModel.state.value.currentNode.id)
+
+        // Sub-story 1: Lore of Veridian Chime
+        val loreChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "ch6_lore_choice" }
+        storyViewModel.selectChoice(loreChoice)
+        assertEquals("ch6_lore_dialogue", storyViewModel.state.value.currentNode.id)
+        assertTrue(storyViewModel.state.value.narrativeFlags["ch6_lore_complete"] == true)
+
+        // Return to hub and harvest spores
+        storyViewModel.advanceDialogue()
+        val sporesChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "ch6_spores_choice" }
+        storyViewModel.selectChoice(sporesChoice)
+        assertEquals("ch6_spores_dialogue", storyViewModel.state.value.currentNode.id)
+        assertTrue(storyViewModel.state.value.narrativeFlags["ch6_spores_complete"] == true)
+
+        // Hub completes
+        storyViewModel.advanceDialogue()
+        assertEquals("ch6_all_completed", storyViewModel.state.value.currentNode.id)
+
+        // Launch Willow Assault
+        val willowChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "ch6_boss_ready" }
+        storyViewModel.selectChoice(willowChoice)
+        assertEquals("ch6_willow_assault", storyViewModel.state.value.currentNode.id)
+        storyViewModel.advanceDialogue()
+
+        // In combat with Bog Behemoth, trio party active
+        assertEquals(GameScreen.COMBAT_ARENA, storyViewModel.state.value.gameScreen)
+        assertEquals("swamp_behemoth", storyViewModel.state.value.activeEncounter?.id)
+        assertEquals(3, storyViewModel.state.value.activeEncounter?.initialParty?.size)
+        assertTrue(storyViewModel.state.value.activeEncounter?.initialParty?.any { it.id == "lyra" } == true)
+
+        // Victory
+        storyViewModel.onCombatVictory()
+        state = storyViewModel.state.value
+        assertEquals(GameScreen.STORY_EXPLORATION, state.gameScreen)
+        assertEquals("ch6_willow_purified", state.currentNode.id)
+
+        storyViewModel.advanceDialogue()
+        assertEquals("ch6_chime_revealed", storyViewModel.state.value.currentNode.id)
+        storyViewModel.advanceDialogue()
+        assertEquals("ch6_bell_inspection", storyViewModel.state.value.currentNode.id)
+        storyViewModel.advanceDialogue()
+        assertEquals("ch6_act2_climax", storyViewModel.state.value.currentNode.id)
+    }
 }

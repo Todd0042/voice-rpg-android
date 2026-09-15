@@ -92,6 +92,24 @@ object StoryScript {
         ambientDescription = "High above the cloudline, the massive bronze Bell of Solaria hangs beneath open gothic parapets."
     )
 
+    val SCENE_MARSH_FANE = StoryScene(
+        id = "scene_marsh_fane",
+        name = "The Drowned Fane",
+        chapterTitle = "Chapter 5: The Severed Resonance",
+        backgroundAsset = "story/marsh_fane.jpg",
+        initialNodeId = "ch5_intro",
+        ambientDescription = "Murky emerald waters lap against sunken gothic pillars and twisted weeping willow roots."
+    )
+
+    val SCENE_WILLOW_SANCTUARY = StoryScene(
+        id = "scene_willow_sanctuary",
+        name = "The Weeping Willow Sanctuary",
+        chapterTitle = "Chapter 6: The Warden's Oath",
+        backgroundAsset = "environments/swamp.jpg",
+        initialNodeId = "ch6_intro",
+        ambientDescription = "Bioluminescent emerald motes float among the hanging moss of the ancient sacred willow."
+    )
+
     val ALL_SCENES = mapOf(
         SCENE_COTTAGE.id to SCENE_COTTAGE,
         SCENE_VILLAGE.id to SCENE_VILLAGE,
@@ -101,7 +119,9 @@ object StoryScript {
         SCENE_SWAMP.id to SCENE_SWAMP,
         SCENE_AQUEDUCT.id to SCENE_AQUEDUCT,
         SCENE_DUNGEON.id to SCENE_DUNGEON,
-        SCENE_TOWER.id to SCENE_TOWER
+        SCENE_TOWER.id to SCENE_TOWER,
+        SCENE_MARSH_FANE.id to SCENE_MARSH_FANE,
+        SCENE_WILLOW_SANCTUARY.id to SCENE_WILLOW_SANCTUARY
     )
 
     // -------------------------------------------------------------------------
@@ -734,16 +754,238 @@ object StoryScript {
             speaker = DialogueSpeaker.AETHEL,
             side = SpeakerSide.LEFT,
             text = "Then we rest for the noon hour and set our course southwest. To the Rotting Marsh, to Lyra the Grove Warden, and to the Second Bell Tower!",
-            nextNodeId = "ch4_act1_complete"
+            nextNodeId = "ch5_intro"
         ),
         DialogueNode(
             id = "ch4_act1_complete",
             speaker = DialogueSpeaker.NARRATOR,
             side = SpeakerSide.CENTER_NARRATOR,
-            text = "ACT I CONCLUDED: THE FALLING SILENCE SHATTERED. You have liberated the eastern valleys and restored the First Great Bell of Solaria! Act II: The Severed Resonance and the journey to the Rotting Marsh will continue in the next chronicle.",
+            text = "ACT I CONCLUDED: THE FALLING SILENCE SHATTERED. You have liberated the eastern valleys and restored the First Great Bell of Solaria! The journey southwest toward the Rotting Marsh and the rescue of Grove Warden Lyra begins in Act II.",
             choices = listOf(
+                DialogueChoice("ch4_start_act2", "Descend the southwestern cliffs into the Rotting Marsh (Begin Act II)", listOf("descend", "southwest", "marsh", "act2", "act two", "begin", "start"), "ch5_intro"),
                 DialogueChoice("ch4_replay_bell", "Re-listen to the glorious chime of Solaria", listOf("relisten", "chime", "bell", "solaria"), "ch4_bell_ringing"),
                 DialogueChoice("ch4_view_epilogue", "Reflect with Sir Cedric upon the belfry", listOf("reflect", "cedric", "view", "belfry"), "ch4_epilogue")
+            )
+        ),
+
+        // =====================================================================
+        // ACT II: CHAPTER 5 — THE ROTTING MARSH & THE BRIAR CAGE RESCUE
+        // =====================================================================
+        DialogueNode(
+            id = "ch5_intro",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            changeSceneId = "scene_marsh_fane",
+            text = "ACT II: THE SEVERED RESONANCE. Descending the precipitous switchbacks of Solaria, the golden mountain light chokes out into suffocating viridian fog. The air turns cold and heavy with the sulfurous reek of stagnant bogwater. Before you lies the Rotting Marsh, where ancient sunken arches mark the entrance to the Drowned Fane.",
+            nextNodeId = "ch5_tracks"
+        ),
+        DialogueNode(
+            id = "ch5_tracks",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            text = "Halt, Invocator! Look upon the mud beside these cypress roots. Shredded green silk bearing the leaf crest of the Grove Wardens. There was a violent skirmish here within the hour. Lyra fought retreating into the sunken fane, but the blight-tracks surround her. We must scout their perimeter before breaching the central altar.",
+            nextNodeId = "ch5_hub"
+        ),
+        DialogueNode(
+            id = "ch5_hub",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            text = "We are at the threshold of the Drowned Fane. Muffled, discordant incantations echo from the flooded pavilion ahead. How shall we coordinate the rescue assault, Invocator?",
+            choices = listOf(
+                DialogueChoice("ch5_creek_choice", "Scout the poisoned creek bed for warden tracks", listOf("scout", "creek", "tracks", "warden"), "ch5_scout_creek", completionFlag = "ch5_creek_scouted"),
+                DialogueChoice("ch5_wards_choice", "Inspect the pulsing obsidian warding stones", listOf("inspect", "examine", "stones", "wards", "obsidian"), "ch5_examine_wards", completionFlag = "ch5_wards_examined"),
+                DialogueChoice("ch5_assault_choice", "Charge the sunken altar and breach Lyra's Briar Cage!", listOf("charge", "assault", "breach", "cage", "rescue"), "ch5_rescue_assault")
+            )
+        ),
+        DialogueNode(
+            id = "ch5_scout_creek",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            setFlagOnEnter = "ch5_creek_scouted",
+            text = "Wading through the knee-deep black mire, you discover three snap-jaw mire traps hidden beneath floating duckweed. Sir Cedric triggers them harmlessly with his spear shaft. Carved into an ancient cypress trunk, you find a hasty druidic glyph: 'THEY SEEK THE VERIDIAN CHIME. I AM BOUND AT THE ALTAR. —L'. Knowing their ambush positions gives your duo fellowship high tactical advantage!",
+            nextNodeId = "ch5_hub"
+        ),
+        DialogueNode(
+            id = "ch5_examine_wards",
+            speaker = DialogueSpeaker.AETHEL,
+            side = SpeakerSide.LEFT,
+            setFlagOnEnter = "ch5_wards_examined",
+            text = "I place my palm near the pulsing obsidian obelisks. A sickening, discordant hum vibrates through my marrow. 'Void Briar Runes,' I warn Sir Cedric. 'The Blight Binder is siphoning the marsh's life-force to tighten the cage and drain Lyra's communion with the trees.' Discerning their counter-harmonic frequency ensures our incantations will shatter their barrier!",
+            nextNodeId = "ch5_hub"
+        ),
+        DialogueNode(
+            id = "ch5_all_completed",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            text = "The perimeter is secured, their ambush traps disarmed, and the ward frequencies mapped! Lyra is suspended above the fane pool in a cage of writhing black briars. It is time. Draw your breath, Invocator—we charge to her rescue!",
+            choices = listOf(
+                DialogueChoice("ch5_assault_ready", "Sound the battle cry and breach the Briar Cage!", listOf("sound", "battle", "cry", "breach", "charge", "assault"), "ch5_rescue_assault")
+            )
+        ),
+        DialogueNode(
+            id = "ch5_rescue_assault",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            triggerBattleEncounterId = "marsh_rescue",
+            text = "You and Sir Cedric storm the flooded courtyard! Suspended above the sunken fane within a cage of writhing obsidian briars hangs Lyra the Grove Warden! A hulking Bog Ironclad, a venomous Mire Stalker, and the Void Briar Binder spin around, weapons bristling with dark sorcery!"
+        ),
+        DialogueNode(
+            id = "ch5_rescue_victory",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "The Void Briar Binder crumbles into dissolving ash! With a ferocious roar, Sir Cedric brings his radiant greatsword down upon the anchoring rune-chains. CLANG-CRACK! The black thorns wither and snap like dry twigs. The cage shatters, and Lyra falls from mid-air!",
+            nextNodeId = "ch5_lyra_unbound"
+        ),
+        DialogueNode(
+            id = "ch5_lyra_unbound",
+            speaker = DialogueSpeaker.AETHEL,
+            side = SpeakerSide.LEFT,
+            text = "I've got you! Steady your footing, Warden. Breathe the fresh air—the corruption is broken, you are safe now.",
+            nextNodeId = "ch5_lyra_first_words"
+        ),
+        DialogueNode(
+            id = "ch5_lyra_first_words",
+            speaker = DialogueSpeaker.LYRA,
+            side = SpeakerSide.RIGHT,
+            text = "You... you wield the living Logos? For weeks I heard only the suffocating whispers of the Silent Blight. I thought Whispering Pines and the Solaria heights had fallen into eternal ruin. Who are you noble champions that dare breach the Sunken Mire?",
+            nextNodeId = "ch5_cedric_introduces"
+        ),
+        DialogueNode(
+            id = "ch5_cedric_introduces",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            text = "I am Sir Cedric, formerly of the Templar Guard, and this is Aethel, the Awakened Invocator. Together we rang the Great Bell of Solaria at dawn and shattered the silence over the eastern valleys. We marched through the southwestern pass to rescue you, Grove Warden.",
+            nextNodeId = "ch5_lyra_explains_crisis"
+        ),
+        DialogueNode(
+            id = "ch5_lyra_explains_crisis",
+            speaker = DialogueSpeaker.LYRA,
+            side = SpeakerSide.LEFT,
+            text = "Solaria's Bell rings once more? Then hope still breathes in Aethelgard! But our time is perilously short. The Binder was merely a warden of my cage. One league deeper, the monstrous Bog Behemoth has infested the roots of the primordial Weeping Willow. If the Willow's heart rots, the Second Great Bell—The Veridian Chime—will drown forever beneath the mire!",
+            nextNodeId = "ch5_rest_sanctuary"
+        ),
+        DialogueNode(
+            id = "ch5_rest_sanctuary",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "You carry Lyra to a secluded limestone alcove framed by ancient willow roots. Together, you dress her wounds and drink clean springwater filtered by the grove. As dusk settles over the marsh, Lyra's strength returns, her verdant staff glowing with emerald life.",
+            nextNodeId = "ch5_complete"
+        ),
+        DialogueNode(
+            id = "ch5_complete",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "CHAPTER 5 COMPLETED: THE DROWNED FANE RESCUE. You have penetrated the Rotting Marsh, defeated the Void Binder garrison, and saved Lyra the Grove Warden from the Briar Cage! Chapter 6: The Warden's Oath awaits.",
+            choices = listOf(
+                DialogueChoice("ch6_start", "Greet the dawn and receive the Warden's Oath (Begin Chapter 6)", listOf("dawn", "oath", "warden", "chapter6", "begin", "start"), "ch6_intro")
+            )
+        ),
+
+        // =====================================================================
+        // ACT II: CHAPTER 6 — THE WARDEN'S OATH & THE WEEPING WILLOW
+        // =====================================================================
+        DialogueNode(
+            id = "ch6_intro",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            changeSceneId = "scene_willow_sanctuary",
+            text = "Dawn pierces the swamp canopy in shafts of shimmering emerald radiance. The sacred waters surrounding the colossal Weeping Willow ripple with quiet power. Lyra stands tall, her verdant tunic buckled and her staff crowned with freshly bloomed white jasmine blossoms.",
+            nextNodeId = "ch6_oath_ceremony"
+        ),
+        DialogueNode(
+            id = "ch6_oath_ceremony",
+            speaker = DialogueSpeaker.LYRA,
+            side = SpeakerSide.LEFT,
+            text = "Aethel... Sir Cedric. You entered the jaws of the mire for me when the rest of the kingdom had surrendered these lands to silence. My grove is my life, but its fate is bound to your quest. Before the ancient roots of the Willow, hear my vow.",
+            nextNodeId = "ch6_oath_words"
+        ),
+        DialogueNode(
+            id = "ch6_oath_words",
+            speaker = DialogueSpeaker.LYRA,
+            side = SpeakerSide.LEFT,
+            text = "'By root and stone, by rain and thorn—where the Logos calls, the Grove Warden answers! My briars shall shield your flank, and my soothing rains shall mend your wounds. From this breath until the last chime, I stand with the Fellowship!'",
+            nextNodeId = "ch6_party_joins"
+        ),
+        DialogueNode(
+            id = "ch6_party_joins",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            setFlagOnEnter = "lyra_recruited",
+            text = "LYRA THE GROVE WARDEN HAS JOINED YOUR FELLOWSHIP! Your active combat party now numbers three champions: Aethel the Invocator, Sir Cedric the Templar, and Lyra the Grove Warden. In battle, Lyra commands nature spells: Soothing Rain, Briar Entangle, and Grounded Mend!",
+            nextNodeId = "ch6_hub"
+        ),
+        DialogueNode(
+            id = "ch6_hub",
+            speaker = DialogueSpeaker.LYRA,
+            side = SpeakerSide.LEFT,
+            text = "The colossal Weeping Willow rises just beyond this mossy embankment. We can hear the guttural, subterranean groans of the Bog Behemoth poisoning its taproot. Before we engage the titan, how shall we prepare?",
+            choices = listOf(
+                DialogueChoice("ch6_lore_choice", "Ask Lyra about the lore of the Veridian Chime (Second Great Bell)", listOf("ask", "lore", "veridian", "chime", "history"), "ch6_lore_dialogue", completionFlag = "ch6_lore_complete"),
+                DialogueChoice("ch6_spores_choice", "Harvest cleansing willow spores to resist the toxic bog miasma", listOf("harvest", "spores", "willow", "cleanse", "miasma"), "ch6_spores_dialogue", completionFlag = "ch6_spores_complete"),
+                DialogueChoice("ch6_willow_assault_choice", "Advance into the heart of the pool and confront the Bog Behemoth!", listOf("advance", "heart", "pool", "confront", "behemoth", "battle"), "ch6_willow_assault")
+            )
+        ),
+        DialogueNode(
+            id = "ch6_lore_dialogue",
+            speaker = DialogueSpeaker.LYRA,
+            side = SpeakerSide.LEFT,
+            setFlagOnEnter = "ch6_lore_complete",
+            text = "Lyra touches the mossy bark reverently. 'The Veridian Chime was cast in the First Age of Song,' she whispers. 'Its bronze is fused with jade mined from the earth-veins deep beneath the marsh. When chimed, its resonance does not merely travel through air—it surges through plant roots and groundwater, restoring life to every blighted blossom for fifty leagues.' Knowing its sacred purpose steels your fellowship's resolve!",
+            nextNodeId = "ch6_hub"
+        ),
+        DialogueNode(
+            id = "ch6_spores_dialogue",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            setFlagOnEnter = "ch6_spores_complete",
+            text = "Together with Lyra, you harvest luminescent sapphire spores clinging to the water lilies. Crushing them releases an invigorating eucalyptus vapor that clears your lungs. 'These spores neutralize the Behemoth's corrosive acid,' Lyra smiles. Sir Cedric's armor and your robes are coated in protective azure pollen. The party's vitality surges to maximum!",
+            nextNodeId = "ch6_hub"
+        ),
+        DialogueNode(
+            id = "ch6_all_completed",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            text = "The protective spores coat our armor, and the sacred destiny of the Veridian Chime is etched in our hearts! The three of us fight as one fellowship. Invocator, give the command and let us cleanse the Weeping Willow!",
+            choices = listOf(
+                DialogueChoice("ch6_boss_ready", "March into the willow roots and destroy the Bog Behemoth!", listOf("march", "destroy", "behemoth", "roots", "battle"), "ch6_willow_assault")
+            )
+        ),
+        DialogueNode(
+            id = "ch6_willow_assault",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            triggerBattleEncounterId = "swamp_behemoth",
+            text = "The fellowship wades into the churning waters of the sacred pool! The mire boils as a colossal, moss-armored Bog Behemoth bursts from the depths, flanked by razor-fanged marsh leeches! Lyra raises her staff, Sir Cedric readies his shield, and your voice invokes the Logos!"
+        ),
+        DialogueNode(
+            id = "ch6_willow_purified",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "With a deafening bellow that shakes the swamp canopy, the Bog Behemoth collapses into the depths! Its black corruption dissolves into shimmering emerald foam. Across the giant willow, withered branches burst into vibrant verdant leaves, and thousands of luminous blue blossoms open in joyous symphony!",
+            nextNodeId = "ch6_chime_revealed"
+        ),
+        DialogueNode(
+            id = "ch6_chime_revealed",
+            speaker = DialogueSpeaker.LYRA,
+            side = SpeakerSide.LEFT,
+            text = "Look at the center of the pool! The murky waters have turned crystal clear! The roots are parting... Behold, the Veridian Chime!",
+            nextNodeId = "ch6_bell_inspection"
+        ),
+        DialogueNode(
+            id = "ch6_bell_inspection",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "Rising gracefully from the cleansed pool, cradled by intertwining cypress roots, hangs the colossal Second Great Bell of Aethelgard—The Veridian Chime. Inscribed along its jade-inlaid bronze rim are ancient botanical runes waiting to be awakened by the sacred Logos.",
+            nextNodeId = "ch6_act2_climax"
+        ),
+        DialogueNode(
+            id = "ch6_act2_climax",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            text = "Two Great Bells found... one ringing with dawn, and one awaiting our rite of tuning! Whispering Pines is safe, the Rotting Marsh breathes with life once more, and Grove Warden Lyra fights at our side. Invocator, our fellowship grows mightier each day. Whenever you are ready, we shall tune the Veridian Chime and march toward the Clockwork Bastion!",
+            choices = listOf(
+                DialogueChoice("ch6_view_willow", "Gaze upon the blossoming Weeping Willow Sanctuary", listOf("gaze", "view", "willow", "blossom", "sanctuary"), "ch6_willow_purified"),
+                DialogueChoice("ch6_commune_lyra", "Speak with Lyra beside the sacred pool", listOf("speak", "commune", "lyra", "pool"), "ch6_chime_revealed")
             )
         )
     ).associateBy { it.id }

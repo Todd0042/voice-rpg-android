@@ -122,16 +122,30 @@ object StoryEncounters {
         initialParty = createDuoParty()
     )
 
-    // 6. Swamp Encounter: The Rotting Willow (Trio Party vs Swamp Horrors)
-    val SWAMP_BEHEMOTH = EncounterDefinition(
-        id = "swamp_behemoth",
-        name = "Chapter 5: The Rotting Willow",
-        description = "Deep in the murky bog, Lyra sings to protect the weeping willow against swamp horrors.",
+    // 6. Marsh Rescue: The Drowned Fane (Duo Party vs Void Briar Binder & Wardens)
+    val MARSH_RESCUE = EncounterDefinition(
+        id = "marsh_rescue",
+        name = "Chapter 5: The Drowned Fane Rescue",
+        description = "Aethel and Sir Cedric assault the corrupted wardens guarding Lyra's void-briar containment cage.",
         environment = BattleEnvironment.SWAMP,
         enemies = listOf(
-            Enemy("behemoth", "Bog Behemoth", "Vanguard", currentHp = 520, maxHp = 520, baseAttack = 26, isTargeted = true, spriteTint = Color(0xFF66BB6A), speed = 38, atbGauge = 0.25f),
-            Enemy("leech_1", "Marsh Leech Alpha", "Sniper", currentHp = 160, maxHp = 160, baseAttack = 18, isTargeted = false, spriteTint = Color(0xFF81C784), speed = 68, atbGauge = 0.40f),
-            Enemy("leech_2", "Marsh Leech Beta", "Sniper", currentHp = 160, maxHp = 160, baseAttack = 18, isTargeted = false, spriteTint = Color(0xFFAED581), speed = 64, atbGauge = 0.35f)
+            Enemy("mire_ironclad", "Bog Ironclad", "Vanguard", currentHp = 380, maxHp = 380, baseAttack = 24, isTargeted = false, spriteTint = Color(0xFF558B2F), speed = 46, atbGauge = 0.25f),
+            Enemy("mire_stalker", "Mire Stalker", "Sniper", currentHp = 220, maxHp = 220, baseAttack = 26, isTargeted = true, spriteTint = Color(0xFF7CB342), speed = 66, atbGauge = 0.40f),
+            Enemy("void_binder", "Void Briar Binder", "Occultist", currentHp = 340, maxHp = 340, baseAttack = 22, isTargeted = false, spriteTint = Color(0xFF6A1B9A), speed = 52, atbGauge = 0.20f)
+        ),
+        initialParty = createDuoParty()
+    )
+
+    // 7. Swamp Encounter: The Weeping Willow Sanctuary (Trio Party vs Bog Behemoth Boss)
+    val SWAMP_BEHEMOTH = EncounterDefinition(
+        id = "swamp_behemoth",
+        name = "Chapter 6: The Weeping Willow Sanctuary",
+        description = "Lyra joins the fellowship to cleanse the colossal Weeping Willow of the corrupting Bog Behemoth.",
+        environment = BattleEnvironment.SWAMP,
+        enemies = listOf(
+            Enemy("behemoth", "Bog Behemoth", "Vanguard", currentHp = 540, maxHp = 540, baseAttack = 28, isBoss = true, isTargeted = true, spriteTint = Color(0xFF66BB6A), speed = 40, atbGauge = 0.25f),
+            Enemy("leech_1", "Marsh Leech Alpha", "Sniper", currentHp = 170, maxHp = 170, baseAttack = 18, isTargeted = false, spriteTint = Color(0xFF81C784), speed = 68, atbGauge = 0.40f),
+            Enemy("leech_2", "Marsh Leech Beta", "Sniper", currentHp = 170, maxHp = 170, baseAttack = 18, isTargeted = false, spriteTint = Color(0xFFAED581), speed = 64, atbGauge = 0.35f)
         ),
         initialParty = listOf(
             PartyMember("hero", "Aethel", "Elementalist", currentHp = 240, maxHp = 240, currentMp = 140, maxMp = 140, spells = aethelSpells, avatarTint = Color(0xFF90CAF9), speed = 70, atbGauge = 0.85f),
@@ -194,6 +208,7 @@ object StoryEncounters {
         DUNGEON_DESCENT,
         CASTLE_HORDE,
         CAVE_BROODMOTHER,
+        MARSH_RESCUE,
         SWAMP_BEHEMOTH,
         BLIGHT_TRACKERS,
         CH3_SENTINELS

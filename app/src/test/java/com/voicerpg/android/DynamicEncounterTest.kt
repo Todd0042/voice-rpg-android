@@ -228,9 +228,14 @@ class DynamicEncounterTest {
             assertTrue("Encounter ${encounter.id} should contain Sir Cedric", party.any { it.id == "cedric" })
         }
 
-        // SWAMP_BEHEMOTH is Chapter 5 and introduces Lyra
-        val ch5Party = StoryEncounters.SWAMP_BEHEMOTH.initialParty ?: emptyList()
-        assertEquals(3, ch5Party.size)
-        assertTrue(ch5Party.any { it.id == "lyra" })
+        // MARSH_RESCUE is Chapter 5 and is a duo rescue mission before Lyra joins
+        val ch5RescueParty = StoryEncounters.MARSH_RESCUE.initialParty ?: emptyList()
+        assertEquals(2, ch5RescueParty.size)
+        assertTrue(ch5RescueParty.none { it.id == "lyra" })
+
+        // SWAMP_BEHEMOTH is Chapter 6 and introduces Lyra into the active combat team
+        val ch6Party = StoryEncounters.SWAMP_BEHEMOTH.initialParty ?: emptyList()
+        assertEquals(3, ch6Party.size)
+        assertTrue(ch6Party.any { it.id == "lyra" })
     }
 }
