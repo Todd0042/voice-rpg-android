@@ -235,7 +235,7 @@ fun StoryScreen(
             )
 
             // Right Character (Companion / NPC - e.g. Sir Cedric or Shadow Wisp)
-            if (currentNode.speaker == DialogueSpeaker.CEDRIC || currentNode.id.contains("cedric") || currentNode.id.contains("crossroads")) {
+            if (currentNode.speaker == DialogueSpeaker.CEDRIC || currentNode.id.contains("cedric") || currentNode.id.contains("crossroads") || currentNode.id.startsWith("camp_") || currentNode.id.startsWith("ch3_")) {
                 CharacterPortraitBust(
                     bitmap = cedricBitmap,
                     speaker = DialogueSpeaker.CEDRIC,
@@ -281,9 +281,11 @@ fun StoryScreen(
                         verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         currentNode.choices.forEachIndexed { index, choice ->
+                            val isCompleted = choice.completionFlag != null && storyState.narrativeFlags[choice.completionFlag] == true
                             DialogueChoiceItem(
                                 index = index + 1,
                                 choice = choice,
+                                isCompleted = isCompleted,
                                 onSelect = { storyViewModel.selectChoice(choice) }
                             )
                         }
@@ -572,15 +574,21 @@ private fun RetroSpeechBubble(
 private fun DialogueChoiceItem(
     index: Int,
     choice: DialogueChoice,
+    isCompleted: Boolean = false,
     onSelect: () -> Unit
 ) {
+    val backgroundColor = if (isCompleted) Color(0xCC1A1C23) else RetroPanel.copy(alpha = 0.95f)
+    val borderColor = if (isCompleted) Color(0xFF37474F) else RetroBorderGold
+    val textColor = if (isCompleted) Color(0xFF78909C) else Color.White
+    val indexColor = if (isCompleted) Color(0xFF546E7A) else LogosGold
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(8.dp))
-            .background(RetroPanel.copy(alpha = 0.95f))
-            .border(1.dp, RetroBorderGold, RoundedCornerShape(8.dp))
-            .clickable { onSelect() }
+            .background(backgroundColor)
+            .border(1.dp, borderColor, RoundedCornerShape(8.dp))
+            .then(if (!isCompleted) Modifier.clickable { onSelect() } else Modifier)
             .padding(horizontal = 12.dp, vertical = 8.dp)
     ) {
         Row(
@@ -594,7 +602,7 @@ private fun DialogueChoiceItem(
             ) {
                 Text(
                     text = "[$index]",
-                    color = LogosGold,
+                    color = indexColor,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     fontFamily = FontFamily.Monospace
@@ -602,23 +610,41 @@ private fun DialogueChoiceItem(
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = choice.text,
-                    color = Color.White,
+                    color = textColor,
                     fontSize = 12.sp,
                     fontFamily = FontFamily.Monospace,
                     fontWeight = FontWeight.Medium
                 )
             }
 
-            // Spoken keyword cue
-            val keywordHint = choice.voiceKeywords.firstOrNull() ?: ""
-            if (keywordHint.isNotBlank()) {
-                Text(
-                    text = "Say \"$keywordHint\"",
-                    color = Color(0xFF80D8FF),
-                    fontSize = 9.sp,
-                    fontFamily = FontFamily.Monospace,
-                    fontWeight = FontWeight.Bold
-                )
+            if (isCompleted) {
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(Color(0x334CAF50))
+                        .border(1.dp, Color(0xFF4CAF50), RoundedCornerShape(4.dp))
+                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                ) {
+                    Text(
+                        text = "✓ COMPLETED",
+                        color = Color(0xFF81C784),
+                        fontSize = 9.sp,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            } else {
+                // Spoken keyword cue
+                val keywordHint = choice.voiceKeywords.firstOrNull() ?: ""
+                if (keywordHint.isNotBlank()) {
+                    Text(
+                        text = "Say \"$keywordHint\"",
+                        color = Color(0xFF80D8FF),
+                        fontSize = 9.sp,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
         }
     }

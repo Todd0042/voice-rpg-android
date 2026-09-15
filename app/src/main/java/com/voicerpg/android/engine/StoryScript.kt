@@ -271,99 +271,185 @@ object StoryScript {
             id = "camp_intro",
             speaker = DialogueSpeaker.CEDRIC,
             side = SpeakerSide.RIGHT,
-            text = "Rest your vocal cords, friend. Tomorrow we cross into the Sunken Hollows. Before we sleep, what weighs upon your mind?",
+            text = "Rest your vocal cords, friend. Before we cross into the Sunken Hollows tomorrow, our camp preparations remain. What shall we attend to?",
             choices = listOf(
-                DialogueChoice("c_lore", "Ask about the Silent Blight and Mute Sovereign", listOf("blight", "silence", "sovereign", "lore"), "camp_lore_blight"),
-                DialogueChoice("c_towers", "Inquire about the Four Bell Towers", listOf("tower", "towers", "bells", "chime"), "camp_lore_towers"),
-                DialogueChoice("c_rest", "Rest by the fire to restore health and mana", listOf("rest", "sleep", "fire", "restore"), "camp_rest")
+                DialogueChoice("c_lore", "Scout the woods for Blighted trackers", listOf("scout", "trackers", "woods", "prowlers", "blight"), "camp_scout_entry", completionFlag = "substory_blight_complete"),
+                DialogueChoice("c_towers", "Inspect the Sun Shrine ruins for ancient chime lore", listOf("shrine", "ruins", "chime", "altar", "towers"), "camp_shrine_entry", completionFlag = "substory_towers_complete"),
+                DialogueChoice("c_rest", "Rest by the campfire and take the midnight vigil", listOf("rest", "vigil", "sleep", "fire", "restore"), "camp_vigil_entry", completionFlag = "substory_rest_complete")
+            )
+        ),
+
+        // === SUB-STORY X: SCOUT THE WOODS FOR TRACKERS ===
+        DialogueNode(
+            id = "camp_scout_entry",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "You and Sir Cedric venture into the dark tree line bordering the camp. Pitch-black obsidian claw marks scar the pine bark. Fresh tracks lead toward a shadowy outcrop.",
+            choices = listOf(
+                DialogueChoice("c_scout_tracks", "Cast an azure spark to illuminate the tracks", listOf("spark", "illuminate", "light", "tracks"), "camp_scout_tracks"),
+                DialogueChoice("c_scout_rush", "Draw weapons and rush the sound in the bracken", listOf("rush", "draw", "weapons", "sound", "attack"), "camp_scout_rush")
             )
         ),
         DialogueNode(
-            id = "camp_lore_blight",
+            id = "camp_scout_tracks",
             speaker = DialogueSpeaker.CEDRIC,
             side = SpeakerSide.RIGHT,
-            text = "Ten cycles ago, the Mute Sovereign descended upon the High Sanctum with an absolute Void that devoured all sound. Those caught in its wake turned to hollow obsidian glass. Only those with the Logos harmonic in their blood can speak.",
-            nextNodeId = "camp_next_morning"
+            text = "Wise thinking! The luminescence exposes two obsidian stalkers attempting to circle our eastern flank! Stand your ground!",
+            nextNodeId = "camp_scout_ambush"
         ),
         DialogueNode(
-            id = "camp_lore_towers",
+            id = "camp_scout_rush",
+            speaker = DialogueSpeaker.AETHEL,
+            side = SpeakerSide.LEFT,
+            text = "I hear their ragged breathing in the brush! Sir Cedric, with me!",
+            nextNodeId = "camp_scout_ambush"
+        ),
+        DialogueNode(
+            id = "camp_scout_ambush",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "Two Blighted Trackers burst from the darkness, razor obsidian claws poised to strike! Defend the fellowship's camp!",
+            triggerBattleEncounterId = "blight_trackers"
+        ),
+        DialogueNode(
+            id = "camp_scout_victory",
             speaker = DialogueSpeaker.CEDRIC,
             side = SpeakerSide.RIGHT,
-            text = "The Four Great Bell Towers were forged by the Primordial Chanters. Each bell carries a sacred acoustic frequency that purges the silence. The first tower crowns the Sunken Hollows, past the Whispering Caverns.",
-            nextNodeId = "camp_next_morning"
+            text = "The prowlers shatter into inert ash! From their belt satchel, I've recovered an obsidian order cipher from the Mute Sovereign — their vanguard is fortifying the Bell Tower. Our perimeter is now secure!",
+            setFlagOnEnter = "substory_blight_complete",
+            nextNodeId = "camp_return_hub"
         ),
+
+        // === SUB-STORY Y: SUN SHRINE RUINS & ECHO CHIME RELIC ===
         DialogueNode(
-            id = "camp_rest",
+            id = "camp_shrine_entry",
             speaker = DialogueSpeaker.NARRATOR,
             side = SpeakerSide.CENTER_NARRATOR,
-            text = "You sit in quiet meditation by the dancing embers. The resonance in your chest warms and stabilizes. Your spirit and vocal power are renewed for the trials ahead.",
-            nextNodeId = "camp_next_morning"
-        ),
-        DialogueNode(
-            id = "camp_next_morning",
-            speaker = DialogueSpeaker.NARRATOR,
-            side = SpeakerSide.CENTER_NARRATOR,
-            text = "Dawn breaks over the jagged forest canopy. A fork in the trail lies ahead: the damp mouth of the Whispering Caverns descends underground, while an overgrown path leads toward the mist-covered marsh.",
+            text = "Behind the campfire stands the weathered sun shrine. Its granite altar is inscribed with ancient musical clefs and celestial dials left by the Primordial Chanters.",
             choices = listOf(
-                DialogueChoice("c_cavern", "Descend into the Whispering Caverns", listOf("cavern", "cave", "descend", "underground"), "cavern_entry"),
-                DialogueChoice("c_marsh", "Traverse the Rotting Marsh", listOf("marsh", "swamp", "bog", "mire"), "marsh_entry")
+                DialogueChoice("c_shrine_chant", "Chant the three sacred notes inscribed on the altar", listOf("chant", "notes", "sing", "sacred"), "camp_shrine_chant"),
+                DialogueChoice("c_shrine_dial", "Align the astrological dial with the Dawn constellation", listOf("dial", "astrological", "align", "constellation"), "camp_shrine_dial")
             )
         ),
-        // Cavern Path
         DialogueNode(
-            id = "cavern_entry",
+            id = "camp_shrine_chant",
+            speaker = DialogueSpeaker.AETHEL,
+            side = SpeakerSide.LEFT,
+            text = "Sol... Aeterna... Cantus! Let the ancient harmonic awaken!",
+            nextNodeId = "camp_shrine_relic"
+        ),
+        DialogueNode(
+            id = "camp_shrine_dial",
             speaker = DialogueSpeaker.CEDRIC,
             side = SpeakerSide.RIGHT,
-            text = "The air in these caves carries a faint crystalline hum. Watch your step... blighted crawlers lurk in the shadows.",
+            text = "The gears click into place! Look — the stone pedestal is sliding open with a golden glow!",
+            nextNodeId = "camp_shrine_relic"
+        ),
+        DialogueNode(
+            id = "camp_shrine_relic",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "A radiant golden tuning relic ascends from the altar — the Echo Chime of Solaria! It hums in harmony with your voice.",
+            nextNodeId = "camp_shrine_lore"
+        ),
+        DialogueNode(
+            id = "camp_shrine_lore",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            text = "By the First Dawn... that tuning chime was forged to break the Sovereign's acoustic lock on the First Bell Tower. We now possess the key to the gates!",
+            setFlagOnEnter = "substory_towers_complete",
+            nextNodeId = "camp_return_hub"
+        ),
+
+        // === SUB-STORY Z: REST & MIDNIGHT VIGIL ===
+        DialogueNode(
+            id = "camp_vigil_entry",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "Midnight cloaks the forest in silence. Sir Cedric quietly feeds dry pine boughs into the fire as glowing embers rise toward the starry sky.",
+            choices = listOf(
+                DialogueChoice("c_vigil_bond", "Ask Cedric what binds his oath against the Blight", listOf("oath", "sister", "binds", "story", "ask"), "camp_vigil_story"),
+                DialogueChoice("c_vigil_meditate", "Focus on harmonic breathwork and restoration", listOf("meditate", "breathe", "heal", "focus", "restoration"), "camp_vigil_meditate")
+            )
+        ),
+        DialogueNode(
+            id = "camp_vigil_story",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            text = "My sister was in the capital when the silence fell. Her voice was stolen... turned to obsidian before my eyes. I swore on my shield that until all four bells chime again, my sword belongs to the Logos.",
+            nextNodeId = "camp_vigil_restored"
+        ),
+        DialogueNode(
+            id = "camp_vigil_meditate",
+            speaker = DialogueSpeaker.AETHEL,
+            side = SpeakerSide.LEFT,
+            text = "Warmth fills my chest. The primordial embers rekindle the harmonic flow within our souls.",
+            nextNodeId = "camp_vigil_restored"
+        ),
+        DialogueNode(
+            id = "camp_vigil_restored",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "A profound calm settles over the camp. The party's health and mana are completely restored, and fellowship morale reaches its peak!",
+            setFlagOnEnter = "substory_rest_complete",
+            nextNodeId = "camp_return_hub"
+        ),
+
+        // === CAMP RETURN HUB ===
+        DialogueNode(
+            id = "camp_return_hub",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "You return to the warm circle of the campfire.",
+            nextNodeId = "camp_intro"
+        ),
+        DialogueNode(
+            id = "camp_all_completed",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            text = "Look toward the northern ridge — dawn is breaking! The perimeter is secure, the Echo Chime is in hand, and our spirits are whole. Invocator, our camp preparations are complete. The First Bell Tower awaits!",
+            nextNodeId = "chapter3_intro"
+        ),
+
+        // === CHAPTER 3 COMMENCEMENT ===
+        DialogueNode(
+            id = "chapter3_intro",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "CHAPTER 3: THE ASCENT OF SOLARIA. Leaving the forest camp behind, you and Sir Cedric ascend the rocky slopes toward the colossal stone aqueducts of the First Bell Tower. Looming in the morning mist, the ancient gateway stands sealed by the Mute Sovereign's obsidian wards.",
             changeSceneId = SCENE_CAVE.id,
-            nextNodeId = "cavern_exploration"
+            choices = listOf(
+                DialogueChoice("ch3_chime", "Raise the Echo Chime to unseal the Aqueduct Gate", listOf("chime", "unseal", "raise", "echo", "gate"), "ch3_gate_unsealed"),
+                DialogueChoice("ch3_scout", "Inspect the corrupted sentinels guarding the portal", listOf("inspect", "sentinels", "guardians", "scout"), "ch3_sentinels_scout")
+            )
         ),
         DialogueNode(
-            id = "cavern_exploration",
+            id = "ch3_gate_unsealed",
+            speaker = DialogueSpeaker.AETHEL,
+            side = SpeakerSide.LEFT,
+            text = "By the resonance of the First Dawn... Echo Chime, awaken!",
+            nextNodeId = "ch3_aqueduct_boss_trigger"
+        ),
+        DialogueNode(
+            id = "ch3_sentinels_scout",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            text = "The gate is guarded by the Chittering Queen and her corrupted brood! We must purge them to breach the tower!",
+            nextNodeId = "ch3_aqueduct_boss_trigger"
+        ),
+        DialogueNode(
+            id = "ch3_aqueduct_boss_trigger",
             speaker = DialogueSpeaker.NARRATOR,
             side = SpeakerSide.CENTER_NARRATOR,
-            text = "Bioluminescent azure crystals cling to the stalactites above, pulsing in rhythm with your breathing. Ahead lies the subterranean aqueduct to the Bell Tower, but a chittering horror blocks the passage!",
+            text = "The Grave Broodmother descends from the aqueduct archway, screeching in deafening discord! Strike with your voice and cleanse the gate!",
             triggerBattleEncounterId = "cave_broodmother"
         ),
         DialogueNode(
-            id = "cavern_post_battle",
+            id = "ch3_victory_ascent",
             speaker = DialogueSpeaker.CEDRIC,
             side = SpeakerSide.RIGHT,
-            text = "The broodmother has fallen! Look ahead — the subterranean aqueducts rise before us, carving a path directly into the Bell Tower's foundations!",
-            nextNodeId = "chapter2_conclusion"
-        ),
-        // Marsh Path
-        DialogueNode(
-            id = "marsh_entry",
-            speaker = DialogueSpeaker.CEDRIC,
-            side = SpeakerSide.RIGHT,
-            text = "The Rotting Marsh... keep to the dry moss mounds. The water here is foul with the Blight's mute venom.",
-            changeSceneId = SCENE_SWAMP.id,
-            nextNodeId = "marsh_exploration"
-        ),
-        DialogueNode(
-            id = "marsh_exploration",
-            speaker = DialogueSpeaker.NARRATOR,
-            side = SpeakerSide.CENTER_NARRATOR,
-            text = "Thick emerald fog drifts across weeping willow branches. Suddenly, the bog churns as a towering Bog Behemoth surges from the mire with razor leeches!",
-            triggerBattleEncounterId = "swamp_behemoth"
-        ),
-        DialogueNode(
-            id = "marsh_post_battle",
-            speaker = DialogueSpeaker.CEDRIC,
-            side = SpeakerSide.RIGHT,
-            text = "A valiant victory! The corrupted willow weeping has ceased. The causeway to the First Bell Tower is open!",
-            nextNodeId = "chapter2_conclusion"
-        ),
-        DialogueNode(
-            id = "chapter2_conclusion",
-            speaker = DialogueSpeaker.AETHEL,
-            side = SpeakerSide.LEFT,
-            text = "We stand at the threshold of the First Bell Tower. Let our voices awaken the bell and break the silence of Aethelgard!",
-            choices = listOf(
-                DialogueChoice("c_replay_camp", "Return to camp and reflect", listOf("camp", "reflect", "rest", "return"), "camp_intro"),
-                DialogueChoice("c_replay_branch", "Explore the other fork in the trail", listOf("fork", "explore", "other", "trail"), "camp_next_morning")
-            )
+            text = "The gate collapses open! Ahead lies the winding spiral staircase to the Solaria Bell chamber. The First Bell Tower is within our grasp!",
+            nextNodeId = null
         )
     ).associateBy { it.id }
 }

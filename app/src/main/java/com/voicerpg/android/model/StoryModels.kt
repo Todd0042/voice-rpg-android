@@ -63,7 +63,8 @@ data class DialogueChoice(
     val id: String,
     val text: String,
     val voiceKeywords: List<String>,
-    val nextNodeId: String
+    val nextNodeId: String,
+    val completionFlag: String? = null
 )
 
 data class DialogueNode(
@@ -74,7 +75,8 @@ data class DialogueNode(
     val choices: List<DialogueChoice> = emptyList(),
     val nextNodeId: String? = null,
     val triggerBattleEncounterId: String? = null,
-    val changeSceneId: String? = null
+    val changeSceneId: String? = null,
+    val setFlagOnEnter: String? = null
 )
 
 data class StoryScene(

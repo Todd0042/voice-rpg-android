@@ -140,61 +140,152 @@ class NarrationAndOptionsTest {
     }
 
     @Test
-    fun testStoryContinuationIntoCampfireAndChapter2() {
-        // Jump directly to crossroads_conclusion
-        val conclusionNode = StoryScript.ALL_NODES["crossroads_conclusion"]!!
-        storyViewModel.selectChoice(DialogueChoice("test", "test", emptyList(), conclusionNode.id))
-        assertEquals("crossroads_conclusion", storyViewModel.state.value.currentNode.id)
-
-        // Advance to campfire transition
+    fun testCampSubStoriesProgressionEliminationAndChapter3Transition() {
+        // Jump directly to campfire transition
+        val campTransNode = StoryScript.ALL_NODES["crossroads_camp_trans"]!!
+        storyViewModel.selectChoice(DialogueChoice("test", "test", emptyList(), campTransNode.id))
         storyViewModel.advanceDialogue()
-        assertEquals("crossroads_camp_trans", storyViewModel.state.value.currentNode.id)
-        assertEquals("scene_camp", storyViewModel.state.value.currentScene.id)
-        assertEquals("Camp of the Fellowship", storyViewModel.state.value.currentScene.name)
 
-        // Advance to camp intro
-        storyViewModel.advanceDialogue()
         assertEquals("camp_intro", storyViewModel.state.value.currentNode.id)
         assertEquals(3, storyViewModel.state.value.currentNode.choices.size)
 
-        // Pick lore choice about Bell Towers
-        val towerChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "c_towers" }
-        storyViewModel.selectChoice(towerChoice)
-        assertEquals("camp_lore_towers", storyViewModel.state.value.currentNode.id)
-        assertTrue(storyViewModel.state.value.currentNode.text.contains("Four Great Bell Towers"))
+        // --- SUB-STORY X: Blight Trackers Scouting & Combat ---
+        val scoutChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "c_lore" }
+        assertEquals("substory_blight_complete", scoutChoice.completionFlag)
+        storyViewModel.selectChoice(scoutChoice)
+        assertEquals("camp_scout_entry", storyViewModel.state.value.currentNode.id)
 
-        // Advance to morning fork
+        // Choose to cast azure spark
+        val sparkChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "c_scout_tracks" }
+        storyViewModel.selectChoice(sparkChoice)
+        assertEquals("camp_scout_tracks", storyViewModel.state.value.currentNode.id)
+
+        // Advance to ambush battle trigger
         storyViewModel.advanceDialogue()
-        assertEquals("camp_next_morning", storyViewModel.state.value.currentNode.id)
-        assertEquals(2, storyViewModel.state.value.currentNode.choices.size)
+        assertEquals("camp_scout_ambush", storyViewModel.state.value.currentNode.id)
+        assertEquals("blight_trackers", storyViewModel.state.value.currentNode.triggerBattleEncounterId)
 
-        // Choose Whispering Caverns branch
-        val cavernChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "c_cavern" }
-        storyViewModel.selectChoice(cavernChoice)
-        assertEquals("cavern_entry", storyViewModel.state.value.currentNode.id)
-        assertEquals("scene_cave", storyViewModel.state.value.currentScene.id)
-        assertEquals("The Whispering Caverns", storyViewModel.state.value.currentScene.name)
-
-        // Advance into cavern exploration and trigger encounter
-        storyViewModel.advanceDialogue()
-        assertEquals("cavern_exploration", storyViewModel.state.value.currentNode.id)
-        assertEquals("cave_broodmother", storyViewModel.state.value.currentNode.triggerBattleEncounterId)
-
-        // Enter battle
+        // Trigger battle
         storyViewModel.advanceDialogue()
         assertEquals(GameScreen.COMBAT_ARENA, storyViewModel.state.value.gameScreen)
-        assertEquals(StoryEncounters.CAVE_BROODMOTHER.id, storyViewModel.state.value.activeEncounter?.id)
+        assertEquals("blight_trackers", storyViewModel.state.value.activeEncounter?.id)
 
-        // Win battle and return to story post-battle
+        // Win battle -> transitions to camp_scout_victory and sets substory_blight_complete flag
         storyViewModel.onCombatVictory()
         assertEquals(GameScreen.STORY_EXPLORATION, storyViewModel.state.value.gameScreen)
-        assertEquals("cavern_post_battle", storyViewModel.state.value.currentNode.id)
-        assertTrue(storyViewModel.state.value.defeatedEncounters.contains("cave_broodmother"))
+        assertEquals("camp_scout_victory", storyViewModel.state.value.currentNode.id)
+        assertTrue(storyViewModel.state.value.narrativeFlags["substory_blight_complete"] == true)
 
-        // Advance to chapter 2 conclusion
+        // Advance back to camp
+        storyViewModel.advanceDialogue() // to camp_return_hub
+        assertEquals("camp_return_hub", storyViewModel.state.value.currentNode.id)
+        storyViewModel.advanceDialogue() // back to camp_intro
+        assertEquals("camp_intro", storyViewModel.state.value.currentNode.id)
+
+        // Verify trying to select the completed scout choice is blocked
+        val completedScoutChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "c_lore" }
+        storyViewModel.selectChoice(completedScoutChoice)
+        assertEquals("camp_intro", storyViewModel.state.value.currentNode.id) // stays at camp_intro
+
+        // Verify voice attempt on completed choice is blocked
+        storyViewModel.handleStoryVoiceInput("scout the woods for trackers")
+        assertEquals("camp_intro", storyViewModel.state.value.currentNode.id) // stays at camp_intro
+
+        // --- SUB-STORY Y: Sun Shrine Lore & Echo Chime Relic ---
+        val shrineChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "c_towers" }
+        assertEquals("substory_towers_complete", shrineChoice.completionFlag)
+        storyViewModel.selectChoice(shrineChoice)
+        assertEquals("camp_shrine_entry", storyViewModel.state.value.currentNode.id)
+
+        // Align astrological dial
+        val dialChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "c_shrine_dial" }
+        storyViewModel.selectChoice(dialChoice)
+        assertEquals("camp_shrine_dial", storyViewModel.state.value.currentNode.id)
+
+        // Advance to relic reveal
         storyViewModel.advanceDialogue()
-        assertEquals("chapter2_conclusion", storyViewModel.state.value.currentNode.id)
-        assertTrue(storyViewModel.state.value.currentNode.choices.isNotEmpty())
+        assertEquals("camp_shrine_relic", storyViewModel.state.value.currentNode.id)
+
+        // Advance to lore explanation which sets substory_towers_complete
+        storyViewModel.advanceDialogue()
+        assertEquals("camp_shrine_lore", storyViewModel.state.value.currentNode.id)
+        assertTrue(storyViewModel.state.value.narrativeFlags["substory_towers_complete"] == true)
+
+        // Return to camp
+        storyViewModel.advanceDialogue() // camp_return_hub
+        storyViewModel.advanceDialogue() // camp_intro
+        assertEquals("camp_intro", storyViewModel.state.value.currentNode.id)
+
+        // --- SUB-STORY Z: Midnight Vigil & Full Party Restoration ---
+        // Damage party member first to test restoration
+        val damagedMember = storyViewModel.state.value.partyStats.first()
+        val damagedParty = listOf(damagedMember.copy(currentHp = 10, currentMp = 5))
+        storyViewModel.updatePartyStatsFromCombat(damagedParty.map { saved ->
+            com.voicerpg.android.model.PartyMember(
+                id = saved.id,
+                name = saved.name,
+                loreClass = saved.loreClass,
+                currentHp = 10,
+                maxHp = saved.maxHp,
+                currentMp = 5,
+                maxMp = saved.maxMp,
+                speed = saved.speed,
+                spells = emptyList()
+            )
+        })
+        assertEquals(10, storyViewModel.state.value.partyStats.first().currentHp)
+
+        val restChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "c_rest" }
+        assertEquals("substory_rest_complete", restChoice.completionFlag)
+        storyViewModel.selectChoice(restChoice)
+        assertEquals("camp_vigil_entry", storyViewModel.state.value.currentNode.id)
+
+        // Choose meditation
+        val meditateChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "c_vigil_meditate" }
+        storyViewModel.selectChoice(meditateChoice)
+        assertEquals("camp_vigil_meditate", storyViewModel.state.value.currentNode.id)
+
+        // Advance to restored state (which sets substory_rest_complete and restores HP/MP)
+        storyViewModel.advanceDialogue()
+        assertEquals("camp_vigil_restored", storyViewModel.state.value.currentNode.id)
+        assertTrue(storyViewModel.state.value.narrativeFlags["substory_rest_complete"] == true)
+        val restoredMember = storyViewModel.state.value.partyStats.first()
+        assertEquals(restoredMember.maxHp, restoredMember.currentHp)
+        assertEquals(restoredMember.maxMp, restoredMember.currentMp)
+
+        // --- ALL 3 SUB-STORIES COMPLETE: Automatic Chapter 3 Commencement ---
+        storyViewModel.advanceDialogue() // to camp_return_hub
+        assertEquals("camp_return_hub", storyViewModel.state.value.currentNode.id)
+
+        // Advancing from camp_return_hub towards camp_intro automatically redirects to camp_all_completed!
+        storyViewModel.advanceDialogue()
+        assertEquals("camp_all_completed", storyViewModel.state.value.currentNode.id)
+        assertTrue(storyViewModel.state.value.currentNode.text.contains("preparations are complete"))
+
+        // Advance into Chapter 3!
+        storyViewModel.advanceDialogue()
+        assertEquals("chapter3_intro", storyViewModel.state.value.currentNode.id)
+        assertEquals("The Whispering Caverns", storyViewModel.state.value.currentScene.name)
+        assertTrue(storyViewModel.state.value.currentNode.text.contains("CHAPTER 3: THE ASCENT OF SOLARIA"))
+
+        // Unseal gate with Echo Chime
+        val chimeChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "ch3_chime" }
+        storyViewModel.selectChoice(chimeChoice)
+        assertEquals("ch3_gate_unsealed", storyViewModel.state.value.currentNode.id)
+
+        // Advance to Aqueduct Boss trigger
+        storyViewModel.advanceDialogue()
+        assertEquals("ch3_aqueduct_boss_trigger", storyViewModel.state.value.currentNode.id)
+        assertEquals("cave_broodmother", storyViewModel.state.value.currentNode.triggerBattleEncounterId)
+
+        // Trigger battle and achieve victory
+        storyViewModel.advanceDialogue()
+        assertEquals(GameScreen.COMBAT_ARENA, storyViewModel.state.value.gameScreen)
+        storyViewModel.onCombatVictory()
+
+        assertEquals(GameScreen.STORY_EXPLORATION, storyViewModel.state.value.gameScreen)
+        assertEquals("ch3_victory_ascent", storyViewModel.state.value.currentNode.id)
+        assertTrue(storyViewModel.state.value.currentNode.text.contains("The First Bell Tower is within our grasp"))
     }
 
     @Test

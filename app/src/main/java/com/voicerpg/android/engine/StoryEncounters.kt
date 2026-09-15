@@ -135,6 +135,22 @@ object StoryEncounters {
         )
     )
 
+    // 7. Camp Reconnaissance: Blighted Trackers (Cedric + Aethel vs 2 Prowlers)
+    val BLIGHT_TRACKERS = EncounterDefinition(
+        id = "blight_trackers",
+        name = "Camp Reconnaissance: The Blighted Prowlers",
+        description = "Cedric and Aethel ambush two corrupted trackers stalking the camp perimeter.",
+        environment = BattleEnvironment.FOREST,
+        enemies = listOf(
+            Enemy("tracker_1", "Obsidian Tracker", "Sniper", currentHp = 220, maxHp = 220, baseAttack = 18, isTargeted = true, spriteTint = Color(0xFFCE93D8), speed = 62, atbGauge = 0.35f),
+            Enemy("tracker_2", "Blighted Stalker", "Vanguard", currentHp = 280, maxHp = 280, baseAttack = 20, isTargeted = false, spriteTint = Color(0xFFEF5350), speed = 54, atbGauge = 0.20f)
+        ),
+        initialParty = listOf(
+            PartyMember("hero", "Aethel", "Elementalist", currentHp = 240, maxHp = 240, currentMp = 140, maxMp = 140, spells = aethelSpells, avatarTint = Color(0xFF90CAF9), speed = 70, atbGauge = 0.85f),
+            PartyMember("cedric", "Sir Cedric", "Templar", currentHp = 310, maxHp = 420, currentMp = 80, maxMp = 80, spells = cedricSpells, avatarTint = Color(0xFFFFD54F), speed = 55, atbGauge = 0.50f)
+        )
+    )
+
     // Helper to generate reinforcement minions dynamically
     fun createMinion(idSuffix: String, name: String = "Blighted Minion", subtitle: String = "Minion", hp: Int = 180): Enemy {
         return Enemy(
@@ -157,6 +173,7 @@ object StoryEncounters {
         DUNGEON_DESCENT,
         CASTLE_HORDE,
         CAVE_BROODMOTHER,
-        SWAMP_BEHEMOTH
+        SWAMP_BEHEMOTH,
+        BLIGHT_TRACKERS
     )
 }

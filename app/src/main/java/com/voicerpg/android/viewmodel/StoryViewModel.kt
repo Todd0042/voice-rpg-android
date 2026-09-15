@@ -58,7 +58,16 @@ class StoryViewModel(
         val existingSave = saveManager.load()
         if (existingSave != null) {
             val restoredScene = StoryScript.ALL_SCENES[existingSave.currentSceneId] ?: StoryScript.SCENE_COTTAGE
-            val restoredNode = StoryScript.ALL_NODES[existingSave.currentNodeId] ?: StoryScript.ALL_NODES["cottage_intro"]!!
+            var restoredNode = StoryScript.ALL_NODES[existingSave.currentNodeId] ?: StoryScript.ALL_NODES["cottage_intro"]!!
+
+            if (restoredNode.id == "camp_intro") {
+                val allThreeComplete = existingSave.narrativeFlags["substory_blight_complete"] == true &&
+                        existingSave.narrativeFlags["substory_towers_complete"] == true &&
+                        existingSave.narrativeFlags["substory_rest_complete"] == true
+                if (allThreeComplete) {
+                    StoryScript.ALL_NODES["camp_all_completed"]?.let { restoredNode = it }
+                }
+            }
 
             _state.value = StoryState(
                 currentScene = restoredScene,
@@ -141,6 +150,11 @@ class StoryViewModel(
     }
 
     fun selectChoice(choice: DialogueChoice) {
+        if (choice.completionFlag != null && _state.value.narrativeFlags[choice.completionFlag] == true) {
+            combatNarrator.speak("That objective has already been completed. Please select a remaining task.", force = true)
+            return
+        }
+
         combatNarrator.stop()
         val nextNode = StoryScript.ALL_NODES[choice.nextNodeId]
         if (nextNode != null) {
@@ -151,16 +165,38 @@ class StoryViewModel(
     }
 
     private fun applyNodeTransition(newNode: DialogueNode) {
-        val sceneIdToUse = newNode.changeSceneId ?: _state.value.currentNode.changeSceneId
-        val targetScene = if (sceneIdToUse != null) {
-            StoryScript.ALL_SCENES[sceneIdToUse] ?: _state.value.currentScene
+        var effectiveNode = newNode
+        val updatedFlags = if (newNode.setFlagOnEnter != null) {
+            _state.value.narrativeFlags + (newNode.setFlagOnEnter to true)
         } else {
-            _state.value.currentScene
+            _state.value.narrativeFlags
         }
+
+        var updatedPartyStats = _state.value.partyStats
+        if (newNode.setFlagOnEnter == "substory_rest_complete") {
+            updatedPartyStats = updatedPartyStats.map { member ->
+                member.copy(currentHp = member.maxHp, currentMp = member.maxMp)
+            }
+        }
+
+        // If transitioning to camp_intro, check if all 3 camp sub-stories are completed
+        if (effectiveNode.id == "camp_intro") {
+            val allThreeComplete = updatedFlags["substory_blight_complete"] == true &&
+                    updatedFlags["substory_towers_complete"] == true &&
+                    updatedFlags["substory_rest_complete"] == true
+            if (allThreeComplete) {
+                StoryScript.ALL_NODES["camp_all_completed"]?.let { effectiveNode = it }
+            }
+        }
+
+        val sceneIdToUse = effectiveNode.changeSceneId ?: _state.value.currentScene.id
+        val targetScene = StoryScript.ALL_SCENES[sceneIdToUse] ?: _state.value.currentScene
 
         _state.value = _state.value.copy(
             currentScene = targetScene,
-            currentNode = newNode
+            currentNode = effectiveNode,
+            narrativeFlags = updatedFlags,
+            partyStats = updatedPartyStats
         )
 
         persistCurrentState()
@@ -194,7 +230,8 @@ class StoryViewModel(
         val postBattleNodeId = when (encounterId) {
             "prologue_solo" -> "village_post_battle"
             "forest_ambush" -> "crossroads_post_battle"
-            "cave_broodmother" -> "cavern_post_battle"
+            "blight_trackers" -> "camp_scout_victory"
+            "cave_broodmother" -> "ch3_victory_ascent"
             "swamp_behemoth" -> "marsh_post_battle"
             else -> null
         }
@@ -205,12 +242,23 @@ class StoryViewModel(
             _state.value.defeatedEncounters
         }
 
-        val nextNode = if (postBattleNodeId != null) StoryScript.ALL_NODES[postBattleNodeId] else lastNode
+        val targetNode = (if (postBattleNodeId != null) StoryScript.ALL_NODES[postBattleNodeId] else null) ?: lastNode
+
+        val updatedFlags = if (targetNode.setFlagOnEnter != null) {
+            _state.value.narrativeFlags + (targetNode.setFlagOnEnter to true)
+        } else {
+            _state.value.narrativeFlags
+        }
+
+        val sceneIdToUse = targetNode.changeSceneId ?: _state.value.currentScene.id
+        val targetScene = StoryScript.ALL_SCENES[sceneIdToUse] ?: _state.value.currentScene
 
         _state.value = _state.value.copy(
             gameScreen = GameScreen.STORY_EXPLORATION,
             activeEncounter = null,
-            currentNode = nextNode ?: lastNode,
+            currentScene = targetScene,
+            currentNode = targetNode,
+            narrativeFlags = updatedFlags,
             defeatedEncounters = updatedDefeated
         )
 
@@ -335,6 +383,10 @@ class StoryViewModel(
                         lower.contains(choice.text.lowercase())
             }
             if (matchedChoice != null) {
+                if (matchedChoice.completionFlag != null && _state.value.narrativeFlags[matchedChoice.completionFlag] == true) {
+                    combatNarrator.speak("That objective has already been completed. Please select a remaining task.", force = true)
+                    return
+                }
                 selectChoice(matchedChoice)
                 return
             }
@@ -352,10 +404,13 @@ class StoryViewModel(
     private fun narrateCurrentNode() {
         if (_state.value.gameScreen != GameScreen.STORY_EXPLORATION) return
         val node = _state.value.currentNode
+        val uncompletedChoices = node.choices.filter { choice ->
+            choice.completionFlag == null || _state.value.narrativeFlags[choice.completionFlag] != true
+        }
         combatNarrator.narrateDialogue(
             speaker = node.speaker,
             text = node.text,
-            choices = node.choices
+            choices = uncompletedChoices
         ) {
             if (speechManager.isAutoListen.value) {
                 activeScope.launch {
