@@ -9,6 +9,7 @@ import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -53,12 +54,17 @@ class SpeechManager(private val context: Context? = null) {
     val lastAcousticProfile: StateFlow<com.voicerpg.android.model.AcousticProfile> = _lastAcousticProfile.asStateFlow()
 
     private var isMutedTemporary = false
+    private var isListeningSessionActive = false
+    private var autoListenRestartJob: Job? = null
     private var onFinalResultCallback: ((String) -> Unit)? = null
 
     fun getLatestAcousticProfile(): com.voicerpg.android.model.AcousticProfile = _lastAcousticProfile.value
 
     val isAvailable: Boolean
         get() = context != null && try { SpeechRecognizer.isRecognitionAvailable(context) } catch (_: Exception) { false }
+
+    val isSessionActive: Boolean
+        get() = isListeningSessionActive
 
     fun toggleChimeMute() {
         _isChimeMuted.value = !_isChimeMuted.value
@@ -69,15 +75,20 @@ class SpeechManager(private val context: Context? = null) {
     }
 
     fun toggleAutoListen() {
-        _isAutoListen.value = !_isAutoListen.value
+        setAutoListen(!_isAutoListen.value)
     }
 
     fun setAutoListen(enabled: Boolean) {
         _isAutoListen.value = enabled
+        if (!enabled && isListeningSessionActive) {
+            autoListenRestartJob?.cancel()
+            autoListenRestartJob = null
+        }
     }
 
     /**
-     * Momentarily mutes system/notification/music streams so OS speech beeps/chimes are silent.
+     * Momentarily mutes system/notification streams so OS speech beeps/chimes are silent.
+     * Keeps STREAM_MUSIC unmuted so game sound effects and TTS remain clear.
      */
     private fun suppressChime() {
         if (!_isChimeMuted.value) return
@@ -85,11 +96,10 @@ class SpeechManager(private val context: Context? = null) {
         isMutedTemporary = true
         try { am.adjustStreamVolume(AudioManager.STREAM_NOTIFICATION, AudioManager.ADJUST_MUTE, 0) } catch (_: Exception) {}
         try { am.adjustStreamVolume(AudioManager.STREAM_SYSTEM, AudioManager.ADJUST_MUTE, 0) } catch (_: Exception) {}
-        try { am.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_MUTE, 0) } catch (_: Exception) {}
     }
 
     /**
-     * Restores streams after the chime window has elapsed.
+     * Restores system/notification streams after the chime window has elapsed.
      */
     private fun restoreVolume(delayMs: Long = 250L) {
         if (!isMutedTemporary) return
@@ -98,9 +108,31 @@ class SpeechManager(private val context: Context? = null) {
             val am = audioManager ?: return@launch
             try { am.adjustStreamVolume(AudioManager.STREAM_NOTIFICATION, AudioManager.ADJUST_UNMUTE, 0) } catch (_: Exception) {}
             try { am.adjustStreamVolume(AudioManager.STREAM_SYSTEM, AudioManager.ADJUST_UNMUTE, 0) } catch (_: Exception) {}
-            try { am.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_UNMUTE, 0) } catch (_: Exception) {}
             isMutedTemporary = false
         }
+    }
+
+    private fun getOrCreateRecognizer(): SpeechRecognizer? {
+        if (context == null) return null
+        if (speechRecognizer == null) {
+            try {
+                speechRecognizer = SpeechRecognizer.createSpeechRecognizer(context).apply {
+                    setRecognitionListener(createListener())
+                }
+            } catch (_: Exception) {
+                speechRecognizer = null
+            }
+        }
+        return speechRecognizer
+    }
+
+    private fun recreateRecognizer() {
+        try {
+            speechRecognizer?.cancel()
+            speechRecognizer?.destroy()
+        } catch (_: Exception) {}
+        speechRecognizer = null
+        getOrCreateRecognizer()
     }
 
     fun startListening(onResult: (String) -> Unit) {
@@ -110,39 +142,64 @@ class SpeechManager(private val context: Context? = null) {
         }
 
         onFinalResultCallback = onResult
+        isListeningSessionActive = true
+        autoListenRestartJob?.cancel()
+        autoListenRestartJob = null
         _liveTranscript.value = ""
+        _speechState.value = SpeechState.Listening
+
+        startListeningInternal()
+    }
+
+    private fun startListeningInternal() {
+        if (!isAvailable || !isListeningSessionActive) return
 
         try {
             suppressChime()
-            try {
-                speechRecognizer?.cancel()
-                speechRecognizer?.destroy()
-            } catch (_: Exception) {}
-
-            speechRecognizer = SpeechRecognizer.createSpeechRecognizer(context).apply {
-                setRecognitionListener(createListener())
-            }
+            val recognizer = getOrCreateRecognizer() ?: return
 
             val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
                 putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
                 putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
-                putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
                 putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
-                putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 1800L)
-                putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 1200L)
-                putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, 1000L)
+                // Generous pause windows so chanting and multi-word incantations are not cut off
+                putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 3000L)
+                putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 2500L)
+                putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, 1500L)
             }
 
-            speechRecognizer?.startListening(intent)
+            try {
+                recognizer.cancel()
+            } catch (_: Exception) {}
+
+            recognizer.startListening(intent)
             _speechState.value = SpeechState.Listening
             restoreVolume(400L)
         } catch (e: Exception) {
-            restoreVolume(0L)
-            _speechState.value = SpeechState.Error(e.localizedMessage ?: "Failed to start speech recognizer")
+            recreateRecognizer()
+            if (isListeningSessionActive && _isAutoListen.value) {
+                scheduleRestart(250L)
+            } else {
+                restoreVolume(0L)
+                _speechState.value = SpeechState.Error(e.localizedMessage ?: "Failed to start speech recognizer")
+            }
+        }
+    }
+
+    private fun scheduleRestart(delayMs: Long) {
+        autoListenRestartJob?.cancel()
+        autoListenRestartJob = CoroutineScope(Dispatchers.Main).launch {
+            delay(delayMs)
+            if (isListeningSessionActive && _isAutoListen.value) {
+                startListeningInternal()
+            }
         }
     }
 
     fun stopListening() {
+        isListeningSessionActive = false
+        autoListenRestartJob?.cancel()
+        autoListenRestartJob = null
         suppressChime()
         try {
             speechRecognizer?.stopListening()
@@ -154,6 +211,9 @@ class SpeechManager(private val context: Context? = null) {
     }
 
     fun cancel() {
+        isListeningSessionActive = false
+        autoListenRestartJob?.cancel()
+        autoListenRestartJob = null
         suppressChime()
         try {
             speechRecognizer?.cancel()
@@ -165,7 +225,11 @@ class SpeechManager(private val context: Context? = null) {
     }
 
     fun destroy() {
+        isListeningSessionActive = false
+        autoListenRestartJob?.cancel()
+        autoListenRestartJob = null
         try {
+            speechRecognizer?.cancel()
             speechRecognizer?.destroy()
         } catch (_: Exception) {}
         speechRecognizer = null
@@ -175,12 +239,16 @@ class SpeechManager(private val context: Context? = null) {
     private fun createListener(): RecognitionListener {
         return object : RecognitionListener {
             override fun onReadyForSpeech(params: Bundle?) {
-                _speechState.value = SpeechState.Listening
+                if (isListeningSessionActive) {
+                    _speechState.value = SpeechState.Listening
+                }
                 restoreVolume(150L)
             }
 
             override fun onBeginningOfSpeech() {
-                _speechState.value = SpeechState.Listening
+                if (isListeningSessionActive) {
+                    _speechState.value = SpeechState.Listening
+                }
                 speechStartTimeMs = System.currentTimeMillis()
                 rmsSamples.clear()
                 pitchDetector.reset()
@@ -207,18 +275,37 @@ class SpeechManager(private val context: Context? = null) {
             override fun onError(error: Int) {
                 _rmsLevel.value = 0f
                 suppressChime()
+
+                // In Hands-Free Auto-Listen mode, keep listening continuously until something has been said!
+                if (isListeningSessionActive && _isAutoListen.value) {
+                    _speechState.value = SpeechState.Listening
+                    if (error == SpeechRecognizer.ERROR_CLIENT ||
+                        error == SpeechRecognizer.ERROR_RECOGNIZER_BUSY ||
+                        error == 10 || // ERROR_TOO_MANY_REQUESTS
+                        error == 11    // ERROR_SERVER_DISCONNECTED
+                    ) {
+                        try { speechRecognizer?.cancel() } catch (_: Exception) {}
+                        scheduleRestart(250L)
+                    } else {
+                        // ERROR_SPEECH_TIMEOUT, ERROR_NO_MATCH, AUDIO, NETWORK_TIMEOUT: re-arm seamlessly
+                        scheduleRestart(120L)
+                    }
+                    return
+                }
+
+                // If not in auto-listen mode (manual single-tap) or session cancelled:
+                isListeningSessionActive = false
                 restoreVolume(350L)
 
                 if (error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT || error == SpeechRecognizer.ERROR_NO_MATCH) {
-                    // Do NOT loop re-triggering speech recognizer (which played repetitive beeps)
                     _speechState.value = SpeechState.Idle
                     return
                 }
 
                 if (error == SpeechRecognizer.ERROR_CLIENT || 
                     error == SpeechRecognizer.ERROR_RECOGNIZER_BUSY || 
-                    error == 10 || // ERROR_TOO_MANY_REQUESTS
-                    error == 11    // ERROR_SERVER_DISCONNECTED
+                    error == 10 || 
+                    error == 11
                 ) {
                     try {
                         speechRecognizer?.cancel()
@@ -248,11 +335,27 @@ class SpeechManager(private val context: Context? = null) {
                 _rmsLevel.value = 0f
                 finalizeAcousticProfile()
                 val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                val finalTrans = matches?.firstOrNull() ?: ""
+                val finalTrans = matches?.firstOrNull()?.trim() ?: ""
                 _liveTranscript.value = finalTrans
-                _speechState.value = SpeechState.Idle
+
                 if (finalTrans.isNotBlank()) {
+                    // Speech was recognized! Session complete!
+                    isListeningSessionActive = false
+                    autoListenRestartJob?.cancel()
+                    autoListenRestartJob = null
+                    _speechState.value = SpeechState.Processing
+                    restoreVolume(400L)
                     onFinalResultCallback?.invoke(finalTrans)
+                } else {
+                    // Blank/silent result: keep listening if in hands-free auto-listen mode
+                    if (isListeningSessionActive && _isAutoListen.value) {
+                        _speechState.value = SpeechState.Listening
+                        scheduleRestart(120L)
+                    } else {
+                        isListeningSessionActive = false
+                        _speechState.value = SpeechState.Idle
+                        restoreVolume(400L)
+                    }
                 }
             }
 

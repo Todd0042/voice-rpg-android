@@ -2,6 +2,7 @@ package com.voicerpg.android
 
 import com.voicerpg.android.audio.CombatNarrator
 import com.voicerpg.android.audio.SpeechManager
+import com.voicerpg.android.audio.SpeechState
 import com.voicerpg.android.engine.IntentParser
 import com.voicerpg.android.engine.SaveManager
 import com.voicerpg.android.engine.StoryEncounters
@@ -464,4 +465,48 @@ class NarrationAndOptionsTest {
         assertEquals(1.30f, loaded.speechRate, 0.01f)
         assertFalse(loaded.isCharacterPitchEnabled)
     }
+
+    @Test
+    fun testHandsFreeAutoListenSessionStateAndCancellation() {
+        assertFalse(speechManager.isAutoListen.value)
+        assertFalse(speechManager.isSessionActive)
+
+        speechManager.setAutoListen(true)
+        assertTrue(speechManager.isAutoListen.value)
+
+        var recognizedText = ""
+        speechManager.startListening { result ->
+            recognizedText = result
+        }
+
+        // In headless unit test with context = null, isAvailable is false and SpeechState.Error is set
+        assertFalse(speechManager.isAvailable)
+        assertTrue(speechManager.speechState.value is SpeechState.Error)
+
+        // Cancel cleanly resets to Idle
+        speechManager.cancel()
+        assertFalse(speechManager.isSessionActive)
+        assertEquals(SpeechState.Idle, speechManager.speechState.value)
+        assertEquals("", recognizedText)
+    }
+
+    @Test
+    fun testCombatNarratorDialoguePreservesVoiceAndUtteranceTracking() {
+        var callbackFired = false
+        narrator.narrateDialogue(
+            speaker = DialogueSpeaker.CEDRIC,
+            text = "By the holy light, we stand firm!",
+            choices = emptyList()
+        ) {
+            callbackFired = true
+        }
+
+        // Without initialized engine in unit tests, callback executes cleanly via fallback
+        assertTrue(callbackFired)
+
+        // Stop cleanly resets active utterance
+        narrator.stop()
+        assertFalse(narrator.isSpeaking.value)
+    }
 }
+

@@ -27,6 +27,7 @@ class CombatNarrator(
     private var tts: TextToSpeech? = null
     private var isTtsInitialized = false
     private var pendingSpeechOnDone: (() -> Unit)? = null
+    private var activeUtteranceId: String? = null
 
     // Multi-voice character profile mapping
     private var defaultVoice: Voice? = null
@@ -80,18 +81,24 @@ class CombatNarrator(
                         }
 
                         override fun onDone(utteranceId: String?) {
-                            _isSpeaking.value = false
-                            val cb = pendingSpeechOnDone
-                            pendingSpeechOnDone = null
-                            cb?.invoke()
+                            if (utteranceId != null && utteranceId == activeUtteranceId) {
+                                _isSpeaking.value = false
+                                activeUtteranceId = null
+                                val cb = pendingSpeechOnDone
+                                pendingSpeechOnDone = null
+                                cb?.invoke()
+                            }
                         }
 
                         @Deprecated("Deprecated in Java")
                         override fun onError(utteranceId: String?) {
-                            _isSpeaking.value = false
-                            val cb = pendingSpeechOnDone
-                            pendingSpeechOnDone = null
-                            cb?.invoke()
+                            if (utteranceId != null && utteranceId == activeUtteranceId) {
+                                _isSpeaking.value = false
+                                activeUtteranceId = null
+                                val cb = pendingSpeechOnDone
+                                pendingSpeechOnDone = null
+                                cb?.invoke()
+                            }
                         }
                     })
                     assignCharacterVoices(engine)
@@ -289,13 +296,13 @@ class CombatNarrator(
             fullScript.append("What is your command?")
         }
 
-        speak(fullScript.toString(), force = true, onDone = onDone)
+        speak(fullScript.toString(), force = true, preserveVoice = true, onDone = onDone)
     }
 
     /**
      * Speaks text aloud if eyes-free mode is active, or if force is true (e.g. for status queries).
      */
-    fun speak(text: String, force: Boolean = false, onDone: (() -> Unit)? = null) {
+    fun speak(text: String, force: Boolean = false, preserveVoice: Boolean = false, onDone: (() -> Unit)? = null) {
         if (!force && !_isEyesFreeMode.value) {
             onDone?.invoke()
             return
@@ -306,15 +313,19 @@ class CombatNarrator(
             return
         }
 
-        // Reset to Narrator voice for system / tactical announcements
-        narratorVoice?.let {
-            try {
-                tts?.voice = it
-            } catch (_: Exception) {}
+        if (!preserveVoice) {
+            // Reset to Narrator voice for system / tactical announcements
+            narratorVoice?.let {
+                try {
+                    tts?.voice = it
+                } catch (_: Exception) {}
+            }
         }
 
-        pendingSpeechOnDone = onDone
         val utteranceId = "combat_tts_${System.currentTimeMillis()}"
+        activeUtteranceId = utteranceId
+        pendingSpeechOnDone = onDone
+
         val params = Bundle().apply {
             putFloat(TextToSpeech.Engine.KEY_PARAM_VOLUME, 1.0f)
         }
@@ -322,9 +333,12 @@ class CombatNarrator(
     }
 
     fun stop() {
-        tts?.stop()
-        _isSpeaking.value = false
+        activeUtteranceId = null
         pendingSpeechOnDone = null
+        try {
+            tts?.stop()
+        } catch (_: Exception) {}
+        _isSpeaking.value = false
     }
 
     // =========================================================================

@@ -706,7 +706,14 @@ class CombatViewModel(
             MetaCommand.TOGGLE_NARRATION -> {
                 val enabled = combatNarrator.toggleNarration()
                 val status = if (enabled) "Story narration enabled." else "Story narration muted."
-                combatNarrator.speak(status, force = true)
+                combatNarrator.speak(status, force = true) {
+                    if (_state.value.phase == CombatPhase.PLAYER_INPUT && speechManager.isAutoListen.value) {
+                        activeScope.launch {
+                            delay(100)
+                            startVoiceListening()
+                        }
+                    }
+                }
                 val fct = FloatingCombatText(
                     text = if (enabled) "Narration: ON 📖" else "Narration: OFF 🔇",
                     color = Color(0xFFFFD54F),
@@ -722,7 +729,14 @@ class CombatViewModel(
             MetaCommand.TOGGLE_READ_CHOICES -> {
                 val enabled = combatNarrator.toggleReadChoices()
                 val status = if (enabled) "Choice reading enabled." else "Choice reading disabled."
-                combatNarrator.speak(status, force = true)
+                combatNarrator.speak(status, force = true) {
+                    if (_state.value.phase == CombatPhase.PLAYER_INPUT && speechManager.isAutoListen.value) {
+                        activeScope.launch {
+                            delay(100)
+                            startVoiceListening()
+                        }
+                    }
+                }
                 val fct = FloatingCombatText(
                     text = if (enabled) "Read Choices: ON 🔢" else "Read Choices: OFF 🔇",
                     color = Color(0xFF80D8FF),
@@ -805,7 +819,16 @@ class CombatViewModel(
             }
         }
 
-        val activeHero = heroByName ?: heroBySpell ?: heroBySchoolKeyword ?: _state.value.activePartyMember ?: return
+        val activeHero = heroByName ?: heroBySpell ?: heroBySchoolKeyword ?: _state.value.activePartyMember
+        if (activeHero == null) {
+            if (speechManager.isAutoListen.value && _state.value.phase == CombatPhase.PLAYER_INPUT) {
+                activeScope.launch {
+                    delay(200)
+                    startVoiceListening()
+                }
+            }
+            return
+        }
 
         activeScope.launch {
             speechManager.cancel()

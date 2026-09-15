@@ -172,6 +172,7 @@ class StoryViewModel(
     fun advanceDialogue() {
         cancelPendingAutoAdvance()
         combatNarrator.stop()
+        speechManager.cancel()
         val node = _state.value.currentNode
         if (node.choices.isNotEmpty()) {
             return
@@ -207,6 +208,7 @@ class StoryViewModel(
         }
 
         combatNarrator.stop()
+        speechManager.cancel()
         val nextNode = StoryScript.ALL_NODES[choice.nextNodeId]
         if (nextNode != null) {
             val updatedDecisions = _state.value.decisionsMade + choice.id
@@ -630,6 +632,18 @@ class StoryViewModel(
             if (lower.contains("fight") || lower.contains("battle") || lower.contains("attack") || lower.contains("fireball")) {
                 advanceDialogue()
                 return
+            }
+        }
+
+        // If in hands-free auto-listen mode and no action triggered, keep listening!
+        if (speechManager.isAutoListen.value && _state.value.gameScreen == GameScreen.STORY_EXPLORATION) {
+            activeScope.launch {
+                delay(200)
+                if (speechManager.isAutoListen.value && _state.value.gameScreen == GameScreen.STORY_EXPLORATION) {
+                    speechManager.startListening { nextUtterance ->
+                        handleStoryVoiceInput(nextUtterance)
+                    }
+                }
             }
         }
     }
