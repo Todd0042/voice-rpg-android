@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -47,6 +48,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.voicerpg.android.model.DialogueChoice
@@ -143,78 +145,98 @@ fun StoryScreen(
                     )
             )
 
-            // 2. Top Header: Chapter & Scene Location with Mode Switcher
-            Column(
+            // 2. Top Header: Chapter & Scene Location Banner on Left + Stacked Controls on Right
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .align(Alignment.TopCenter)
-                    .padding(horizontal = 12.dp, vertical = 8.dp)
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.Top
             ) {
-                Row(
+                // Title Banner Card (with set flex width and clean multi-line wrapping)
+                Box(
                     modifier = Modifier
-                        .fillMaxWidth()
+                        .weight(1f)
+                        .defaultMinSize(minHeight = 60.dp)
                         .clip(RoundedCornerShape(8.dp))
                         .background(RetroPanel.copy(alpha = 0.92f))
                         .border(1.dp, RetroBorder, RoundedCornerShape(8.dp))
-                        .padding(horizontal = 12.dp, vertical = 6.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    contentAlignment = Alignment.CenterStart
                 ) {
-                    Column {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(3.dp)
+                    ) {
                         Text(
                             text = storyState.currentScene.chapterTitle.uppercase(),
                             color = LogosGold,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Black,
-                            fontFamily = FontFamily.Monospace
+                            fontFamily = FontFamily.Monospace,
+                            softWrap = true,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            lineHeight = 14.sp
                         )
                         Text(
                             text = "📍 ${storyState.currentScene.name}",
                             color = Color.LightGray,
                             fontSize = 10.sp,
-                            fontFamily = FontFamily.Monospace
+                            fontFamily = FontFamily.Monospace,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+
+                // Stacked Action Buttons (Outside the banner: Options above Battle)
+                Column(
+                    modifier = Modifier.width(96.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    horizontalAlignment = Alignment.End
+                ) {
+                    // Top: Options / Pocket Mode Toggle Button
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(28.dp)
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(if (isEyesFreeMode) Color(0xFF1565C0) else RetroPanel.copy(alpha = 0.92f))
+                            .border(1.dp, if (isEyesFreeMode) Color(0xFF64B5F6) else RetroBorder, RoundedCornerShape(6.dp))
+                            .clickable { onOpenOptions() },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = if (isEyesFreeMode) "🎧 POCKET" else "⚙️ OPTIONS",
+                            color = if (isEyesFreeMode) Color(0xFFE3F2FD) else LogosGold,
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Monospace,
+                            maxLines = 1
                         )
                     }
 
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                    // Bottom: Switch to Combat Sandbox Button
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(28.dp)
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(Color(0xFF37474F).copy(alpha = 0.92f))
+                            .border(1.dp, Color(0xFF78909C), RoundedCornerShape(6.dp))
+                            .clickable { storyViewModel.switchToCombat() },
+                        contentAlignment = Alignment.Center
                     ) {
-                        // Switch to Combat Sandbox Button
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(Color(0xFF37474F))
-                                .border(1.dp, Color(0xFF78909C), RoundedCornerShape(6.dp))
-                                .clickable { storyViewModel.switchToCombat() }
-                                .padding(horizontal = 8.dp, vertical = 4.dp)
-                        ) {
-                            Text(
-                                text = "⚔️ BATTLE",
-                                color = Color.White,
-                                fontSize = 9.sp,
-                                fontWeight = FontWeight.Bold,
-                                fontFamily = FontFamily.Monospace
-                            )
-                        }
-
-                        // Options / Pocket Toggle Button
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(if (isEyesFreeMode) Color(0xFF1565C0) else RetroPanel)
-                                .border(1.dp, if (isEyesFreeMode) Color(0xFF64B5F6) else RetroBorder, RoundedCornerShape(6.dp))
-                                .clickable { onOpenOptions() }
-                                .padding(horizontal = 8.dp, vertical = 4.dp)
-                        ) {
-                            Text(
-                                text = if (isEyesFreeMode) "🎧 POCKET" else "⚙️ OPTIONS",
-                                color = if (isEyesFreeMode) Color(0xFFE3F2FD) else LogosGold,
-                                fontSize = 9.sp,
-                                fontWeight = FontWeight.Bold,
-                                fontFamily = FontFamily.Monospace
-                            )
-                        }
+                        Text(
+                            text = "⚔️ BATTLE",
+                            color = Color.White,
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Monospace,
+                            maxLines = 1
+                        )
                     }
                 }
             }
