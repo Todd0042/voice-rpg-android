@@ -38,11 +38,33 @@ object StoryEncounters {
         PartyMember("cedric", "Sir Cedric", "Templar", currentHp = 310, maxHp = 420, currentMp = 80, maxMp = 80, spells = cedricSpells, avatarTint = Color(0xFFFFD54F), speed = 55, atbGauge = 0.50f)
     )
 
+    fun createTrioParty(): List<PartyMember> = listOf(
+        PartyMember("hero", "Aethel", "Elementalist", currentHp = 240, maxHp = 240, currentMp = 140, maxMp = 140, spells = aethelSpells, avatarTint = Color(0xFF90CAF9), speed = 70, atbGauge = 0.85f),
+        PartyMember("cedric", "Sir Cedric", "Templar", currentHp = 310, maxHp = 420, currentMp = 80, maxMp = 80, spells = cedricSpells, avatarTint = Color(0xFFFFD54F), speed = 55, atbGauge = 0.50f),
+        PartyMember("lyra", "Lyra", "Grove Warden", currentHp = 240, maxHp = 280, currentMp = 120, maxMp = 120, spells = lyraSpells, avatarTint = Color(0xFFA5D6A7), speed = 65, atbGauge = 0.70f)
+    )
+
     fun createStandardParty(): List<PartyMember> = listOf(
         PartyMember("hero", "Aethel", "Elementalist", currentHp = 240, maxHp = 240, currentMp = 140, maxMp = 140, spells = aethelSpells, avatarTint = Color(0xFF90CAF9), speed = 70, atbGauge = 0.85f),
         PartyMember("cedric", "Sir Cedric", "Templar", currentHp = 310, maxHp = 420, currentMp = 80, maxMp = 80, spells = cedricSpells, avatarTint = Color(0xFFFFD54F), speed = 55, atbGauge = 0.50f),
         PartyMember("lyra", "Lyra", "Grove Warden", currentHp = 240, maxHp = 280, currentMp = 120, maxMp = 120, spells = lyraSpells, avatarTint = Color(0xFFA5D6A7), speed = 65, atbGauge = 0.70f),
         PartyMember("zephyr", "Zephyr", "Shadowblade", currentHp = 250, maxHp = 250, currentMp = 90, maxMp = 90, spells = zephyrSpells, avatarTint = Color(0xFFCE93D8), speed = 85, atbGauge = 0.95f)
+    )
+
+    fun createQuadParty(): List<PartyMember> = createStandardParty()
+
+    fun createZephyrMember(): PartyMember = PartyMember(
+        id = "zephyr",
+        name = "Zephyr",
+        loreClass = "Shadowblade",
+        currentHp = 250,
+        maxHp = 250,
+        currentMp = 90,
+        maxMp = 90,
+        spells = zephyrSpells,
+        avatarTint = Color(0xFFCE93D8),
+        speed = 85,
+        atbGauge = 1.0f
     )
 
     // 1. Prologue Solo (1 Hero vs 2 Enemies)
@@ -186,6 +208,159 @@ object StoryEncounters {
         )
     )
 
+    // 9. Chapter 7: Guardian of the Silt Core (Trio Party vs Mire Wyrm + Silt Ghouls)
+    val CH7_MIRE_WYRM = EncounterDefinition(
+        id = "ch7_mire_wyrm",
+        name = "Chapter 7: Guardian of the Silt Core",
+        description = "Lyra strikes her botanical tuning fork, provoking the ancient silt wyrm guarding the submerged catacomb entrance.",
+        environment = BattleEnvironment.SWAMP,
+        enemies = listOf(
+            Enemy("mire_wyrm", "Ancient Mire Wyrm", "Boss Behemoth", currentHp = 580, maxHp = 580, baseAttack = 26, isBoss = true, isTargeted = true, spriteTint = Color(0xFF689F38), speed = 44, atbGauge = 0.25f),
+            Enemy("ghoul_1", "Silt Ghoul Alpha", "Vanguard", currentHp = 160, maxHp = 160, baseAttack = 18, isTargeted = false, spriteTint = Color(0xFF8D6E63), speed = 58, atbGauge = 0.35f),
+            Enemy("ghoul_2", "Silt Ghoul Beta", "Sniper", currentHp = 160, maxHp = 160, baseAttack = 18, isTargeted = false, spriteTint = Color(0xFFA1887F), speed = 56, atbGauge = 0.30f),
+            Enemy("ghoul_3", "Silt Ghoul Gamma", "Vanguard", currentHp = 160, maxHp = 160, baseAttack = 18, isTargeted = false, spriteTint = Color(0xFFBCAAA4), speed = 54, atbGauge = 0.20f)
+        ),
+        initialParty = createTrioParty()
+    )
+
+    // 10. Chapter 8: The Shadowed Crags Ambush (Trio begins; Zephyr defects mid-battle!)
+    val CH8_EXECUTIONER_AMBUSH = EncounterDefinition(
+        id = "ch8_executioner_ambush",
+        name = "Chapter 8: The Shadowed Crags Ambush",
+        description = "Grand Executioner Kaelen and the Inquisition shadowblades spring a lethal trap in the rocky pass.",
+        environment = BattleEnvironment.CAVE,
+        enemies = listOf(
+            Enemy("kaelen", "Executioner Kaelen", "Boss Assassin", currentHp = 640, maxHp = 640, baseAttack = 28, isBoss = true, isTargeted = true, spriteTint = Color(0xFFD32F2F), speed = 66, atbGauge = 0.35f),
+            Enemy("blade_1", "Shadowblade Alpha", "Sniper", currentHp = 200, maxHp = 200, baseAttack = 22, isTargeted = false, spriteTint = Color(0xFF7E57C2), speed = 76, atbGauge = 0.45f),
+            Enemy("blade_2", "Shadowblade Beta", "Sniper", currentHp = 200, maxHp = 200, baseAttack = 22, isTargeted = false, spriteTint = Color(0xFF9575CD), speed = 72, atbGauge = 0.40f)
+        ),
+        initialParty = createTrioParty()
+    )
+
+    // 11. Chapter 9: Sir Cedric's Required Trial — The Broken Vow of Dawn
+    val CH9_GALAHAULT_TRIAL = EncounterDefinition(
+        id = "ch9_galahault_trial",
+        name = "Chapter 9: The Broken Vow of Dawn",
+        description = "Cedric faces the petrified spirit of Grandmaster Galahault in the Mausoleum of the Sun.",
+        environment = BattleEnvironment.DUNGEON,
+        enemies = listOf(
+            Enemy("galahault", "Sir Galahault", "Boss Paladin", currentHp = 750, maxHp = 750, baseAttack = 30, isBoss = true, isTargeted = true, spriteTint = Color(0xFFFFB300), speed = 52, atbGauge = 0.35f),
+            Enemy("penitent_1", "Penitent Templar", "Vanguard", currentHp = 280, maxHp = 280, baseAttack = 22, isTargeted = false, spriteTint = Color(0xFFB0BEC5), speed = 48, atbGauge = 0.25f),
+            Enemy("penitent_2", "Chantry Cleric", "Occultist", currentHp = 240, maxHp = 240, baseAttack = 16, isTargeted = false, spriteTint = Color(0xFF81D4FA), speed = 60, atbGauge = 0.30f)
+        ),
+        initialParty = createQuadParty()
+    )
+
+    // 12. Chapter 10: Lyra's Required Trial — The Song of the Mute Grove
+    val CH10_BROODMOTHER_TRIAL = EncounterDefinition(
+        id = "ch10_broodmother_trial",
+        name = "Chapter 10: The Song of the Mute Grove",
+        description = "Lyra and the fellowship cleanse the corrupted obsidian silt choking the Emerald Choir spring.",
+        environment = BattleEnvironment.SWAMP,
+        enemies = listOf(
+            Enemy("broodmother", "Blighted Broodmother", "Boss Summoner", currentHp = 760, maxHp = 760, baseAttack = 30, isBoss = true, isTargeted = true, spriteTint = Color(0xFF43A047), speed = 54, atbGauge = 0.35f),
+            Enemy("spider_1", "Corrupted Webweaver", "Sniper", currentHp = 180, maxHp = 180, baseAttack = 20, isTargeted = false, spriteTint = Color(0xFF81C784), speed = 68, atbGauge = 0.40f),
+            Enemy("spider_2", "Toxic Hatchling", "Sniper", currentHp = 180, maxHp = 180, baseAttack = 20, isTargeted = false, spriteTint = Color(0xFFAED581), speed = 65, atbGauge = 0.35f)
+        ),
+        initialParty = createQuadParty()
+    )
+
+    // 13. Chapter 11: Zephyr's Required Trial — The Silent Blade's Reckoning
+    val CH11_NOCTURNE_TRIAL = EncounterDefinition(
+        id = "ch11_nocturne_trial",
+        name = "Chapter 11: The Silent Blade's Reckoning",
+        description = "Zephyr faces his former master, Nocturne, in the misty depths of the Blind Gorge.",
+        environment = BattleEnvironment.CAVE,
+        enemies = listOf(
+            Enemy("nocturne", "Master Nocturne", "Boss Assassin", currentHp = 780, maxHp = 780, baseAttack = 34, isBoss = true, isTargeted = true, spriteTint = Color(0xFF4A148C), speed = 88, atbGauge = 0.45f),
+            Enemy("assassin_1", "Black Guild Stalker", "Sniper", currentHp = 220, maxHp = 220, baseAttack = 24, isTargeted = false, spriteTint = Color(0xFF9575CD), speed = 78, atbGauge = 0.35f),
+            Enemy("assassin_2", "Umbral Cutthroat", "Sniper", currentHp = 220, maxHp = 220, baseAttack = 24, isTargeted = false, spriteTint = Color(0xFFB39DDB), speed = 74, atbGauge = 0.30f)
+        ),
+        initialParty = createQuadParty()
+    )
+
+    // 14. Chapter 12: Awakening the Third Bell (The Iron Belfry of Ouros)
+    val CH12_WARMASTER_OUROS = EncounterDefinition(
+        id = "ch12_warmaster_ouros",
+        name = "Chapter 12: The Iron Belfry of Ouros",
+        description = "The 4-hero fellowship storms the clockwork belfry to defeat Warmaster Ouros and chime Bell 3.",
+        environment = BattleEnvironment.CASTLE,
+        enemies = listOf(
+            // Front Row
+            Enemy("phalanx_1", "Clockwork Phalanx A", "Vanguard", currentHp = 360, maxHp = 360, baseAttack = 24, isTargeted = false, spriteTint = Color(0xFF78909C), speed = 45, atbGauge = 0.20f),
+            Enemy("phalanx_2", "Clockwork Phalanx B", "Vanguard", currentHp = 360, maxHp = 360, baseAttack = 24, isTargeted = false, spriteTint = Color(0xFF607D8B), speed = 48, atbGauge = 0.25f),
+            // Back Row
+            Enemy("warmaster", "Warmaster Ouros", "Boss Automaton", currentHp = 880, maxHp = 880, baseAttack = 32, isBoss = true, isTargeted = true, spriteTint = Color(0xFFFF9800), speed = 50, atbGauge = 0.35f),
+            Enemy("arbalest_1", "Steam Arbalest A", "Sniper", currentHp = 230, maxHp = 230, baseAttack = 26, isTargeted = false, spriteTint = Color(0xFFB0BEC5), speed = 65, atbGauge = 0.40f),
+            Enemy("arbalest_2", "Steam Arbalest B", "Sniper", currentHp = 230, maxHp = 230, baseAttack = 26, isTargeted = false, spriteTint = Color(0xFFCFD8DC), speed = 63, atbGauge = 0.35f)
+        ),
+        initialParty = createQuadParty()
+    )
+
+    // 15. Chapter 13: Breach of the Silent Citadel
+    val CH13_COMMANDER_VAELOR = EncounterDefinition(
+        id = "ch13_commander_vaelor",
+        name = "Chapter 13: Breach of the Silent Citadel",
+        description = "Commander Vaelor sounds the Void Horn to summon spectral legions before the capital gates.",
+        environment = BattleEnvironment.CASTLE,
+        enemies = listOf(
+            // Front Row
+            Enemy("sentinel_1", "Citadel Ironclad", "Vanguard", currentHp = 380, maxHp = 380, baseAttack = 24, isTargeted = false, spriteTint = Color(0xFF546E7A), speed = 48, atbGauge = 0.20f),
+            Enemy("sentinel_2", "Obsidian Warden", "Vanguard", currentHp = 380, maxHp = 380, baseAttack = 24, isTargeted = false, spriteTint = Color(0xFF37474F), speed = 46, atbGauge = 0.25f),
+            // Back Row
+            Enemy("vaelor", "Commander Vaelor", "Boss Vanguard", currentHp = 980, maxHp = 980, baseAttack = 35, isBoss = true, isTargeted = true, spriteTint = Color(0xFFE53935), speed = 64, atbGauge = 0.35f),
+            Enemy("reaper_1", "Spectral Reaper A", "Sniper", currentHp = 240, maxHp = 240, baseAttack = 28, isTargeted = false, spriteTint = Color(0xFF8E24AA), speed = 72, atbGauge = 0.40f),
+            Enemy("reaper_2", "Spectral Reaper B", "Sniper", currentHp = 240, maxHp = 240, baseAttack = 28, isTargeted = false, spriteTint = Color(0xFFAB47BC), speed = 70, atbGauge = 0.35f)
+        ),
+        initialParty = createQuadParty()
+    )
+
+    // 16. Chapter 14: The Void Reservoir
+    val CH14_ABYSSAL_LEVIATHAN = EncounterDefinition(
+        id = "ch14_abyssal_leviathan",
+        name = "Chapter 14: The Void Reservoir",
+        description = "The Abyssal Leviathan rises from the lake of liquid silence, enveloping the arena in a sound-draining aura.",
+        environment = BattleEnvironment.SWAMP,
+        enemies = listOf(
+            Enemy("leviathan", "Abyssal Leviathan", "Boss Leviathan", currentHp = 1050, maxHp = 1050, baseAttack = 36, isBoss = true, isTargeted = true, spriteTint = Color(0xFF00695C), speed = 42, atbGauge = 0.25f),
+            Enemy("tendril_1", "Void Tendril Alpha", "Sniper", currentHp = 220, maxHp = 220, baseAttack = 22, isTargeted = false, spriteTint = Color(0xFF00897B), speed = 62, atbGauge = 0.35f),
+            Enemy("tendril_2", "Void Tendril Beta", "Sniper", currentHp = 220, maxHp = 220, baseAttack = 22, isTargeted = false, spriteTint = Color(0xFF26A69A), speed = 60, atbGauge = 0.30f),
+            Enemy("tendril_3", "Void Tendril Gamma", "Sniper", currentHp = 220, maxHp = 220, baseAttack = 22, isTargeted = false, spriteTint = Color(0xFF80CBC4), speed = 58, atbGauge = 0.25f)
+        ),
+        initialParty = createQuadParty()
+    )
+
+    // 17. Chapter 15: Ascent of the Celestial Spire
+    val CH15_ARCHON_CUSTODIANS = EncounterDefinition(
+        id = "ch15_archon_custodians",
+        name = "Chapter 15: Ascent of the Celestial Spire",
+        description = "Golden archon custodians bar the stairway of solidified harmonic light.",
+        environment = BattleEnvironment.CASTLE,
+        enemies = listOf(
+            Enemy("custodian_1", "Archon Custodian A", "Vanguard", currentHp = 440, maxHp = 440, baseAttack = 30, isTargeted = true, spriteTint = Color(0xFFFFCA28), speed = 66, atbGauge = 0.35f),
+            Enemy("custodian_2", "Archon Custodian B", "Vanguard", currentHp = 440, maxHp = 440, baseAttack = 30, isTargeted = false, spriteTint = Color(0xFFFFD54F), speed = 64, atbGauge = 0.30f),
+            Enemy("spire_1", "Celestial Spire Alpha", "Occultist", currentHp = 320, maxHp = 320, baseAttack = 20, isTargeted = false, spriteTint = Color(0xFF80DEEA), speed = 55, atbGauge = 0.25f),
+            Enemy("spire_2", "Celestial Spire Beta", "Occultist", currentHp = 320, maxHp = 320, baseAttack = 20, isTargeted = false, spriteTint = Color(0xFFB2EBF2), speed = 52, atbGauge = 0.20f)
+        ),
+        initialParty = createQuadParty()
+    )
+
+    // 18. Chapter 16: The Primordial Syllable — Grand Finale (Grand Inquisitor Malakor)
+    val CH16_MALAKOR_FINALE = EncounterDefinition(
+        id = "ch16_malakor_finale",
+        name = "Chapter 16: The Primordial Syllable",
+        description = "The final confrontation against Grand Inquisitor Malakor, The Mute Sovereign, high above the cosmos.",
+        environment = BattleEnvironment.CASTLE,
+        enemies = listOf(
+            Enemy("malakor", "Grand Inquisitor Malakor", "The Mute Sovereign", currentHp = 1350, maxHp = 1350, baseAttack = 42, isBoss = true, isTargeted = true, spriteTint = Color(0xFFB71C1C), speed = 68, atbGauge = 0.40f),
+            Enemy("nullifier_1", "Echo Nullifier I", "Sniper", currentHp = 200, maxHp = 200, baseAttack = 18, isTargeted = false, spriteTint = Color(0xFF78909C), speed = 56, atbGauge = 0.30f),
+            Enemy("nullifier_2", "Echo Nullifier II", "Sniper", currentHp = 200, maxHp = 200, baseAttack = 18, isTargeted = false, spriteTint = Color(0xFF90A4AE), speed = 54, atbGauge = 0.25f),
+            Enemy("nullifier_3", "Echo Nullifier III", "Sniper", currentHp = 200, maxHp = 200, baseAttack = 18, isTargeted = false, spriteTint = Color(0xFFB0BEC5), speed = 52, atbGauge = 0.20f),
+            Enemy("nullifier_4", "Echo Nullifier IV", "Sniper", currentHp = 200, maxHp = 200, baseAttack = 18, isTargeted = false, spriteTint = Color(0xFFCFD8DC), speed = 50, atbGauge = 0.15f)
+        ),
+        initialParty = createQuadParty()
+    )
+
     // Helper to generate reinforcement minions dynamically
     fun createMinion(idSuffix: String, name: String = "Blighted Minion", subtitle: String = "Minion", hp: Int = 180): Enemy {
         return Enemy(
@@ -211,6 +386,16 @@ object StoryEncounters {
         MARSH_RESCUE,
         SWAMP_BEHEMOTH,
         BLIGHT_TRACKERS,
-        CH3_SENTINELS
+        CH3_SENTINELS,
+        CH7_MIRE_WYRM,
+        CH8_EXECUTIONER_AMBUSH,
+        CH9_GALAHAULT_TRIAL,
+        CH10_BROODMOTHER_TRIAL,
+        CH11_NOCTURNE_TRIAL,
+        CH12_WARMASTER_OUROS,
+        CH13_COMMANDER_VAELOR,
+        CH14_ABYSSAL_LEVIATHAN,
+        CH15_ARCHON_CUSTODIANS,
+        CH16_MALAKOR_FINALE
     )
 }

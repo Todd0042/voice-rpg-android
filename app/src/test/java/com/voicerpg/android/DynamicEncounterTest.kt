@@ -238,4 +238,88 @@ class DynamicEncounterTest {
         assertEquals(3, ch6Party.size)
         assertTrue(ch6Party.any { it.id == "lyra" })
     }
+
+    @Test
+    fun testActIIAndBeyondPartyRosterIntegrity() {
+        // Chapter 7: Trio party (Aethel, Cedric, Lyra)
+        val ch7Party = StoryEncounters.CH7_MIRE_WYRM.initialParty ?: emptyList()
+        assertEquals(3, ch7Party.size)
+        assertTrue(ch7Party.any { it.id == "hero" })
+        assertTrue(ch7Party.any { it.id == "cedric" })
+        assertTrue(ch7Party.any { it.id == "lyra" })
+        assertTrue(ch7Party.none { it.id == "zephyr" })
+
+        // Chapter 8: Ambush begins as Trio before Zephyr defects
+        val ch8Party = StoryEncounters.CH8_EXECUTIONER_AMBUSH.initialParty ?: emptyList()
+        assertEquals(3, ch8Party.size)
+        assertTrue(ch8Party.none { it.id == "zephyr" })
+
+        // Chapters 9 through 16: Full Quad Party (Aethel, Cedric, Lyra, Zephyr)
+        val quadEncounters = listOf(
+            StoryEncounters.CH9_GALAHAULT_TRIAL,
+            StoryEncounters.CH10_BROODMOTHER_TRIAL,
+            StoryEncounters.CH11_NOCTURNE_TRIAL,
+            StoryEncounters.CH12_WARMASTER_OUROS,
+            StoryEncounters.CH13_COMMANDER_VAELOR,
+            StoryEncounters.CH14_ABYSSAL_LEVIATHAN,
+            StoryEncounters.CH15_ARCHON_CUSTODIANS,
+            StoryEncounters.CH16_MALAKOR_FINALE
+        )
+
+        for (enc in quadEncounters) {
+            val party = enc.initialParty ?: emptyList()
+            assertEquals("Encounter ${enc.id} must feature the full 4-hero party", 4, party.size)
+            assertTrue("Encounter ${enc.id} must include Aethel", party.any { it.id == "hero" })
+            assertTrue("Encounter ${enc.id} must include Cedric", party.any { it.id == "cedric" })
+            assertTrue("Encounter ${enc.id} must include Lyra", party.any { it.id == "lyra" })
+            assertTrue("Encounter ${enc.id} must include Zephyr", party.any { it.id == "zephyr" })
+        }
+    }
+
+    @Test
+    fun testMidBattleZephyrDefectionAndRecruitment() {
+        viewModel.startEncounter(StoryEncounters.CH8_EXECUTIONER_AMBUSH)
+        val initialParty = viewModel.state.value.party
+        assertEquals(3, initialParty.size)
+        assertFalse(viewModel.isZephyrRecruitedMidBattle)
+
+        // Mid-battle trigger: Zephyr turns his daggers against Executioner Kaelen
+        viewModel.recruitZephyrMidBattle()
+
+        assertTrue(viewModel.isZephyrRecruitedMidBattle)
+        val updatedParty = viewModel.state.value.party
+        assertEquals(4, updatedParty.size)
+        val zephyr = updatedParty.firstOrNull { it.id == "zephyr" }
+        assertNotNull(zephyr)
+        assertEquals("Zephyr", zephyr?.name)
+        assertEquals(1.0f, zephyr?.atbGauge)
+    }
+
+    @Test
+    fun testFinalBossPhase3DeathOfVoiceAndPrimordialSyllable() {
+        viewModel.startEncounter(StoryEncounters.CH16_MALAKOR_FINALE)
+        assertEquals("ch16_malakor_finale", viewModel.currentEncounterId)
+        assertFalse(viewModel.isPhase3Triggered)
+
+        // Phase 3 trigger: Malakor suppresses all sound
+        viewModel.triggerPhase3DeathOfVoice()
+        assertTrue(viewModel.isPhase3Triggered)
+        assertTrue(viewModel.sfxManager.isMuted)
+
+        // Set player turn ready
+        viewModel.setPlayerInputPhaseForTesting("hero")
+
+        // When the player speaks the Primordial Incantation in unison:
+        viewModel.processIncantation("Morning star cataclysm oblivion primordial syllable")
+
+        // Wait briefly for coroutine launch
+        Thread.sleep(150)
+
+        // Silence is shattered!
+        assertFalse(viewModel.sfxManager.isMuted)
+        val resonance = viewModel.state.value.lastResonance
+        assertNotNull(resonance)
+        assertEquals(200, resonance?.bonusPercent)
+        assertEquals(com.voicerpg.android.model.ResonanceTier.TRANSCENDENTAL, resonance?.tier)
+    }
 }

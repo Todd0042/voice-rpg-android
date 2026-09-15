@@ -59,40 +59,8 @@ class StoryViewModel(
         val existingSave = saveManager.load()
         if (existingSave != null) {
             val restoredScene = StoryScript.ALL_SCENES[existingSave.currentSceneId] ?: StoryScript.SCENE_COTTAGE
-            var restoredNode = StoryScript.ALL_NODES[existingSave.currentNodeId] ?: StoryScript.ALL_NODES["cottage_intro"]!!
-
-            if (restoredNode.id == "camp_intro") {
-                val allThreeComplete = existingSave.narrativeFlags["substory_blight_complete"] == true &&
-                        existingSave.narrativeFlags["substory_towers_complete"] == true &&
-                        existingSave.narrativeFlags["substory_rest_complete"] == true
-                if (allThreeComplete) {
-                    StoryScript.ALL_NODES["camp_all_completed"]?.let { restoredNode = it }
-                }
-            }
-
-            if (restoredNode.id == "chapter3_intro" || restoredNode.id == "ch3_hub") {
-                val ch3BothComplete = existingSave.narrativeFlags["ch3_sentinels_complete"] == true &&
-                        existingSave.narrativeFlags["ch3_chime_complete"] == true
-                if (ch3BothComplete) {
-                    StoryScript.ALL_NODES["ch3_all_completed"]?.let { restoredNode = it }
-                }
-            }
-
-            if (restoredNode.id == "ch5_intro" || restoredNode.id == "ch5_hub") {
-                val ch5BothComplete = existingSave.narrativeFlags["ch5_creek_scouted"] == true &&
-                        existingSave.narrativeFlags["ch5_wards_examined"] == true
-                if (ch5BothComplete) {
-                    StoryScript.ALL_NODES["ch5_all_completed"]?.let { restoredNode = it }
-                }
-            }
-
-            if (restoredNode.id == "ch6_intro" || restoredNode.id == "ch6_hub") {
-                val ch6BothComplete = existingSave.narrativeFlags["ch6_lore_complete"] == true &&
-                        existingSave.narrativeFlags["ch6_spores_complete"] == true
-                if (ch6BothComplete) {
-                    StoryScript.ALL_NODES["ch6_all_completed"]?.let { restoredNode = it }
-                }
-            }
+            val rawRestoredNode = StoryScript.ALL_NODES[existingSave.currentNodeId] ?: StoryScript.ALL_NODES["cottage_intro"]!!
+            val restoredNode = resolveEffectiveHubNode(rawRestoredNode, existingSave.narrativeFlags)
 
             _state.value = StoryState(
                 currentScene = restoredScene,
@@ -167,7 +135,7 @@ class StoryViewModel(
                 applyNodeTransition(nextNode)
             }
         } else if (node.choices.isEmpty()) {
-            if (node.id.startsWith("ch3_") || node.id.startsWith("ch4_") || node.id.startsWith("ch5_") || node.id.startsWith("ch6_") || node.id == "ch4_act1_complete") {
+            if (node.id.startsWith("ch3_") || node.id.startsWith("ch4_") || node.id.startsWith("ch5_") || node.id.startsWith("ch6_") || node.id.startsWith("ch7_") || node.id.startsWith("ch8_") || node.id.startsWith("ch9_") || node.id.startsWith("ch10_") || node.id.startsWith("ch11_") || node.id.startsWith("ch12_") || node.id.startsWith("ch13_") || node.id.startsWith("ch14_") || node.id.startsWith("ch15_") || node.id.startsWith("ch16_") || node.id.startsWith("epilogue_") || node.id == "ch4_act1_complete") {
                 return
             }
             val fallbackNode = StoryScript.ALL_NODES["camp_intro"] ?: StoryScript.ALL_NODES["crossroads_intro"]
@@ -193,12 +161,13 @@ class StoryViewModel(
     }
 
     private fun applyNodeTransition(newNode: DialogueNode) {
-        var effectiveNode = newNode
         val updatedFlags = if (newNode.setFlagOnEnter != null) {
             _state.value.narrativeFlags + (newNode.setFlagOnEnter to true)
         } else {
             _state.value.narrativeFlags
         }
+
+        var effectiveNode = resolveEffectiveHubNode(newNode, updatedFlags)
 
         var updatedPartyStats = _state.value.partyStats
         if (newNode.setFlagOnEnter == "substory_rest_complete") {
@@ -207,47 +176,18 @@ class StoryViewModel(
             }
         }
 
-        // If transitioning to camp_intro, check if all 3 camp sub-stories are completed
-        if (effectiveNode.id == "camp_intro") {
-            val allThreeComplete = updatedFlags["substory_blight_complete"] == true &&
-                    updatedFlags["substory_towers_complete"] == true &&
-                    updatedFlags["substory_rest_complete"] == true
-            if (allThreeComplete) {
-                StoryScript.ALL_NODES["camp_all_completed"]?.let { effectiveNode = it }
-            }
-        }
-
-        // If transitioning to chapter3_intro or ch3_hub, check if both objectives are completed
-        if (effectiveNode.id == "chapter3_intro" || effectiveNode.id == "ch3_hub") {
-            val ch3BothComplete = updatedFlags["ch3_sentinels_complete"] == true &&
-                    updatedFlags["ch3_chime_complete"] == true
-            if (ch3BothComplete) {
-                StoryScript.ALL_NODES["ch3_all_completed"]?.let { effectiveNode = it }
-            }
-        }
-
-        // If transitioning to ch5_intro or ch5_hub, check if both scouting objectives are completed
-        if (effectiveNode.id == "ch5_intro" || effectiveNode.id == "ch5_hub") {
-            val ch5BothComplete = updatedFlags["ch5_creek_scouted"] == true &&
-                    updatedFlags["ch5_wards_examined"] == true
-            if (ch5BothComplete) {
-                StoryScript.ALL_NODES["ch5_all_completed"]?.let { effectiveNode = it }
-            }
-        }
-
-        // If transitioning to ch6_intro or ch6_hub, check if both preparation objectives are completed
-        if (effectiveNode.id == "ch6_intro" || effectiveNode.id == "ch6_hub") {
-            val ch6BothComplete = updatedFlags["ch6_lore_complete"] == true &&
-                    updatedFlags["ch6_spores_complete"] == true
-            if (ch6BothComplete) {
-                StoryScript.ALL_NODES["ch6_all_completed"]?.let { effectiveNode = it }
-            }
-        }
-
         // Ensure Cedric is present in party stats from Chapter 1 Camp onward
-        if ((effectiveNode.id == "crossroads_camp_trans" || effectiveNode.id.startsWith("camp_") || effectiveNode.id.startsWith("ch3_") || effectiveNode.id.startsWith("ch4_") || effectiveNode.id.startsWith("ch5_") || effectiveNode.id.startsWith("ch6_") || updatedFlags["cedric_recruited"] == true) &&
-            updatedPartyStats.none { it.id == "cedric" }
-        ) {
+        val isCedricPostRecruitNode = effectiveNode.id == "crossroads_camp_trans" ||
+            effectiveNode.id.startsWith("camp_") || effectiveNode.id.startsWith("ch3_") ||
+            effectiveNode.id.startsWith("ch4_") || effectiveNode.id.startsWith("ch5_") ||
+            effectiveNode.id.startsWith("ch6_") || effectiveNode.id.startsWith("ch7_") ||
+            effectiveNode.id.startsWith("ch8_") || effectiveNode.id.startsWith("ch9_") ||
+            effectiveNode.id.startsWith("ch10_") || effectiveNode.id.startsWith("ch11_") ||
+            effectiveNode.id.startsWith("ch12_") || effectiveNode.id.startsWith("ch13_") ||
+            effectiveNode.id.startsWith("ch14_") || effectiveNode.id.startsWith("ch15_") ||
+            effectiveNode.id.startsWith("ch16_") || effectiveNode.id.startsWith("epilogue_") ||
+            updatedFlags["cedric_recruited"] == true
+        if (isCedricPostRecruitNode && updatedPartyStats.none { it.id == "cedric" }) {
             val cedricStats = SavedCharacterStats(
                 id = "cedric",
                 name = "Sir Cedric",
@@ -259,15 +199,20 @@ class StoryViewModel(
                 speed = 55,
                 level = 1,
                 xp = 0,
-                spellIds = listOf("holy_smite", "aegis_shield", "radiant_cleave")
+                spellIds = listOf("holy_smite", "lay_on_hands", "shield_wall")
             )
             updatedPartyStats = updatedPartyStats + cedricStats
         }
 
         // When Lyra is recruited, add her to party stats
-        if ((effectiveNode.id == "ch6_party_joins" || updatedFlags["lyra_recruited"] == true) &&
-            updatedPartyStats.none { it.id == "lyra" }
-        ) {
+        val isLyraPostRecruitNode = effectiveNode.id == "ch6_party_joins" || updatedFlags["lyra_recruited"] == true ||
+            effectiveNode.id.startsWith("ch6_") || effectiveNode.id.startsWith("ch7_") ||
+            effectiveNode.id.startsWith("ch8_") || effectiveNode.id.startsWith("ch9_") ||
+            effectiveNode.id.startsWith("ch10_") || effectiveNode.id.startsWith("ch11_") ||
+            effectiveNode.id.startsWith("ch12_") || effectiveNode.id.startsWith("ch13_") ||
+            effectiveNode.id.startsWith("ch14_") || effectiveNode.id.startsWith("ch15_") ||
+            effectiveNode.id.startsWith("ch16_") || effectiveNode.id.startsWith("epilogue_")
+        if (isLyraPostRecruitNode && updatedPartyStats.none { it.id == "lyra" }) {
             val lyraStats = SavedCharacterStats(
                 id = "lyra",
                 name = "Lyra",
@@ -279,9 +224,60 @@ class StoryViewModel(
                 speed = 65,
                 level = 1,
                 xp = 0,
-                spellIds = listOf("soothing_rain", "briar_entangle", "grounded_mend")
+                spellIds = listOf("soothing_rain", "briar_entangle")
             )
             updatedPartyStats = updatedPartyStats + lyraStats
+        }
+
+        // When Zephyr is recruited (post-ambush in Ch 8 or Ch 9 onward), add him to party stats
+        val isZephyrPostRecruitNode = effectiveNode.id == "ch8_executioner_victory" || effectiveNode.id == "ch8_hub" ||
+            effectiveNode.id.startsWith("ch8_motives") || effectiveNode.id.startsWith("ch8_map") ||
+            effectiveNode.id.startsWith("ch8_herbs") || effectiveNode.id.startsWith("ch8_all") ||
+            effectiveNode.id.startsWith("ch9_") || effectiveNode.id.startsWith("ch10_") ||
+            effectiveNode.id.startsWith("ch11_") || effectiveNode.id.startsWith("ch12_") ||
+            effectiveNode.id.startsWith("ch13_") || effectiveNode.id.startsWith("ch14_") ||
+            effectiveNode.id.startsWith("ch15_") || effectiveNode.id.startsWith("ch16_") ||
+            effectiveNode.id.startsWith("epilogue_")
+        if ((updatedFlags["zephyr_recruited"] == true || isZephyrPostRecruitNode) &&
+            updatedPartyStats.none { it.id == "zephyr" }
+        ) {
+            val zephyrStats = SavedCharacterStats(
+                id = "zephyr",
+                name = "Zephyr",
+                loreClass = "Shadowblade",
+                currentHp = 250,
+                maxHp = 250,
+                currentMp = 90,
+                maxMp = 90,
+                speed = 85,
+                level = 1,
+                xp = 0,
+                spellIds = listOf("shadow_strike", "venom_flurry", "umbral_oblivion")
+            )
+            updatedPartyStats = updatedPartyStats + zephyrStats
+        }
+
+        // Companion master spells awarded on trial completion
+        if (updatedFlags["cedric_trial_complete"] == true) {
+            updatedPartyStats = updatedPartyStats.map { member ->
+                if (member.id == "cedric" && !member.spellIds.contains("aegis_dawn")) {
+                    member.copy(spellIds = member.spellIds + "aegis_dawn")
+                } else member
+            }
+        }
+        if (updatedFlags["lyra_trial_complete"] == true) {
+            updatedPartyStats = updatedPartyStats.map { member ->
+                if (member.id == "lyra" && !member.spellIds.contains("verdant_cataclysm")) {
+                    member.copy(spellIds = member.spellIds + "verdant_cataclysm")
+                } else member
+            }
+        }
+        if (updatedFlags["zephyr_trial_complete"] == true) {
+            updatedPartyStats = updatedPartyStats.map { member ->
+                if (member.id == "zephyr" && !member.spellIds.contains("umbral_oblivion")) {
+                    member.copy(spellIds = member.spellIds + "umbral_oblivion")
+                } else member
+            }
         }
 
         val sceneIdToUse = effectiveNode.changeSceneId ?: _state.value.currentScene.id
@@ -298,6 +294,77 @@ class StoryViewModel(
         narrateCurrentNode()
     }
 
+    private fun resolveEffectiveHubNode(node: DialogueNode, flags: Map<String, Boolean>): DialogueNode {
+        var effective = node
+        if (effective.id == "camp_intro" || effective.id == "camp_hub") {
+            val allThree = flags["substory_blight_complete"] == true &&
+                    flags["substory_towers_complete"] == true &&
+                    flags["substory_rest_complete"] == true
+            if (allThree) StoryScript.ALL_NODES["camp_all_completed"]?.let { effective = it }
+        }
+        if (effective.id == "chapter3_intro" || effective.id == "ch3_hub") {
+            if (flags["ch3_sentinels_complete"] == true && flags["ch3_chime_complete"] == true) {
+                StoryScript.ALL_NODES["ch3_all_completed"]?.let { effective = it }
+            }
+        }
+        if (effective.id == "ch5_intro" || effective.id == "ch5_hub") {
+            if (flags["ch5_creek_scouted"] == true && flags["ch5_wards_examined"] == true) {
+                StoryScript.ALL_NODES["ch5_all_completed"]?.let { effective = it }
+            }
+        }
+        if (effective.id == "ch6_intro" || effective.id == "ch6_hub") {
+            if (flags["ch6_lore_complete"] == true && flags["ch6_spores_complete"] == true) {
+                StoryScript.ALL_NODES["ch6_all_completed"]?.let { effective = it }
+            }
+        }
+        if (effective.id == "ch7_intro" || effective.id == "ch7_hub") {
+            if (flags["ch7_tuning_complete"] == true && flags["ch7_stele_complete"] == true && flags["ch7_cedric_complete"] == true) {
+                StoryScript.ALL_NODES["ch7_all_completed"]?.let { effective = it }
+            }
+        }
+        if (effective.id == "ch8_hub") {
+            if (flags["ch8_motives_complete"] == true && flags["ch8_map_complete"] == true && flags["ch8_herbs_complete"] == true) {
+                StoryScript.ALL_NODES["ch8_all_completed"]?.let { effective = it }
+            }
+        }
+        if (effective.id == "ch9_intro" || effective.id == "ch9_hub") {
+            if (flags["ch9_knights_complete"] == true && flags["ch9_altar_complete"] == true) {
+                StoryScript.ALL_NODES["ch9_all_completed"]?.let { effective = it }
+            }
+        }
+        if (effective.id == "ch10_intro" || effective.id == "ch10_hub") {
+            if (flags["ch10_dryads_complete"] == true && flags["ch10_seed_complete"] == true) {
+                StoryScript.ALL_NODES["ch10_all_completed"]?.let { effective = it }
+            }
+        }
+        if (effective.id == "ch11_intro" || effective.id == "ch11_hub") {
+            if (flags["ch11_traps_complete"] == true && flags["ch11_vials_complete"] == true) {
+                StoryScript.ALL_NODES["ch11_all_completed"]?.let { effective = it }
+            }
+        }
+        if (effective.id == "ch12_intro" || effective.id == "ch12_hub") {
+            if (flags["ch12_valves_complete"] == true && flags["ch12_cogs_complete"] == true) {
+                StoryScript.ALL_NODES["ch12_all_completed"]?.let { effective = it }
+            }
+        }
+        if (effective.id == "ch13_intro" || effective.id == "ch13_hub") {
+            if (flags["ch13_gate_complete"] == true && flags["ch13_seal_complete"] == true) {
+                StoryScript.ALL_NODES["ch13_all_completed"]?.let { effective = it }
+            }
+        }
+        if (effective.id == "ch14_intro" || effective.id == "ch14_hub") {
+            if (flags["ch14_archons_complete"] == true && flags["ch14_eddies_complete"] == true) {
+                StoryScript.ALL_NODES["ch14_all_completed"]?.let { effective = it }
+            }
+        }
+        if (effective.id == "ch15_intro" || effective.id == "ch15_hub") {
+            if (flags["ch15_cedric_complete"] == true && flags["ch15_lyra_complete"] == true && flags["ch15_zephyr_complete"] == true) {
+                StoryScript.ALL_NODES["ch15_all_completed"]?.let { effective = it }
+            }
+        }
+        return effective
+    }
+
     var onOpenOptions: (() -> Unit)? = null
     var onCloseOptions: (() -> Unit)? = null
 
@@ -312,6 +379,16 @@ class StoryViewModel(
             "castle_horde" -> StoryEncounters.CASTLE_HORDE
             "marsh_rescue" -> StoryEncounters.MARSH_RESCUE
             "swamp_behemoth" -> StoryEncounters.SWAMP_BEHEMOTH
+            "ch7_mire_wyrm" -> StoryEncounters.CH7_MIRE_WYRM
+            "ch8_executioner_ambush" -> StoryEncounters.CH8_EXECUTIONER_AMBUSH
+            "ch9_galahault_trial" -> StoryEncounters.CH9_GALAHAULT_TRIAL
+            "ch10_broodmother_trial" -> StoryEncounters.CH10_BROODMOTHER_TRIAL
+            "ch11_nocturne_trial" -> StoryEncounters.CH11_NOCTURNE_TRIAL
+            "ch12_warmaster_ouros" -> StoryEncounters.CH12_WARMASTER_OUROS
+            "ch13_commander_vaelor" -> StoryEncounters.CH13_COMMANDER_VAELOR
+            "ch14_abyssal_leviathan" -> StoryEncounters.CH14_ABYSSAL_LEVIATHAN
+            "ch15_archon_custodians" -> StoryEncounters.CH15_ARCHON_CUSTODIANS
+            "ch16_malakor_finale" -> StoryEncounters.CH16_MALAKOR_FINALE
             else -> StoryEncounters.ALL_ENCOUNTERS.firstOrNull { it.id == encounterId } ?: StoryEncounters.PROLOGUE_SOLO
         }
         speechManager.cancel()
@@ -335,6 +412,16 @@ class StoryViewModel(
             "castle_horde" -> "ch4_tower_victory"
             "marsh_rescue" -> "ch5_rescue_victory"
             "swamp_behemoth" -> "ch6_willow_purified"
+            "ch7_mire_wyrm" -> "ch7_wyrm_victory"
+            "ch8_executioner_ambush" -> "ch8_executioner_victory"
+            "ch9_galahault_trial" -> "ch9_galahault_victory"
+            "ch10_broodmother_trial" -> "ch10_broodmother_victory"
+            "ch11_nocturne_trial" -> "ch11_nocturne_victory"
+            "ch12_warmaster_ouros" -> "ch12_warmaster_victory"
+            "ch13_commander_vaelor" -> "ch13_vaelor_victory"
+            "ch14_abyssal_leviathan" -> "ch14_leviathan_victory"
+            "ch15_archon_custodians" -> "ch15_custodians_victory"
+            "ch16_malakor_finale" -> "ch16_malakor_victory"
             else -> null
         }
 
@@ -346,26 +433,13 @@ class StoryViewModel(
 
         val targetNode = (if (postBattleNodeId != null) StoryScript.ALL_NODES[postBattleNodeId] else null) ?: lastNode
 
-        val updatedFlags = if (targetNode.setFlagOnEnter != null) {
-            _state.value.narrativeFlags + (targetNode.setFlagOnEnter to true)
-        } else {
-            _state.value.narrativeFlags
-        }
-
-        val sceneIdToUse = targetNode.changeSceneId ?: _state.value.currentScene.id
-        val targetScene = StoryScript.ALL_SCENES[sceneIdToUse] ?: _state.value.currentScene
-
         _state.value = _state.value.copy(
             gameScreen = GameScreen.STORY_EXPLORATION,
             activeEncounter = null,
-            currentScene = targetScene,
-            currentNode = targetNode,
-            narrativeFlags = updatedFlags,
             defeatedEncounters = updatedDefeated
         )
 
-        persistCurrentState()
-        narrateCurrentNode()
+        applyNodeTransition(targetNode)
     }
 
     fun updatePartyStatsFromCombat(updatedParty: List<PartyMember>) {

@@ -99,20 +99,61 @@ flowchart TD
     subgraph Act2 ["Act II: The Severed Resonance (Chapters 5-8)"]
         Ch4 --> Ch5["Chapter 5: The Rotting Marsh & The Briar Cage Rescue (Duo Mission)"]
         Ch5 --> Ch6["Chapter 6: The Warden's Oath & The Weeping Willow (Trio: Lyra Joins!)"]
-        Ch6 --> Ch7["Chapter 7: Tuning the Veridian Chime (Trio)"]
-        Ch7 --> Ch8["Chapter 8: The Clockwork Bastion (Recruiting Vane)"]
+        Ch6 --> Ch7["Chapter 7: Tuning the Veridian Chime (Trio vs. Ancient Mire Wyrm)"]
+        Ch7 --> Ch8["Chapter 8: The Shadowed Crags & Zephyr's Defection (Option A: Mid-Battle Defection!)"]
+    end
+
+    subgraph Act3 ["Act III: The Crucible of Oaths — Required Companion Trials (Chapters 9-11)"]
+        Ch8 --> Ch9["Chapter 9: The Broken Vow of Dawn (Cedric vs. Grandmaster Galahault -> Unlocks Aegis of the Dawn)"]
+        Ch9 --> Ch10["Chapter 10: The Song of the Mute Grove (Lyra vs. Blighted Broodmother -> Unlocks Verdant Cataclysm)"]
+        Ch10 --> Ch11["Chapter 11: The Silent Blade's Reckoning (Zephyr vs. Master Nocturne -> Unlocks Umbral Oblivion)"]
+    end
+
+    subgraph Act4 ["Act IV: Ascent of the Monolith (Chapters 12-14)"]
+        Ch11 --> Ch12["Chapter 12: Awakening the Third Bell (Clockwork Bastion vs. Warmaster Ouros)"]
+        Ch12 --> Ch13["Chapter 13: Breach of the Silent Citadel (Black Glass Gates vs. Commander Vaelor)"]
+        Ch13 --> Ch14["Chapter 14: The Void Reservoir (Liquid Silence vs. Abyssal Leviathan)"]
+    end
+
+    subgraph Act5 ["Act V & Epilogue: The Primordial Syllable & The Great Awakening (Chapters 15-16 & Epilogue)"]
+        Ch14 --> Ch15["Chapter 15: Ascent of the Celestial Spire (Ribbon Stair vs. Archon Custodians)"]
+        Ch15 --> Ch16["Chapter 16: The Primordial Syllable (Final Summit vs. Malakor; Phase 3 'Death of Voice' Mute Cut -> Primordial Syllable Unison)"]
+        Ch16 --> Epilogue["Epilogue: The Great Awakening (Four Great Bells in Harmony; Whispering Pines Restored; Final Credits)"]
     end
 ```
 
-### Detailed Act II Breakdown:
-* **Chapter 5: The Rotting Marsh & The Briar Cage Rescue:**
-  * **Setting:** *The Murkmire Threshold & The Drowned Fane*.
-  * **Plot:** Aethel and Cedric descend from Solaria into the poisoned marsh mist. They find signs of a desperate druidic retreat and discover Lyra imprisoned inside an obsidian Void-Briar Cage by the Blight Binder.
-  * **Combat (`MARSH_RESCUE`):** Duo Fellowship (Aethel + Cedric) fights the Bog Ironclad, Mire Stalker, and Void Briar Binder with minion reinforcements to shatter the cage.
-* **Chapter 6: The Warden's Oath & The Weeping Willow:**
-  * **Setting:** *The Weeping Willow Sanctuary*.
-  * **Plot:** Lyra recovers her strength, learns of Solaria's First Bell, and swears the Warden's Oath to join the fellowship.
-  * **Combat (`SWAMP_BEHEMOTH`):** Trio Fellowship (Aethel + Cedric + Lyra) fights the colossal Bog Behemoth and marsh leeches to cleanse the sacred pool and uncover the Second Great Bell: *The Veridian Chime*.
+### Detailed Acts III–V & Epilogue Breakdown:
+* **Chapter 8: The Shadowed Crags & Zephyr's Defection (Option A Mid-Battle Defection):**
+  * **Setting:** *The Shadowed Crags*.
+  * **Plot:** Grand Executioner Kaelen ambushes the trio. Mid-battle, the Inquisition's top assassin—Zephyr the Shadowblade—defects to the fellowship, turning his twin daggers against Kaelen and forging the 4-hero party!
+* **Chapter 9: The Broken Vow of Dawn (Cedric's Required Trial):**
+  * **Setting:** *The Mausoleum of the Sun*.
+  * **Plot & Combat:** Cedric confronts his fallen mentor, Grandmaster Galahault. Resolves Cedric's shame over opening the gates to save orphans, unlocking the Master Chant: *Aegis of the Dawn*.
+* **Chapter 10: The Song of the Mute Grove (Lyra's Required Trial):**
+  * **Setting:** *The Emerald Choir*.
+  * **Plot & Combat:** Lyra confronts the Blighted Broodmother corrupting the sacred spring, awakening 30 petrified singing dryads and unlocking the Master Chant: *Verdant Cataclysm*.
+* **Chapter 11: The Silent Blade's Reckoning (Zephyr's Required Trial):**
+  * **Setting:** *The Blind Gorge*.
+  * **Plot & Combat:** Zephyr disarms sonic mines and slays Master Nocturne, shattering the Black Guild of the Mute and unlocking the Master Chant: *Umbral Oblivion*.
+* **Chapter 12: Awakening the Third Bell:**
+  * **Setting:** *The Clockwork Bastion of Ouros*.
+  * **Combat:** Clashing against 10-foot automaton Warmaster Ouros and steam arbalests. Tolling the Third Great Bell raises the cosmic sky bridge to the floating capital of Sol-Aethel!
+* **Chapter 13: Breach of the Silent Citadel:**
+  * **Setting:** *The Gates of Sol-Aethel*.
+  * **Combat:** Shattering the black glass portcullis and defeating Commander Vaelor wielding the dreaded Void Horn.
+* **Chapter 14: The Void Reservoir:**
+  * **Setting:** *The Lake of Liquid Silence*.
+  * **Combat:** Defeating the gargantuan Abyssal Leviathan and its Muffle Aura, releasing millions of captive voice motes that construct the Ribbon Stair.
+* **Chapter 15: Ascent of the Celestial Spire:**
+  * **Setting:** *The Ribbon Stair & Celestial Belfry Landing*.
+  * **Plot:** Emotional fellowship vigils with Cedric, Lyra, and Zephyr on the threshold of eternity. Defeating the Archon Custodians to open the final belfry doors.
+* **Chapter 16: The Primordial Syllable (Grand Finale):**
+  * **Setting:** *The Celestial Belfry Summit*.
+  * **Boss Encounter:** Grand Inquisitor Malakor (The Mute Sovereign) + 4 Echo Nullifiers.
+  * **Phase 3 ("The Death of Voice"):** At $\le 450$ HP, all game audio drops dead silent (`sfxManager.mute(true)`), evoking the prologue's opening morning of silence. The player speaks the 4-line Primordial Incantation in unison with all 4 companions, instantly unmuting audio, detonating 120 cosmic particles, granting $+200\%$ Transcendental Resonance, and redeeming Malakor!
+* **Epilogue: The Great Awakening:**
+  * **Setting:** *Aethelgard Restored & The Spire Overlook*.
+  * **Resolution:** All 4 Great Bells ring in cosmic harmony. The petrified citizens of Whispering Pines awaken. Companion epilogues and final credits.
 
 ---
 

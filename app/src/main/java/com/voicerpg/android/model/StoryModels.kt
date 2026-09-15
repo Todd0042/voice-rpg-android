@@ -65,6 +65,60 @@ data class DialogueSpeaker(
             themeColor = Color(0xFFA5D6A7),
             ttsPitch = 1.20f
         )
+
+        val ZEPHYR = DialogueSpeaker(
+            id = "zephyr",
+            name = "Zephyr",
+            title = "Shadowblade",
+            portraitAsset = "portraits/zephyr.jpg",
+            themeColor = Color(0xFFCE93D8),
+            ttsPitch = 0.95f
+        )
+
+        val MALAKOR = DialogueSpeaker(
+            id = "malakor",
+            name = "Grand Inquisitor Malakor",
+            title = "The Mute Sovereign",
+            portraitAsset = "portraits/malakor.jpg",
+            themeColor = Color(0xFFEF5350),
+            ttsPitch = 0.60f
+        )
+
+        val VAELOR = DialogueSpeaker(
+            id = "vaelor",
+            name = "Commander Vaelor",
+            title = "The Voice-Thief",
+            portraitAsset = null,
+            themeColor = Color(0xFFB0BEC5),
+            ttsPitch = 0.75f
+        )
+
+        val GALAHAULT = DialogueSpeaker(
+            id = "galahault",
+            name = "Sir Galahault",
+            title = "The Obsidian Grandmaster",
+            portraitAsset = null,
+            themeColor = HolyYellow,
+            ttsPitch = 0.78f
+        )
+
+        val NOCTURNE = DialogueSpeaker(
+            id = "nocturne",
+            name = "Master Nocturne",
+            title = "Spymaster of the Mute",
+            portraitAsset = null,
+            themeColor = ShadowPurple,
+            ttsPitch = 0.70f
+        )
+
+        val OUROS = DialogueSpeaker(
+            id = "ouros",
+            name = "Clockwork Warmaster Ouros",
+            title = "Iron Bastion Sovereign",
+            portraitAsset = null,
+            themeColor = Color(0xFFFFB74D),
+            ttsPitch = 0.65f
+        )
     }
 }
 

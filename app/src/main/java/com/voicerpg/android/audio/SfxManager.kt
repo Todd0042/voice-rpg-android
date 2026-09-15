@@ -17,8 +17,14 @@ class SfxManager {
 
     private val scope = CoroutineScope(Dispatchers.Default)
     private val sampleRate = 22050
+    var isMuted: Boolean = false
+
+    fun mute(muted: Boolean) {
+        isMuted = muted
+    }
 
     fun playHitImpact() {
+        if (isMuted) return
         scope.launch {
             val durationMs = 90
             val numSamples = (sampleRate * (durationMs / 1000.0)).toInt()
@@ -37,6 +43,7 @@ class SfxManager {
     }
 
     fun playSpellCast() {
+        if (isMuted) return
         scope.launch {
             val durationMs = 180
             val numSamples = (sampleRate * (durationMs / 1000.0)).toInt()

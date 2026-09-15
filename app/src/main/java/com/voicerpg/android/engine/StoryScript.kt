@@ -110,6 +110,105 @@ object StoryScript {
         ambientDescription = "Bioluminescent emerald motes float among the hanging moss of the ancient sacred willow."
     )
 
+    val SCENE_SUNKEN_CATACOMBS = StoryScene(
+        id = "scene_sunken_catacombs",
+        name = "The Sunken Catacombs",
+        chapterTitle = "Chapter 7: Tuning the Veridian Chime",
+        backgroundAsset = "environments/swamp.jpg",
+        initialNodeId = "ch7_intro",
+        ambientDescription = "Jade-infused bronze rings over crystal clear waters as ancient stone pathways emerge from the bog."
+    )
+
+    val SCENE_SHADOWED_CRAGS = StoryScene(
+        id = "scene_shadowed_crags",
+        name = "The Shadowed Crags",
+        chapterTitle = "Chapter 8: The Shadowed Crags & Zephyr's Defection",
+        backgroundAsset = "environments/cave.jpg",
+        initialNodeId = "ch8_intro",
+        ambientDescription = "Razor obsidian crags tower over a cold canyon shrouded in purple mountain mist."
+    )
+
+    val SCENE_MAUSOLEUM = StoryScene(
+        id = "scene_mausoleum",
+        name = "The Mausoleum of the Sun",
+        chapterTitle = "Chapter 9: The Broken Vow of Dawn",
+        backgroundAsset = "environments/dungeon.jpg",
+        initialNodeId = "ch9_intro",
+        ambientDescription = "Shattered marble statues of the Golden Chime knights lie beneath weeping golden sunburst banners."
+    )
+
+    val SCENE_EMERALD_CHOIR = StoryScene(
+        id = "scene_emerald_choir",
+        name = "The Emerald Choir Grove",
+        chapterTitle = "Chapter 10: The Song of the Mute Grove",
+        backgroundAsset = "environments/swamp.jpg",
+        initialNodeId = "ch10_intro",
+        ambientDescription = "Petrified dryads stand frozen around a dark spring choked in obsidian silt."
+    )
+
+    val SCENE_BLIND_GORGE = StoryScene(
+        id = "scene_blind_gorge",
+        name = "The Blind Gorge",
+        chapterTitle = "Chapter 11: The Silent Blade's Reckoning",
+        backgroundAsset = "environments/cave.jpg",
+        initialNodeId = "ch11_intro",
+        ambientDescription = "Thick silence and shadow mist cling to the jagged canyon hideout of the Black Guild."
+    )
+
+    val SCENE_CLOCKWORK_BASTION = StoryScene(
+        id = "scene_clockwork_bastion",
+        name = "The Clockwork Bastion of Ouros",
+        chapterTitle = "Chapter 12: Awakening the Third Bell",
+        backgroundAsset = "environments/castle.jpg",
+        initialNodeId = "ch12_intro",
+        ambientDescription = "Colossal brass cogs and steam pipes hum within the towering iron belfry of Ouros."
+    )
+
+    val SCENE_SILENT_CITADEL = StoryScene(
+        id = "scene_silent_citadel",
+        name = "The Silent Citadel Gates",
+        chapterTitle = "Chapter 13: Breach of the Silent Citadel",
+        backgroundAsset = "environments/castle.jpg",
+        initialNodeId = "ch13_intro",
+        ambientDescription = "Banners of the Mute Sovereign hang from monolithic black glass battlements before Sol-Aethel."
+    )
+
+    val SCENE_VOID_RESERVOIR = StoryScene(
+        id = "scene_void_reservoir",
+        name = "The Void Reservoir",
+        chapterTitle = "Chapter 14: The Void Reservoir",
+        backgroundAsset = "environments/swamp.jpg",
+        initialNodeId = "ch14_intro",
+        ambientDescription = "A cosmic lake of pure liquid silence that drinks all echoes high above the clouds."
+    )
+
+    val SCENE_CELESTIAL_SPIRE = StoryScene(
+        id = "scene_celestial_spire",
+        name = "The Celestial Ribbon Stair",
+        chapterTitle = "Chapter 15: Ascent of the Celestial Spire",
+        backgroundAsset = "environments/castle.jpg",
+        initialNodeId = "ch15_intro",
+        ambientDescription = "A ribbon staircase of crystallized harmonic light rises toward the aurora of the stars."
+    )
+
+    val SCENE_FINAL_SUMMIT = StoryScene(
+        id = "scene_final_summit",
+        name = "The Spire Summit — Bell of Eternity",
+        chapterTitle = "Chapter 16: The Primordial Syllable",
+        backgroundAsset = "environments/castle.jpg",
+        initialNodeId = "ch16_intro",
+        ambientDescription = "The colossal Fourth Great Bell hangs beneath cosmic auroras where Grand Inquisitor Malakor waits."
+    )
+
+    val SCENE_EPILOGUE = StoryScene(
+        id = "scene_epilogue",
+        name = "Whispering Pines Awakened",
+        chapterTitle = "Epilogue: The Great Awakening",
+        backgroundAsset = "story/village_square.jpg",
+        initialNodeId = "epilogue_awakening",
+        ambientDescription = "Golden sunlight bathes the awakened village square as songbirds fill the living pines."
+    )
+
     val ALL_SCENES = mapOf(
         SCENE_COTTAGE.id to SCENE_COTTAGE,
         SCENE_VILLAGE.id to SCENE_VILLAGE,
@@ -121,7 +220,18 @@ object StoryScript {
         SCENE_DUNGEON.id to SCENE_DUNGEON,
         SCENE_TOWER.id to SCENE_TOWER,
         SCENE_MARSH_FANE.id to SCENE_MARSH_FANE,
-        SCENE_WILLOW_SANCTUARY.id to SCENE_WILLOW_SANCTUARY
+        SCENE_WILLOW_SANCTUARY.id to SCENE_WILLOW_SANCTUARY,
+        SCENE_SUNKEN_CATACOMBS.id to SCENE_SUNKEN_CATACOMBS,
+        SCENE_SHADOWED_CRAGS.id to SCENE_SHADOWED_CRAGS,
+        SCENE_MAUSOLEUM.id to SCENE_MAUSOLEUM,
+        SCENE_EMERALD_CHOIR.id to SCENE_EMERALD_CHOIR,
+        SCENE_BLIND_GORGE.id to SCENE_BLIND_GORGE,
+        SCENE_CLOCKWORK_BASTION.id to SCENE_CLOCKWORK_BASTION,
+        SCENE_SILENT_CITADEL.id to SCENE_SILENT_CITADEL,
+        SCENE_VOID_RESERVOIR.id to SCENE_VOID_RESERVOIR,
+        SCENE_CELESTIAL_SPIRE.id to SCENE_CELESTIAL_SPIRE,
+        SCENE_FINAL_SUMMIT.id to SCENE_FINAL_SUMMIT,
+        SCENE_EPILOGUE.id to SCENE_EPILOGUE
     )
 
     // -------------------------------------------------------------------------
@@ -984,9 +1094,753 @@ object StoryScript {
             side = SpeakerSide.RIGHT,
             text = "Two Great Bells found... one ringing with dawn, and one awaiting our rite of tuning! Whispering Pines is safe, the Rotting Marsh breathes with life once more, and Grove Warden Lyra fights at our side. Invocator, our fellowship grows mightier each day. Whenever you are ready, we shall tune the Veridian Chime and march toward the Clockwork Bastion!",
             choices = listOf(
+                DialogueChoice("ch6_advance_ch7", "Commence the Harmonic Resonance of the Veridian Chime", listOf("commence", "begin", "harmonic", "resonance", "veridian", "chime", "advance", "next"), "ch7_intro"),
                 DialogueChoice("ch6_view_willow", "Gaze upon the blossoming Weeping Willow Sanctuary", listOf("gaze", "view", "willow", "blossom", "sanctuary"), "ch6_willow_purified"),
                 DialogueChoice("ch6_commune_lyra", "Speak with Lyra beside the sacred pool", listOf("speak", "commune", "lyra", "pool"), "ch6_chime_revealed")
             )
+        ),
+
+        // === CHAPTER 7: TUNING THE VERIDIAN CHIME ===
+        DialogueNode(
+            id = "ch7_intro",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            changeSceneId = "scene_sunken_catacombs",
+            text = "Morning light filters through the emerald canopy above the cleansed Weeping Willow pool. The Veridian Chime hangs suspended over the crystal water, its jade surface etched with sleeping botanical runes. Lyra unclasps her botanical tuning fork, its polished heartwood trembling with natural resonance.",
+            nextNodeId = "ch7_hub"
+        ),
+        DialogueNode(
+            id = "ch7_hub",
+            speaker = DialogueSpeaker.LYRA,
+            side = SpeakerSide.LEFT,
+            text = "Lyra holds the tuning fork steady. 'To awaken the Veridian Chime, we must align our voices with the ancient root-frequency of Aethelgard. Invocator, how shall we prepare the rite?'",
+            choices = listOf(
+                DialogueChoice("ch7_tuning_choice", "Strike the botanical tuning fork against the jade bell", listOf("tuning", "fork", "strike", "bell", "chime"), "ch7_tuning_dialogue", "ch7_tuning_complete"),
+                DialogueChoice("ch7_stele_choice", "Inspect the submerged steles of the First Word", listOf("stele", "tablet", "inscriptions", "inspect", "submerged"), "ch7_stele_dialogue", "ch7_stele_complete"),
+                DialogueChoice("ch7_cedric_choice", "Confer with Cedric regarding the northern crags", listOf("cedric", "crags", "north", "scout", "confer"), "ch7_cedric_dialogue", "ch7_cedric_complete")
+            )
+        ),
+        DialogueNode(
+            id = "ch7_tuning_dialogue",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            setFlagOnEnter = "ch7_tuning_complete",
+            text = "Lyra strikes the fork gently against the rim of the Veridian Chime. A clear, bell-like hum ripples across the water, making the willow blossoms glow in sympathetic blue-green light. Calcified silt begins flaking from the bell's underbelly, revealing pure jade filigree! Lyra smiles: 'The resonance is pure. The bell remembers!'",
+            nextNodeId = "ch7_hub"
+        ),
+        DialogueNode(
+            id = "ch7_stele_dialogue",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            setFlagOnEnter = "ch7_stele_complete",
+            text = "Cedric scrapes silt from the submerged limestone steles. 'These carvings tell of the First Age,' he reads in awe. 'When the ancient kings sought to enforce a single language upon all subjects, they distorted the Logos into an iron law. The Blight was not born of darkness, but of forced uniformity—silencing dissent until the silence swallowed the world.' The sobering truth steels your fellowship's purpose!",
+            nextNodeId = "ch7_hub"
+        ),
+        DialogueNode(
+            id = "ch7_cedric_dialogue",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            setFlagOnEnter = "ch7_cedric_complete",
+            text = "Cedric gazes north toward the jagged silhouette of the mountains. 'The Inquisition's elite assassin cabal, the Brotherhood of the Mute, patrols those crags. If we sound the Veridian Chime, its resonance will surely alert their strike teams. We must be ready for an ambush the moment the waters drain.'",
+            nextNodeId = "ch7_hub"
+        ),
+        DialogueNode(
+            id = "ch7_all_completed",
+            speaker = DialogueSpeaker.LYRA,
+            side = SpeakerSide.LEFT,
+            text = "The preparatory runes glow with incandescent jade light! The Veridian Chime is primed to awaken. But beneath the pool, the ancient silt core thrashes—a gargantuan Mire Wyrm rises to crush the chime before it can ring!",
+            choices = listOf(
+                DialogueChoice("ch7_boss_ready", "Unleash the Logos and destroy the Mire Wyrm!", listOf("unleash", "destroy", "wyrm", "battle", "strike"), "ch7_wyrm_assault")
+            )
+        ),
+        DialogueNode(
+            id = "ch7_wyrm_assault",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            triggerBattleEncounterId = "ch7_mire_wyrm",
+            text = "The Mire Wyrm erupts from the muddy depths, spraying corrosive silt as swarms of silt ghouls rush the shore! Lyra raises her staff, Sir Cedric locks his golden shield in place, and your voice invokes the Logos!"
+        ),
+        DialogueNode(
+            id = "ch7_wyrm_victory",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            setFlagOnEnter = "ch7_wyrm_defeated",
+            text = "With a subterranean groan, the Ancient Mire Wyrm collapses and dissolves into radiant jade moss! Lyra strikes the botanical fork with all her strength against the Veridian Chime. A deafening, glorious jade toll reverberates across fifty leagues of marsh! Massive whirlpools form as the stagnant black bogwater drains through subterranean caverns, exposing the dry stone road leading into the northern crags!",
+            nextNodeId = "ch7_post_toll"
+        ),
+        DialogueNode(
+            id = "ch7_post_toll",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            text = "The Veridian Chime rings true! Two bells restored, two remain! The northern road is open, Invocator. Forward, into the Shadowed Crags!",
+            choices = listOf(
+                DialogueChoice("ch7_advance_ch8", "March into the Shadowed Crags toward Ouros", listOf("march", "crags", "shadowed", "ouros", "advance", "north"), "ch8_intro")
+            )
+        ),
+
+        // === CHAPTER 8: THE SHADOWED CRAGS & ZEPHYR'S DEFECTION ===
+        DialogueNode(
+            id = "ch8_intro",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            changeSceneId = "scene_shadowed_crags",
+            text = "Cold wind whips through the narrow gorge of the Shadowed Crags. Purple mist clings to obsidian rocks. High above on the canyon ledges, silent figures in dark cowls watch every step of your ascent.",
+            nextNodeId = "ch8_ambush_warning"
+        ),
+        DialogueNode(
+            id = "ch8_ambush_warning",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            text = "Halt! Look to the ledges! They have severed tripwires across the trail. We are surrounded!",
+            nextNodeId = "ch8_ambush_strike"
+        ),
+        DialogueNode(
+            id = "ch8_ambush_strike",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "Grand Executioner Kaelen drops from the cliffside with twin executioner axes, flanked by lethal shadowblades! 'By decree of the Mute Sovereign, your voices end here!' Prepare for battle!",
+            choices = listOf(
+                DialogueChoice("ch8_fight_ambush", "Defend the pass against the Inquisition assassins!", listOf("defend", "fight", "ambush", "kaelen", "battle"), "ch8_assassin_assault")
+            )
+        ),
+        DialogueNode(
+            id = "ch8_assassin_assault",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            triggerBattleEncounterId = "ch8_executioner_ambush",
+            text = "The ambush strikes! The fellowship forms a defensive circle against Kaelen and the shadowblades. Mid-battle, a silken shadow drops from above—Zephyr the Shadowblade defects to the fellowship, turning his twin daggers against Kaelen!"
+        ),
+        DialogueNode(
+            id = "ch8_executioner_victory",
+            speaker = DialogueSpeaker.ZEPHYR,
+            side = SpeakerSide.LEFT,
+            setFlagOnEnter = "zephyr_recruited",
+            text = "Executioner Kaelen collapses against the rocky cliff, his axes shattering upon the stones. Zephyr wipes his daggers and sheathes them. 'I was sent to sever your tongues,' Zephyr breathes in a calm, lethal whisper. 'Instead, I chose to keep my own. You speak with the First Voice. I will fight at your side.'",
+            nextNodeId = "ch8_hub"
+        ),
+        DialogueNode(
+            id = "ch8_hub",
+            speaker = DialogueSpeaker.ZEPHYR,
+            side = SpeakerSide.LEFT,
+            text = "Zephyr leans against the canyon wall, silver hair catching the cold mountain light. 'The four harmonic disciplines are gathered: Flame, Dawn, Grove, and Shadow. But before we assault Ouros, we have preparations to make.'",
+            choices = listOf(
+                DialogueChoice("ch8_motives_choice", "Ask Zephyr why he turned against the Inquisition", listOf("motives", "why", "turned", "betrayed", "inquisition"), "ch8_motives_dialogue", "ch8_motives_complete"),
+                DialogueChoice("ch8_map_choice", "Study Zephyr's stolen blueprints of the Clockwork Bastion", listOf("map", "blueprints", "bastion", "ouros", "study"), "ch8_map_dialogue", "ch8_map_complete"),
+                DialogueChoice("ch8_herbs_choice", "Rest around the cragfire and blend mountain herbs", listOf("rest", "cragfire", "herbs", "tend", "wounds"), "ch8_herbs_dialogue", "ch8_herbs_complete")
+            )
+        ),
+        DialogueNode(
+            id = "ch8_motives_dialogue",
+            speaker = DialogueSpeaker.ZEPHYR,
+            side = SpeakerSide.LEFT,
+            setFlagOnEnter = "ch8_motives_complete",
+            text = "Zephyr touches his collar. 'In the Black Guild, initiates undergo the Severing—drinking molten obsidian to burn out our vocal cords so we carry no secrets. I feigned silence, concealing a hidden razor under my tongue. Malakor does not desire peace; he desires a graveyard of mute puppets. I would rather die screaming than live in his silence.'",
+            nextNodeId = "ch8_hub"
+        ),
+        DialogueNode(
+            id = "ch8_map_dialogue",
+            speaker = DialogueSpeaker.ZEPHYR,
+            side = SpeakerSide.LEFT,
+            setFlagOnEnter = "ch8_map_complete",
+            text = "Zephyr unrolls a sheepskin diagram marked with clockwork gears. 'Ouros is powered by geothermal steam chambers. The Third Bell—the Resonant Bastion—is locked in the apex belfry. If we disable the steam valves, the automated defense grid will collapse, exposing Warmaster Ouros!'",
+            nextNodeId = "ch8_hub"
+        ),
+        DialogueNode(
+            id = "ch8_herbs_dialogue",
+            speaker = DialogueSpeaker.LYRA,
+            side = SpeakerSide.LEFT,
+            setFlagOnEnter = "ch8_herbs_complete",
+            text = "Lyra brews dried winterberry leaves over Cedric's consecrated flint. The invigorating steam soothes the cold chill of the crags, restoring full vitality and morale to all four champions!",
+            nextNodeId = "ch8_hub"
+        ),
+        DialogueNode(
+            id = "ch8_all_completed",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            text = "The quad fellowship stands united! Yet Sir Cedric looks down with heavy eyes. 'Invocator... before we assault the bastion, my spirit carries a debt. In the catacombs beneath this ridge lies the Mausoleum of the Sun. My former mentor, Sir Galahault, haunts that desecrated hall. If my blade is to remain unbroken, I must face my past.'",
+            choices = listOf(
+                DialogueChoice("ch8_to_cedric_trial", "Enter the Mausoleum of the Sun for Sir Cedric's Trial", listOf("enter", "mausoleum", "cedric", "trial", "dawn"), "ch9_intro")
+            )
+        ),
+
+        // === CHAPTER 9: THE BROKEN VOW OF DAWN (Sir Cedric's Required Trial) ===
+        DialogueNode(
+            id = "ch9_intro",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            changeSceneId = "scene_mausoleum",
+            text = "Cold marble echoes beneath your boots. The Mausoleum of the Sun lies buried beneath the forgotten foundations of Sol-Aethel. Shattered statues of knights kneel before weeping golden sunburst banners.",
+            nextNodeId = "ch9_hub"
+        ),
+        DialogueNode(
+            id = "ch9_hub",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            text = "Cedric touches his golden cross. 'Here lies the tomb of Sir Galahault, Grandmaster of the Golden Chime. When the Blight came, he ordered the gates sealed from within, damning thirty thousand innocent citizens to become obsidian statues so our order might survive. I broke my vow and opened the sally port to save the children. His ghost cursed me with eternal shame.'",
+            choices = listOf(
+                DialogueChoice("ch9_knights_choice", "Examine the petrified statues of the Golden Chime knights", listOf("knights", "statues", "examine", "petrified"), "ch9_knights_dialogue", "ch9_knights_complete"),
+                DialogueChoice("ch9_altar_choice", "Offer a prayer of renewal at the Solar Sunburst Altar", listOf("altar", "prayer", "solar", "sunburst", "offer"), "ch9_altar_dialogue", "ch9_altar_complete")
+            )
+        ),
+        DialogueNode(
+            id = "ch9_knights_dialogue",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            setFlagOnEnter = "ch9_knights_complete",
+            text = "Cedric brushes dust from the fallen knight statues. 'They obeyed orders without question... and in their obedience, they turned to obsidian all the same. Blind vows do not protect righteousness; only living conscience does.'",
+            nextNodeId = "ch9_hub"
+        ),
+        DialogueNode(
+            id = "ch9_altar_dialogue",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            setFlagOnEnter = "ch9_altar_complete",
+            text = "You kindle sacred embers upon the solar altar. Golden light washes across the crypt, dispelling the suffocating gloom. Cedric's shield begins to glow with blinding morning luminescence!",
+            nextNodeId = "ch9_hub"
+        ),
+        DialogueNode(
+            id = "ch9_all_completed",
+            speaker = DialogueSpeaker.GALAHAULT,
+            side = SpeakerSide.RIGHT,
+            text = "The central obsidian sarcophagus bursts open! A petrified spectral knight encased in black obsidian armor steps forth, eyes blazing with pale golden fury: 'Traitor! You chose thirty crying orphans over five centuries of sacred chivalric lineage!' Cedric draws his greatsword: 'My oath was to the people, master!'",
+            choices = listOf(
+                DialogueChoice("ch9_boss_ready", "Stand beside Cedric and shatter Grandmaster Galahault's curse!", listOf("stand", "shatter", "galahault", "curse", "battle"), "ch9_galahault_assault")
+            )
+        ),
+        DialogueNode(
+            id = "ch9_galahault_assault",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            triggerBattleEncounterId = "ch9_galahault_trial",
+            text = "Sir Galahault charges with spectral paladins! Cedric steps into the vanguard with radiant shield held high!"
+        ),
+        DialogueNode(
+            id = "ch9_galahault_victory",
+            speaker = DialogueSpeaker.GALAHAULT,
+            side = SpeakerSide.RIGHT,
+            setFlagOnEnter = "cedric_trial_complete",
+            text = "Sir Galahault drops to one knee as the obsidian plate fractures and dissolves into golden sparks. The Grandmaster smiles gently: 'You did not break the vow, Cedric... you fulfilled its truest meaning. The dawn belongs to you.' He dissolves peacefully into celestial light. Sir Cedric unlocks the Master Chant: Aegis of the Dawn!",
+            nextNodeId = "ch9_post_victory"
+        ),
+        DialogueNode(
+            id = "ch9_post_victory",
+            speaker = DialogueSpeaker.LYRA,
+            side = SpeakerSide.LEFT,
+            text = "Sir Cedric stands unburdened, his holy aura blazing brighter than the sun. Lyra clutches her Heart-Tree amulet with trembling hands. 'Invocator... my sisters call to me. The Emerald Choir spring is dying under obsidian silt. We must go there next!'",
+            choices = listOf(
+                DialogueChoice("ch9_to_lyra_trial", "Journey to the Emerald Choir Grove for Lyra's Trial", listOf("journey", "emerald", "choir", "lyra", "trial", "grove"), "ch10_intro")
+            )
+        ),
+
+        // === CHAPTER 10: THE SONG OF THE MUTE GROVE (Lyra's Required Trial) ===
+        DialogueNode(
+            id = "ch10_intro",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            changeSceneId = "scene_emerald_choir",
+            text = "The fellowship arrives in the secluded sunken glade of the Emerald Choir. Massive ancient redwoods loom overhead, completely motionless. Dozens of singing dryads stand petrified in obsidian around a bubbling black spring.",
+            nextNodeId = "ch10_hub"
+        ),
+        DialogueNode(
+            id = "ch10_hub",
+            speaker = DialogueSpeaker.LYRA,
+            side = SpeakerSide.LEFT,
+            text = "Lyra kneels beside a statue of an elder dryad with tears of crystallized sap on her cheeks. 'When Malakor's priests came, they dumped obsidian venom into the spring. The dryads sang until their voices turned to glass. I was too afraid to sing loud enough to save them... But now, with your fellowship, I will not be quiet!'",
+            choices = listOf(
+                DialogueChoice("ch10_dryads_choice", "Touch the weeping obsidian statues of Lyra's sisters", listOf("dryads", "statues", "sisters", "touch", "weeping"), "ch10_dryads_dialogue", "ch10_dryads_complete"),
+                DialogueChoice("ch10_seed_choice", "Prepare the Living Seed of the Sacred Willow", listOf("seed", "willow", "sacred", "prepare", "spring"), "ch10_seed_dialogue", "ch10_seed_complete")
+            )
+        ),
+        DialogueNode(
+            id = "ch10_dryads_dialogue",
+            speaker = DialogueSpeaker.LYRA,
+            side = SpeakerSide.LEFT,
+            setFlagOnEnter = "ch10_dryads_complete",
+            text = "Lyra presses her palms to the dryads' chests. A faint emerald heartbeat resonates through the stone. 'They are still alive inside! If we cleanse the venom source, their voices will bloom once more!'",
+            nextNodeId = "ch10_hub"
+        ),
+        DialogueNode(
+            id = "ch10_seed_dialogue",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            setFlagOnEnter = "ch10_seed_complete",
+            text = "You channel harmonic energy into the ancient willow seed. It sprouts luminous tendrils of emerald light that snake toward the murky spring, craving pure living water.",
+            nextNodeId = "ch10_hub"
+        ),
+        DialogueNode(
+            id = "ch10_all_completed",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "The spring roils violently! The Blighted Broodmother—a colossal arachnid behemoth dripping with obsidian venom—climbs from the pit, hissing with discordant screeching!",
+            choices = listOf(
+                DialogueChoice("ch10_boss_ready", "Cleanse the sacred spring and crush the Blighted Broodmother!", listOf("cleanse", "crush", "broodmother", "battle", "spring"), "ch10_broodmother_assault")
+            )
+        ),
+        DialogueNode(
+            id = "ch10_broodmother_assault",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            triggerBattleEncounterId = "ch10_broodmother_trial",
+            text = "The Broodmother strikes with venomous fangs as toxic spiderlings swarm the grove! Lyra raises her staff to weave the living earth!"
+        ),
+        DialogueNode(
+            id = "ch10_broodmother_victory",
+            speaker = DialogueSpeaker.LYRA,
+            side = SpeakerSide.LEFT,
+            setFlagOnEnter = "lyra_trial_complete",
+            text = "The Broodmother shatters into harmless green loam! Lyra drops the living seed into the bubbling waters. Crystal pure turquoise water erupts in geysers! Across the grove, the obsidian crusts peel away, and thirty dryads awaken, singing a glorious four-part hymn of thanksgiving! Lyra unlocks the Master Chant: Verdant Cataclysm!",
+            nextNodeId = "ch10_post_victory"
+        ),
+        DialogueNode(
+            id = "ch10_post_victory",
+            speaker = DialogueSpeaker.ZEPHYR,
+            side = SpeakerSide.LEFT,
+            text = "Lyra is radiant, surrounded by dancing woodland spirits. Zephyr tightens his gloves. 'Two debts cleared. Now comes mine. Master Nocturne has tracked us to the Blind Gorge. If I do not extinguish him today, his blades will seek us at our backs during the assault on Ouros.'",
+            choices = listOf(
+                DialogueChoice("ch10_to_zephyr_trial", "Enter the Blind Gorge for Zephyr's Trial", listOf("enter", "blind", "gorge", "zephyr", "trial"), "ch11_intro")
+            )
+        ),
+
+        // === CHAPTER 11: THE SILENT BLADE'S RECKONING (Zephyr's Required Trial) ===
+        DialogueNode(
+            id = "ch11_intro",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            changeSceneId = "scene_blind_gorge",
+            text = "The Blind Gorge is a labyrinth of razor obsidian slabs and subterranean thermal vents. An oppressive silence hangs in the air, muffled by dark alchemical smog.",
+            nextNodeId = "ch11_hub"
+        ),
+        DialogueNode(
+            id = "ch11_hub",
+            speaker = DialogueSpeaker.ZEPHYR,
+            side = SpeakerSide.LEFT,
+            text = "Zephyr tests the wind. 'Nocturne is the deadliest assassin in Aethelgard. He moves without sound or shadow. Watch your footing—the gorge is rigged with sonic mines and poisoned garrotes.'",
+            choices = listOf(
+                DialogueChoice("ch11_traps_choice", "Disarm the acoustic tripwires strung across the canyon", listOf("traps", "tripwires", "disarm", "acoustic", "mines"), "ch11_traps_dialogue", "ch11_traps_complete"),
+                DialogueChoice("ch11_vials_choice", "Identify the obsidian venom vials left along the trail", listOf("vials", "venom", "poison", "identify", "trail"), "ch11_vials_dialogue", "ch11_vials_complete")
+            )
+        ),
+        DialogueNode(
+            id = "ch11_traps_dialogue",
+            speaker = DialogueSpeaker.ZEPHYR,
+            side = SpeakerSide.LEFT,
+            setFlagOnEnter = "ch11_traps_complete",
+            text = "Zephyr nimbly snips the nearly invisible obsidian wires, disabling the sonic concussion mines. 'My former master taught me these traps. Now they will not harm us.'",
+            nextNodeId = "ch11_hub"
+        ),
+        DialogueNode(
+            id = "ch11_vials_dialogue",
+            speaker = DialogueSpeaker.LYRA,
+            side = SpeakerSide.LEFT,
+            setFlagOnEnter = "ch11_vials_complete",
+            text = "Lyra treats the obsidian vials with eucalyptus spores, neutralizing the airborne paralysis toxins. The air in the gorge clears!",
+            nextNodeId = "ch11_hub"
+        ),
+        DialogueNode(
+            id = "ch11_all_completed",
+            speaker = DialogueSpeaker.NOCTURNE,
+            side = SpeakerSide.RIGHT,
+            text = "A whirlpool of black mist congeals on the canyon floor. Master Nocturne steps forward, masked in obsidian bone. 'You were my prize pupil, Zephyr. Yet you trade the perfection of silence for the babbling of fools.' Zephyr uncrosses his daggers: 'Silence is death. Words are how we choose each other!'",
+            choices = listOf(
+                DialogueChoice("ch11_boss_ready", "Strike down Master Nocturne and shatter the Black Guild!", listOf("strike", "nocturne", "guild", "battle", "master"), "ch11_nocturne_assault")
+            )
+        ),
+        DialogueNode(
+            id = "ch11_nocturne_assault",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            triggerBattleEncounterId = "ch11_nocturne_trial",
+            text = "Master Nocturne dissolves into three shadow duplicates, striking from the dark! Zephyr leaps forward to meet his former master blade to blade!"
+        ),
+        DialogueNode(
+            id = "ch11_nocturne_victory",
+            speaker = DialogueSpeaker.ZEPHYR,
+            side = SpeakerSide.LEFT,
+            setFlagOnEnter = "zephyr_trial_complete",
+            text = "Zephyr's twin daggers pierce Nocturne's shadow core. The master's obsidian mask splits in half and clatters to the stone floor. Nocturne dissolves into drifting soot. Zephyr breathes deeply, tearing the Black Guild insignias from his cloak: 'I am no longer an assassin of the mute. I am Zephyr of the Fellowship!' Zephyr unlocks the Master Chant: Umbral Oblivion!",
+            nextNodeId = "ch11_post_victory"
+        ),
+        DialogueNode(
+            id = "ch11_post_victory",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            text = "Sir Cedric claps Zephyr firmly on the shoulder. 'All four companions have proven their souls in trial! Our blades are keen, our spirits unyielding. The Clockwork Bastion of Ouros stands before us. Let us awaken the Third Great Bell!'",
+            choices = listOf(
+                DialogueChoice("ch11_to_ouros", "Assault the Clockwork Bastion of Ouros!", listOf("assault", "ouros", "clockwork", "bastion", "advance"), "ch12_intro")
+            )
+        ),
+
+        // === CHAPTER 12: AWAKENING THE THIRD BELL (The Iron Belfry of Ouros) ===
+        DialogueNode(
+            id = "ch12_intro",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            changeSceneId = "scene_clockwork_bastion",
+            text = "The Clockwork Bastion rises like an iron mountain into the clouds. Colossal brass gears groan with mechanical rhythm as pressurized steam vents roar along the parapets. At the pinnacle hangs the Third Great Bell: The Resonant Bastion!",
+            nextNodeId = "ch12_hub"
+        ),
+        DialogueNode(
+            id = "ch12_hub",
+            speaker = DialogueSpeaker.ZEPHYR,
+            side = SpeakerSide.LEFT,
+            text = "Zephyr points to the central clockwork core. 'The bell is clamped by magnetic hydraulic locks powered by the main steam manifold. If we shut those bypass valves, the locks will drop!'",
+            choices = listOf(
+                DialogueChoice("ch12_valves_choice", "Override the steam pressure bypass valves", listOf("valves", "steam", "pressure", "override", "bypass"), "ch12_valves_dialogue", "ch12_valves_complete"),
+                DialogueChoice("ch12_cogs_choice", "Disengage the magnetic clamps locking the Great Bell", listOf("cogs", "clamps", "magnetic", "disengage", "gear"), "ch12_cogs_dialogue", "ch12_cogs_complete")
+            )
+        ),
+        DialogueNode(
+            id = "ch12_valves_dialogue",
+            speaker = DialogueSpeaker.AETHEL,
+            side = SpeakerSide.LEFT,
+            setFlagOnEnter = "ch12_valves_complete",
+            text = "Aethel invokes a burst of intense glacial ice, freezing the superheated pressure valves shut. The steam sirens howl and sputter out!",
+            nextNodeId = "ch12_hub"
+        ),
+        DialogueNode(
+            id = "ch12_cogs_dialogue",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            setFlagOnEnter = "ch12_cogs_complete",
+            text = "Cedric wedges his greatsword into the magnetic interlock lever, throwing his entire weight into it. With a thunderous clank, the massive iron clamps retract from the bell!",
+            nextNodeId = "ch12_hub"
+        ),
+        DialogueNode(
+            id = "ch12_all_completed",
+            speaker = DialogueSpeaker.OUROS,
+            side = SpeakerSide.RIGHT,
+            text = "The foundry floor trembles as Clockwork Warmaster Ouros deploys from the furnace elevator—a ten-foot armored automaton wielding molten steam cannons and backed by iron phalanx guards! 'Intruders detected! Protocol: Silence the living!'",
+            choices = listOf(
+                DialogueChoice("ch12_boss_ready", "Destroy Warmaster Ouros and ring the Iron Belfry!", listOf("destroy", "warmaster", "ouros", "belfry", "battle"), "ch12_warmaster_assault")
+            )
+        ),
+        DialogueNode(
+            id = "ch12_warmaster_assault",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            triggerBattleEncounterId = "ch12_warmaster_ouros",
+            text = "The 4-hero fellowship clashes against Warmaster Ouros and his clockwork phalanx battalion high on the belfry platform!"
+        ),
+        DialogueNode(
+            id = "ch12_warmaster_victory",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            setFlagOnEnter = "ch12_ouros_defeated",
+            text = "With a cataclysmic blast of steam and flying cogs, Warmaster Ouros collapses into glowing molten scrap! The fellowship grips the massive iron chain and pulls together. The Third Great Bell—The Resonant Bastion—tolls with a thunderous, metallic roar that shakes the very foundations of the earth! Across the skies, a blinding ribbon of celestial light solidifies into a sky bridge leading directly to the capital of Sol-Aethel!",
+            nextNodeId = "ch12_post_victory"
+        ),
+        DialogueNode(
+            id = "ch12_post_victory",
+            speaker = DialogueSpeaker.LYRA,
+            side = SpeakerSide.LEFT,
+            text = "Three Great Bells restored! The sky bridge has opened! The capital gates of Sol-Aethel lie just ahead. Forward, to the heart of the Blight!",
+            choices = listOf(
+                DialogueChoice("ch12_to_citadel", "Cross the sky bridge to the Silent Citadel Gates", listOf("cross", "bridge", "citadel", "gates", "advance"), "ch13_intro")
+            )
+        ),
+
+        // === CHAPTER 13: BREACH OF THE SILENT CITADEL ===
+        DialogueNode(
+            id = "ch13_intro",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            changeSceneId = "scene_silent_citadel",
+            text = "High above the cloudline on the floating plateau of Sol-Aethel, the Silent Citadel looms in terrifying majesty. Monolithic battlements of black glass reflect the eerie silence of the capital. The Great Gates are bolted shut with obsidian sorcery.",
+            nextNodeId = "ch13_hub"
+        ),
+        DialogueNode(
+            id = "ch13_hub",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            text = "Cedric looks upon the city of his youth. 'The streets of Sol-Aethel were once filled with songs, market calls, and the laughter of pilgrims. Now it is a mausoleum in the sky. We must break the seal on these gates!'",
+            choices = listOf(
+                DialogueChoice("ch13_gate_choice", "Inspect the fortified black glass portcullis", listOf("gate", "portcullis", "inspect", "glass", "black"), "ch13_gate_dialogue", "ch13_gate_complete"),
+                DialogueChoice("ch13_seal_choice", "Purge the obsidian seal binding the entrance", listOf("seal", "purge", "dispel", "binding", "obsidian"), "ch13_seal_dialogue", "ch13_seal_complete")
+            )
+        ),
+        DialogueNode(
+            id = "ch13_gate_dialogue",
+            speaker = DialogueSpeaker.ZEPHYR,
+            side = SpeakerSide.LEFT,
+            setFlagOnEnter = "ch13_gate_complete",
+            text = "Zephyr inspects the locking mechanism: 'The gate is held by void resonance. If we strike the seal with a unified chant, the glass will shatter!'",
+            nextNodeId = "ch13_hub"
+        ),
+        DialogueNode(
+            id = "ch13_seal_dialogue",
+            speaker = DialogueSpeaker.AETHEL,
+            side = SpeakerSide.LEFT,
+            setFlagOnEnter = "ch13_seal_complete",
+            text = "Aethel unleashes a focused harmonic incantation. Cracks of golden fire race across the black glass seal, weakening its grip!",
+            nextNodeId = "ch13_hub"
+        ),
+        DialogueNode(
+            id = "ch13_all_completed",
+            speaker = DialogueSpeaker.VAELOR,
+            side = SpeakerSide.RIGHT,
+            text = "The black gates open to reveal Commander Vaelor, Hand of Malakor, flanked by obsidian sentinels! At his belt hangs the terrifying Void Horn. 'You have climbed high, little songbirds. But here, the sky belongs to the void!' Vaelor raises the horn to his lips!",
+            choices = listOf(
+                DialogueChoice("ch13_boss_ready", "Slay Commander Vaelor and breach the Citadel!", listOf("slay", "vaelor", "citadel", "battle", "horn"), "ch13_vaelor_assault")
+            )
+        ),
+        DialogueNode(
+            id = "ch13_vaelor_assault",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            triggerBattleEncounterId = "ch13_commander_vaelor",
+            text = "Commander Vaelor sounds the Void Horn, summoning spectral reapers from the abyss as the fellowship charges the gatehouse!"
+        ),
+        DialogueNode(
+            id = "ch13_vaelor_victory",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            setFlagOnEnter = "ch13_vaelor_defeated",
+            text = "Commander Vaelor falls from the ramparts, and the Void Horn shatters into harmless glass shards! Beyond the citadel gates, a grand celestial plaza opens onto the lake of the Void Reservoir, where the stolen voices of the world are pooled.",
+            nextNodeId = "ch13_post_victory"
+        ),
+        DialogueNode(
+            id = "ch13_post_victory",
+            speaker = DialogueSpeaker.ZEPHYR,
+            side = SpeakerSide.LEFT,
+            text = "Vaelor is dead. The path to the Void Reservoir is clear. Let us reclaim what was stolen!",
+            choices = listOf(
+                DialogueChoice("ch13_to_reservoir", "Enter the Chamber of the Void Reservoir", listOf("enter", "reservoir", "void", "chamber", "advance"), "ch14_intro")
+            )
+        ),
+
+        // === CHAPTER 14: THE VOID RESERVOIR ===
+        DialogueNode(
+            id = "ch14_intro",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            changeSceneId = "scene_void_reservoir",
+            text = "A vast sunken lake of pitch-black liquid silence stretches beneath a weeping starlight dome. Ripples move across the dark pool in complete, eerie noiselessness. Swirling voice motes struggle beneath the surface, trapped like captive stars.",
+            nextNodeId = "ch14_hub"
+        ),
+        DialogueNode(
+            id = "ch14_hub",
+            speaker = DialogueSpeaker.LYRA,
+            side = SpeakerSide.LEFT,
+            text = "Lyra clutches her ears. 'The water... it is drinking our echoes before they can even leave our lips. This is where Malakor pools the stolen voices of everyone petrified across Aethelgard.'",
+            choices = listOf(
+                DialogueChoice("ch14_archons_choice", "Commune with the petrified High Archons kneeling by the lake", listOf("archons", "commune", "high", "statues", "kneeling"), "ch14_archons_dialogue", "ch14_archons_complete"),
+                DialogueChoice("ch14_eddies_choice", "Dispel the swirling silt eddies of liquid silence", listOf("eddies", "dispel", "silt", "liquid", "silence"), "ch14_eddies_dialogue", "ch14_eddies_complete")
+            )
+        ),
+        DialogueNode(
+            id = "ch14_archons_dialogue",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            setFlagOnEnter = "ch14_archons_complete",
+            text = "Cedric kneels beside the frozen Archons. 'Their minds are still trapped in prayer. They warn us: the lake has a guardian—the Abyssal Leviathan. We must chant with overwhelming volume and cadence to break its muffle aura!'",
+            nextNodeId = "ch14_hub"
+        ),
+        DialogueNode(
+            id = "ch14_eddies_dialogue",
+            speaker = DialogueSpeaker.LYRA,
+            side = SpeakerSide.LEFT,
+            setFlagOnEnter = "ch14_eddies_complete",
+            text = "Lyra chants an invigorating cleansing verse. The black liquid eddies churn and clear, restoring acoustic clarity to the shoreline!",
+            nextNodeId = "ch14_hub"
+        ),
+        DialogueNode(
+            id = "ch14_all_completed",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "The liquid silence rises into a towering tidal wave as the colossal Abyssal Leviathan breaches the surface! Tendrils of pure void lash out, suffocating all sound in their wake!",
+            choices = listOf(
+                DialogueChoice("ch14_boss_ready", "Strike the Abyssal Leviathan and free the stolen voices!", listOf("strike", "leviathan", "free", "voices", "battle"), "ch14_leviathan_assault")
+            )
+        ),
+        DialogueNode(
+            id = "ch14_leviathan_assault",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            triggerBattleEncounterId = "ch14_abyssal_leviathan",
+            text = "The Abyssal Leviathan envelops the party in its Muffle Aura! Speak your chants with unyielding conviction and volume to pierce the void!"
+        ),
+        DialogueNode(
+            id = "ch14_leviathan_victory",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            setFlagOnEnter = "ch14_leviathan_defeated",
+            text = "With a deafening shriek of dissolving shadow, the Abyssal Leviathan bursts into millions of incandescent voice motes! The motes swirl around the fellowship like a spiral galaxy, singing melodies of love, hope, and courage. The liquid silence evaporates, revealing the crystalline Ribbon Stair ascending to the Spire Summit!",
+            nextNodeId = "ch14_post_victory"
+        ),
+        DialogueNode(
+            id = "ch14_post_victory",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            text = "The voices are free! They swirl ahead of us, lighting the ribbon stair into the heavens. The summit is within our grasp!",
+            choices = listOf(
+                DialogueChoice("ch14_to_spire", "Ascend the Celestial Ribbon Stair to the Summit", listOf("ascend", "ribbon", "stair", "summit", "spire", "advance"), "ch15_intro")
+            )
+        ),
+
+        // === CHAPTER 15: ASCENT OF THE CELESTIAL SPIRE ===
+        DialogueNode(
+            id = "ch15_intro",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            changeSceneId = "scene_celestial_spire",
+            text = "You ascend a stairway made of solidified harmonic light suspended between the clouds and stars. The four Great Bell Towers of Aethelgard form a colossal cross of gold, jade, and iron below you. Ahead stands the Celestial Belfry.",
+            nextNodeId = "ch15_hub"
+        ),
+        DialogueNode(
+            id = "ch15_hub",
+            speaker = DialogueSpeaker.AETHEL,
+            side = SpeakerSide.LEFT,
+            text = "The four companions pause on the final landing before the great double doors. The fellowship stands at the edge of destiny.",
+            choices = listOf(
+                DialogueChoice("ch15_cedric_choice", "Speak with Sir Cedric upon the threshold of dawn", listOf("cedric", "dawn", "vow", "speak", "templar"), "ch15_cedric_dialogue", "ch15_cedric_complete"),
+                DialogueChoice("ch15_lyra_choice", "Speak with Lyra beneath the starlight canopy", listOf("lyra", "starlight", "grove", "warden", "speak"), "ch15_lyra_dialogue", "ch15_lyra_complete"),
+                DialogueChoice("ch15_zephyr_choice", "Speak with Zephyr overlooking the waking world", listOf("zephyr", "shadow", "world", "overlook", "speak"), "ch15_zephyr_dialogue", "ch15_zephyr_complete")
+            )
+        ),
+        DialogueNode(
+            id = "ch15_cedric_dialogue",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            setFlagOnEnter = "ch15_cedric_complete",
+            text = "Cedric adjusts his gauntlet and looks at you with profound respect. 'I was an exile, broken by guilt. You taught me that honor is not a wall—it is the courage to speak for those who cannot. Whatever waits behind those doors, Invocator, my shield is yours until my last breath.'",
+            nextNodeId = "ch15_hub"
+        ),
+        DialogueNode(
+            id = "ch15_lyra_dialogue",
+            speaker = DialogueSpeaker.LYRA,
+            side = SpeakerSide.LEFT,
+            setFlagOnEnter = "ch15_lyra_complete",
+            text = "Lyra catches a drifting voice mote in her palm and smiles softly. 'I lived in terror of the quiet for so many years. But together, our voices made the blossoms bloom and the dryads sing. We are going to bring the morning back to everyone.'",
+            nextNodeId = "ch15_hub"
+        ),
+        DialogueNode(
+            id = "ch15_zephyr_dialogue",
+            speaker = DialogueSpeaker.ZEPHYR,
+            side = SpeakerSide.LEFT,
+            setFlagOnEnter = "ch15_zephyr_complete",
+            text = "Zephyr rests a hand on his daggers. 'In the shadows, they told me words were weakness. But I see now that words are how we bind our hearts together in the dark. Malakor thinks silence is peace. Let us show him the storm.'",
+            nextNodeId = "ch15_hub"
+        ),
+        DialogueNode(
+            id = "ch15_all_completed",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "Golden Archon Custodians and Celestial Spires materialize to guard the final sanctum. They raise their halberds: 'Only those of true harmonic resonance may enter the Belfry of Eternity!'",
+            choices = listOf(
+                DialogueChoice("ch15_boss_ready", "Prove your fellowship's resonance to the Archons!", listOf("prove", "resonance", "archons", "battle", "enter"), "ch15_custodians_assault")
+            )
+        ),
+        DialogueNode(
+            id = "ch15_custodians_assault",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            triggerBattleEncounterId = "ch15_archon_custodians",
+            text = "The Archon Custodians strike with celestial radiance! The four companions unite their master spells to break through the final test!"
+        ),
+        DialogueNode(
+            id = "ch15_custodians_victory",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            setFlagOnEnter = "ch15_custodians_defeated",
+            text = "The Archon Custodians bow low, their halberds lowering as the golden doors slowly swing open into the celestial belfry. Beyond, against a swirling backdrop of cosmic auroras, stands Grand Inquisitor Malakor—The Mute Sovereign!",
+            nextNodeId = "ch15_post_victory"
+        ),
+        DialogueNode(
+            id = "ch15_post_victory",
+            speaker = DialogueSpeaker.AETHEL,
+            side = SpeakerSide.LEFT,
+            text = "The final belfry is open. The fourth Great Bell—The Bell of Eternity—awaits. It is time to end the silence forever.",
+            choices = listOf(
+                DialogueChoice("ch15_to_finale", "Enter the Celestial Belfry to confront Grand Inquisitor Malakor", listOf("enter", "belfry", "malakor", "sovereign", "finale", "advance"), "ch16_intro")
+            )
+        ),
+
+        // === CHAPTER 16: THE PRIMORDIAL SYLLABLE (Grand Finale) ===
+        DialogueNode(
+            id = "ch16_intro",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            changeSceneId = "scene_final_summit",
+            text = "The pinnacle of the Spire of Echoes touches the outer rim of the cosmos. High above hangs the Fourth Great Bell—The Bell of Eternity—cast from star-metal and meteoric glass. Grand Inquisitor Malakor stands beneath it, his filigree muzzle mask gleaming beneath cold crimson eyes.",
+            nextNodeId = "ch16_confrontation"
+        ),
+        DialogueNode(
+            id = "ch16_confrontation",
+            speaker = DialogueSpeaker.MALAKOR,
+            side = SpeakerSide.RIGHT,
+            text = "Malakor's telepathic voice echoes directly into your minds, cold and tragic: 'Why do you fight for voice? Every war began with a proclamation. Every heartbreak began with a whisper. Every cruelty was justified with a spoken lie. Silence is the only mercy that lasts forever.'",
+            nextNodeId = "ch16_fellowship_reply"
+        ),
+        DialogueNode(
+            id = "ch16_fellowship_reply",
+            speaker = DialogueSpeaker.AETHEL,
+            side = SpeakerSide.LEFT,
+            text = "Aethel steps forward, voice ringing like pure bronze: 'Words can wound, Malakor, but words are also how we say I love you. Words are how we promise to protect each other. Without voice, peace is just an empty grave! We will not let your sorrow mute the universe!'",
+            choices = listOf(
+                DialogueChoice("ch16_boss_ready", "Confront Grand Inquisitor Malakor, The Mute Sovereign!", listOf("confront", "malakor", "sovereign", "final", "battle"), "ch16_malakor_assault")
+            )
+        ),
+        DialogueNode(
+            id = "ch16_malakor_assault",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            triggerBattleEncounterId = "ch16_malakor_finale",
+            text = "The final battle begins! Malakor shields himself in the Glass Monolith and summons the Echo Nullifiers! In Phase 3, the Death of Voice will silence all sound—speak the four-line Primordial Incantation in unison to shatter the void!"
+        ),
+        DialogueNode(
+            id = "ch16_malakor_victory",
+            speaker = DialogueSpeaker.MALAKOR,
+            side = SpeakerSide.RIGHT,
+            setFlagOnEnter = "malakor_defeated",
+            text = "Malakor falls to his knees upon the celestial dais. The filigree mask cracks and clatters to the stone floor. For the first time in five hundred years, color returns to his pale skin and a tear tracks down his cheek. He touches his throat and whispers with a restored, frail human voice: 'I remember... the song my mother sang.' He closes his eyes with a serene smile and dissolves into peaceful motes of golden light.",
+            nextNodeId = "ch16_toll_bell"
+        ),
+        DialogueNode(
+            id = "ch16_toll_bell",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "The fellowship approaches the Bell of Eternity. Together, all four companions grasp the cord of braided starlight. The player invokes the First Word with full lung power: 'LET THERE BE ECHO!'",
+            choices = listOf(
+                DialogueChoice("ch16_ring_bell", "Toll the Bell of Eternity and awaken Aethelgard!", listOf("toll", "ring", "bell", "eternity", "awaken"), "epilogue_awakening")
+            )
+        ),
+
+        // === EPILOGUE: THE GREAT AWAKENING ===
+        DialogueNode(
+            id = "epilogue_awakening",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            changeSceneId = "scene_epilogue",
+            text = "The Bell of Eternity tolls! A blinding shockwave of incandescent golden sound cascades down from the summit. Across the four quadrants of Aethelgard, the Bell of Solaria, the Veridian Chime, and the Resonant Bastion answer in symphonic four-part resonance! The sky turns brilliant sapphire, woven with auroras of pure melodic light!",
+            nextNodeId = "epilogue_village"
+        ),
+        DialogueNode(
+            id = "epilogue_village",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "Down in Whispering Pines, the thick obsidian vines that strangled the village square shatter into iridescent dust! The frozen statues gasp and draw their first deep breaths of mountain air! The village elder shouts with joy. Parents weep as they embrace their children. Down in the valley, the river sings over smooth stones, and thousands of songbirds burst into joyful morning hymn!",
+            nextNodeId = "epilogue_destinies"
+        ),
+        DialogueNode(
+            id = "epilogue_destinies",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            text = "The fellowship stands upon the high overlook above Whispering Pines. Sir Cedric pledges: 'I shall rebuild the Order of the Harmonious Dawn—knights dedicated to defending the right of every living soul to speak freely.' Lyra smiles as green sprouts burst from her staff: 'The Emerald Choir will sing again, louder and more joyous than ever.' Zephyr flips his daggers into his belt with a grin: 'And I shall travel from province to province, carrying the stories of what we did here.'",
+            nextNodeId = "epilogue_invocator"
+        ),
+        DialogueNode(
+            id = "epilogue_invocator",
+            speaker = DialogueSpeaker.AETHEL,
+            side = SpeakerSide.LEFT,
+            text = "And what of you, Invocator? As the First Invocator of the New Age, you will keep vigil at the Spire of Echoes, teaching the children of Aethelgard to speak with conviction, kindness, and truth—so that the silence of fear may never claim the world again.",
+            nextNodeId = "epilogue_credits"
+        ),
+        DialogueNode(
+            id = "epilogue_credits",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            setFlagOnEnter = "game_completed",
+            text = "CONGRATULATIONS! You have completed Voice RPG: Chronicles of the Logos! Every chapter, every trial, every companion bond, and the ultimate confrontation with the Mute Sovereign was conquered by your courage, your voice, and your heart. Thank you for playing!"
         )
     ).associateBy { it.id }
 }

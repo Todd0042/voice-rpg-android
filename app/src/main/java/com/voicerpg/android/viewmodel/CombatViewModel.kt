@@ -83,21 +83,39 @@ class CombatViewModel(
     private val cedricSpells = listOf(
         Spell("holy_smite", "Holy Smite", SpellSchool.HOLY, basePower = 70, mpCost = 14, description = "Righteous celestial blow", exampleChant = "By celestial dawn, smite the heretic!"),
         Spell("lay_on_hands", "Lay on Hands", SpellSchool.HOLY, basePower = 110, mpCost = 16, isHeal = true, description = "Restorative blessing", exampleChant = "Sacred radiance mend Cedric's wounds!"),
-        Spell("shield_wall", "Shield Wall", SpellSchool.PHYSICAL, basePower = 40, mpCost = 10, hitsAll = true, description = "Vanguard protection", exampleChant = "Raise the golden aegis against the horde!")
+        Spell("shield_wall", "Shield Wall", SpellSchool.PHYSICAL, basePower = 40, mpCost = 10, hitsAll = true, description = "Vanguard protection", exampleChant = "Raise the golden aegis against the horde!"),
+        Spell("aegis_dawn", "Aegis of the Dawn", SpellSchool.HOLY, basePower = 150, mpCost = 25, isHeal = true, hitsAll = true, description = "Radiant invulnerability barrier", exampleChant = "By celestial dawn, raise the morning star!")
     )
 
     private val lyraSpells = listOf(
         Spell("soothing_rain", "Soothing Rain", SpellSchool.HOLY, basePower = 65, mpCost = 18, isHeal = true, hitsAll = true, description = "Grove restorative mist", exampleChant = "Spirits of the grove, grant soothing rain upon our party!"),
-        Spell("briar_entangle", "Briar Entangle", SpellSchool.HOLY, basePower = 60, mpCost = 12, description = "Thorny vines snare the foe", exampleChant = "Thorny vines and briars ensnare that archer!")
+        Spell("briar_entangle", "Briar Entangle", SpellSchool.HOLY, basePower = 60, mpCost = 12, description = "Thorny vines snare the foe", exampleChant = "Thorny vines and briars ensnare that archer!"),
+        Spell("verdant_cataclysm", "Verdant Cataclysm", SpellSchool.HOLY, basePower = 140, mpCost = 25, hitsAll = true, description = "Roots surge and reclaim the earth", exampleChant = "Ancient roots of the deep earth awaken!")
     )
 
     private val zephyrSpells = listOf(
         Spell("shadow_strike", "Shadow Strike", SpellSchool.SHADOW, basePower = 75, mpCost = 12, description = "Lethal strike from behind", exampleChant = "From the silent umbra, strike the shaman's throat!"),
-        Spell("venom_flurry", "Venom Flurry", SpellSchool.SHADOW, basePower = 50, mpCost = 15, hitsAll = true, description = "Poisoned twin daggers", exampleChant = "Abyssal venom coat my blades!")
+        Spell("venom_flurry", "Venom Flurry", SpellSchool.SHADOW, basePower = 50, mpCost = 15, hitsAll = true, description = "Poisoned twin daggers", exampleChant = "Abyssal venom coat my blades!"),
+        Spell("umbral_oblivion", "Umbral Oblivion", SpellSchool.SHADOW, basePower = 160, mpCost = 25, description = "Fourfold shadow execution", exampleChant = "From the shadow between heartbeats, cut the tether of the void!")
     )
 
     private val _state = MutableStateFlow(createInitialState())
     val state: StateFlow<CombatState> = _state.asStateFlow()
+
+    var currentEncounterId: String? = null
+        internal set
+    var isZephyrRecruitedMidBattle: Boolean = false
+        internal set
+    var isPhase3Triggered: Boolean = false
+        internal set
+
+    fun setPlayerInputPhaseForTesting(heroId: String = "hero") {
+        val hero = _state.value.party.firstOrNull { it.id == heroId } ?: _state.value.party.firstOrNull()
+        _state.value = _state.value.copy(
+            phase = CombatPhase.PLAYER_INPUT,
+            activePartyMemberId = hero?.id
+        )
+    }
 
     private var atbJob: Job? = null
     private var lastActedHeroId: String? = null
@@ -350,6 +368,11 @@ class CombatViewModel(
 
             delay(250)
 
+            // Option A: Zephyr mid-battle recruitment in Chapter 8
+            if (currentEncounterId == "ch8_executioner_ambush" && !isZephyrRecruitedMidBattle && _state.value.party.none { it.id == "zephyr" }) {
+                recruitZephyrMidBattle()
+            }
+
             // Turn transition: check if another combatant is already ready
             checkAndTransitionNextTurn()
         }
@@ -358,6 +381,12 @@ class CombatViewModel(
     private fun checkAndTransitionNextTurn() {
         val currentParty = _state.value.party
         val currentEnemies = _state.value.enemies
+
+        // Phase 3 Death of Voice in Chapter 16 against Grand Inquisitor Malakor
+        val malakor = currentEnemies.firstOrNull { it.id == "malakor" && it.isAlive }
+        if (currentEncounterId == "ch16_malakor_finale" && malakor != null && malakor.currentHp <= 450 && !isPhase3Triggered) {
+            triggerPhase3DeathOfVoice()
+        }
 
         val readyHeroes = currentParty.filter { it.isAlive && it.isTurnReady }
         val readyEnemies = currentEnemies.filter { it.isAlive && it.isTurnReady }
@@ -390,6 +419,63 @@ class CombatViewModel(
         } else {
             // Nobody ready yet — resume advancing turn gauges
             _state.value = _state.value.copy(phase = CombatPhase.ATB_WAITING)
+        }
+    }
+
+    fun recruitZephyrMidBattle() {
+        if (isZephyrRecruitedMidBattle || _state.value.party.any { it.id == "zephyr" }) return
+        isZephyrRecruitedMidBattle = true
+        val zephyr = StoryEncounters.createZephyrMember()
+        val updatedParty = _state.value.party + zephyr
+        val fct = FloatingCombatText(
+            text = "Zephyr Defects to the Fellowship!",
+            color = Color(0xFFCE93D8),
+            startX = 400f,
+            startY = 350f,
+            isCrit = true
+        )
+        sfxManager.playSpellCast()
+        triggerScreenShake(16f)
+        combatNarrator.speak(
+            "Zephyr descends from the rocky canyon rim with twin daggers flashing! 'I will not cut my tongue for your silence!' Zephyr defects to the fellowship!",
+            force = true
+        )
+        _state.value = _state.value.copy(
+            party = updatedParty,
+            floatingTexts = _state.value.floatingTexts + fct
+        )
+        activeScope.launch {
+            delay(1500)
+            _state.value = _state.value.copy(
+                floatingTexts = _state.value.floatingTexts.filter { it.id != fct.id }
+            )
+        }
+    }
+
+    fun triggerPhase3DeathOfVoice() {
+        if (isPhase3Triggered) return
+        isPhase3Triggered = true
+        sfxManager.mute(true)
+        triggerScreenShake(20f)
+        val fct = FloatingCombatText(
+            text = "THE DEATH OF VOICE — Total Silence",
+            color = Color(0xFFEF5350),
+            startX = 400f,
+            startY = 350f,
+            isCrit = true
+        )
+        combatNarrator.speak(
+            "The Death of Voice! Malakor severs the cords of creation. The world plunges into total, deafening silence. All music and echoes cease. Speak the Primordial Incantation in unison to shatter the void!",
+            force = true
+        )
+        _state.value = _state.value.copy(
+            floatingTexts = _state.value.floatingTexts + fct
+        )
+        activeScope.launch {
+            delay(2000)
+            _state.value = _state.value.copy(
+                floatingTexts = _state.value.floatingTexts.filter { it.id != fct.id }
+            )
         }
     }
 
@@ -711,10 +797,10 @@ class CombatViewModel(
 
         val heroBySchoolKeyword = aliveParty.firstOrNull { member ->
             when (member.id) {
-                "hero" -> lower.contains("fire") || lower.contains("frost") || lower.contains("ice") || lower.contains("lightning") || lower.contains("tempest") || lower.contains("blaze")
-                "cedric" -> lower.contains("smite") || lower.contains("aegis") || lower.contains("shield wall") || lower.contains("lay on hands")
-                "lyra" -> lower.contains("soothing") || lower.contains("rain") || lower.contains("briar") || lower.contains("entangle") || lower.contains("grove") || (lower.contains("heal") && !lower.contains("cedric"))
-                "zephyr" -> lower.contains("shadow strike") || lower.contains("venom") || lower.contains("flurry") || lower.contains("dagger") || lower.contains("poison")
+                "hero" -> lower.contains("fire") || lower.contains("frost") || lower.contains("ice") || lower.contains("lightning") || lower.contains("tempest") || lower.contains("blaze") || lower.contains("primordial")
+                "cedric" -> lower.contains("smite") || lower.contains("aegis") || lower.contains("shield wall") || lower.contains("lay on hands") || lower.contains("dawn") || lower.contains("morning star")
+                "lyra" -> lower.contains("soothing") || lower.contains("rain") || lower.contains("briar") || lower.contains("entangle") || lower.contains("grove") || lower.contains("cataclysm") || (lower.contains("heal") && !lower.contains("cedric"))
+                "zephyr" -> lower.contains("shadow strike") || lower.contains("venom") || lower.contains("flurry") || lower.contains("dagger") || lower.contains("poison") || lower.contains("oblivion")
                 else -> false
             }
         }
@@ -733,12 +819,23 @@ class CombatViewModel(
             // 2. Parse intent using the selected hero's specific available spells
             val parsed = IntentParser.parse(utterance, activeHero.spells, _state.value.enemies, _state.value.party)
             val acoustic = forcedAcoustic ?: speechManager.getLatestAcousticProfile()
-            val resonance = resonanceEngine.evaluate(
+            val rawResonance = resonanceEngine.evaluate(
                 utterance = utterance,
                 school = parsed.spell.school,
                 acousticProfile = acoustic,
                 ignoreNoveltyDecay = forcedAcoustic != null
             )
+            val resonance = if (isPhase3Triggered) {
+                sfxManager.mute(false)
+                rawResonance.copy(
+                    bonusPercent = 200,
+                    damageMultiplier = 3.0f,
+                    tier = ResonanceTier.TRANSCENDENTAL,
+                    particleCount = 120
+                )
+            } else {
+                rawResonance
+            }
 
             val isSuperLogos = resonance.bonusPercent >= 100
             val isTranscendental = resonance.tier == ResonanceTier.TRANSCENDENTAL
@@ -1120,6 +1217,11 @@ class CombatViewModel(
     }
 
     fun startEncounter(encounter: EncounterDefinition) {
+        currentEncounterId = encounter.id
+        isZephyrRecruitedMidBattle = false
+        isPhase3Triggered = false
+        sfxManager.mute(false)
+
         val baseParty = encounter.initialParty ?: if (_state.value.party.isNotEmpty()) {
             _state.value.party.map {
                 it.copy(

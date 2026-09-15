@@ -48,18 +48,31 @@ An immersive, voice-commanded retro JRPG designed natively for Android. All game
 
 ---
 
-## Story Overview
+## Story Overview & Campaign Roadmap
 
 * **Act I: The Falling Silence Shattered (Chapters 1–4):**
   * *Prologue:* Awakening in Whispering Pines; harnessing the spoken Logos.
   * *Chapter 1:* Repelling the Forest Ambush at the Old Way Shrine with Sir Cedric.
   * *Chapter 2:* Campfire fellowship and investigating the petrified village.
   * *Chapter 3:* The Solaria Aqueduct infiltration, corrupted sentinels, and tuning fork discovery.
-  * *Chapter 4:* Breaching the Sun-Tower Belfry, garrison battle, and ringing the First Great Bell of Solaria!
+  * *Chapter 4:* Breaching the Sun-Tower Belfry, garrison battle, and tolling the First Great Bell of Solaria!
 * **Act II: The Severed Resonance (Chapters 5–8):**
-  * *Chapter 5: The Drowned Fane & The Briar Cage:* Descent into the Rotting Marsh; assaulting the Blight Binder's lair to rescue Lyra.
-  * *Chapter 6: The Warden's Oath & The Weeping Willow:* Lyra joins the fellowship; trio battle against the Bog Behemoth to purify the sacred pool and uncover the Second Great Bell.
-  * *Chapters 7–8:* Tuning the Veridian Chime and delving toward the Clockwork Bastion.
+  * *Chapter 5: The Drowned Fane & The Briar Cage:* Descent into the Rotting Marsh; assaulting the Blight Binder's lair to rescue Lyra (Duo party).
+  * *Chapter 6: The Warden's Oath & The Weeping Willow:* Lyra officially joins the fellowship; Trio battle against the Bog Behemoth to purify the sacred pool and uncover the Second Great Bell.
+  * *Chapter 7: Tuning the Veridian Chime:* Trio fellowship strikes the botanical fork, reads the First Word steles, slays the Ancient Mire Wyrm, and tolls the Second Bell to drain the marshes.
+  * *Chapter 8: The Shadowed Crags & The Silent Blade:* Ambush by Executioner Kaelen; mid-battle defection of assassin Zephyr to forge the 4-hero Quad Fellowship!
+* **Act III: The Crucible of Oaths — Companion Trials (Chapters 9–11):**
+  * *Chapter 9: The Broken Vow of Dawn (Sir Cedric's Trial):* In the Mausoleum of the Sun, Cedric confronts the shade of Grandmaster Galahault, unlocking the Master Chant: *Aegis of the Dawn*.
+  * *Chapter 10: The Song of the Mute Grove (Lyra's Trial):* In the Emerald Choir, Lyra cleanses the venom spring and crushes the Blighted Broodmother, awakening 30 singing dryads and unlocking *Verdant Cataclysm*.
+  * *Chapter 11: The Silent Blade's Reckoning (Zephyr's Trial):* In the Blind Gorge, Zephyr disarms sonic mines and slays Master Nocturne, shattering the Black Guild and unlocking *Umbral Oblivion*.
+* **Act IV: Ascent of the Monolith (Chapters 12–14):**
+  * *Chapter 12: Awakening the Third Bell:* Assaulting the Clockwork Bastion, shutting down the steam grid, defeating Warmaster Ouros, tolling the Resonant Bastion, and raising the sky bridge!
+  * *Chapter 13: Breach of the Silent Citadel:* Shattering the black glass gate and defeating Commander Vaelor wielding the Void Horn.
+  * *Chapter 14: The Void Reservoir:* Diving into the lake of liquid silence, defeating the Abyssal Leviathan, and freeing millions of captive voice motes that illuminate the Celestial Ribbon Stair.
+* **Act V & Epilogue: The Primordial Syllable & The Great Awakening (Chapters 15–16 & Epilogue):**
+  * *Chapter 15: Ascent of the Celestial Spire:* Fellowship vigils on the threshold of eternity; proving resonance against the Archon Custodians.
+  * *Chapter 16: The Primordial Syllable (Grand Finale):* Confronting Grand Inquisitor Malakor (The Mute Sovereign). In Phase 3, Malakor suppresses all sound ("The Death of Voice"); speaking the 4-line Primordial Incantation in unison shatters the silence, granting a guaranteed 200% Transcendental Multiplier that redeems Malakor.
+  * *Epilogue: The Great Awakening:* Tolling the Bell of Eternity alongside all 4 Great Bells; Whispering Pines unfreezes, voices return to every living soul across Aethelgard, companion destinies are fulfilled, and the First Invocator of the New Age keeps eternal vigil!
 
 ---
 
