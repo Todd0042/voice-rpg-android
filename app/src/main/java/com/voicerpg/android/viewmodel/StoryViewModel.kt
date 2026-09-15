@@ -4,12 +4,17 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.voicerpg.android.audio.CombatNarrator
 import com.voicerpg.android.audio.SpeechManager
+import com.voicerpg.android.engine.SaveManager
 import com.voicerpg.android.engine.StoryEncounters
 import com.voicerpg.android.engine.StoryScript
 import com.voicerpg.android.model.DialogueChoice
 import com.voicerpg.android.model.DialogueNode
 import com.voicerpg.android.model.EncounterDefinition
+import com.voicerpg.android.model.GameSaveData
 import com.voicerpg.android.model.GameScreen
+import com.voicerpg.android.model.PartyMember
+import com.voicerpg.android.model.PlayerCustomization
+import com.voicerpg.android.model.SavedCharacterStats
 import com.voicerpg.android.model.StoryScene
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
@@ -21,8 +26,14 @@ import kotlinx.coroutines.launch
 data class StoryState(
     val currentScene: StoryScene = StoryScript.SCENE_COTTAGE,
     val currentNode: DialogueNode = StoryScript.ALL_NODES["cottage_intro"]!!,
-    val gameScreen: GameScreen = GameScreen.STORY_EXPLORATION,
+    val gameScreen: GameScreen = GameScreen.CHARACTER_CREATION,
     val activeEncounter: EncounterDefinition? = null,
+    val player: PlayerCustomization = PlayerCustomization(),
+    val decisionsMade: List<String> = emptyList(),
+    val narrativeFlags: Map<String, Boolean> = emptyMap(),
+    val defeatedEncounters: List<String> = emptyList(),
+    val achievements: List<String> = emptyList(),
+    val partyStats: List<SavedCharacterStats> = emptyList(),
     val isNarratorSpeaking: Boolean = false,
     val isTypingComplete: Boolean = true
 )
@@ -30,6 +41,7 @@ data class StoryState(
 class StoryViewModel(
     val speechManager: SpeechManager,
     val combatNarrator: CombatNarrator,
+    val saveManager: SaveManager = SaveManager(),
     private val scopeOverride: CoroutineScope? = null
 ) : ViewModel() {
 
@@ -40,14 +52,63 @@ class StoryViewModel(
     val state: StateFlow<StoryState> = _state.asStateFlow()
 
     init {
-        // Narrate initial scene on load
+        // Load persistent game save on boot
+        val existingSave = saveManager.load()
+        if (existingSave != null) {
+            val restoredScene = StoryScript.ALL_SCENES[existingSave.currentSceneId] ?: StoryScript.SCENE_COTTAGE
+            val restoredNode = StoryScript.ALL_NODES[existingSave.currentNodeId] ?: StoryScript.ALL_NODES["cottage_intro"]!!
+
+            _state.value = StoryState(
+                currentScene = restoredScene,
+                currentNode = restoredNode,
+                gameScreen = GameScreen.STORY_EXPLORATION,
+                player = existingSave.player,
+                decisionsMade = existingSave.decisionsMade,
+                narrativeFlags = existingSave.narrativeFlags,
+                defeatedEncounters = existingSave.defeatedEncounters,
+                achievements = existingSave.achievements,
+                partyStats = existingSave.partyStats
+            )
+            combatNarrator.setEyesFreeMode(existingSave.isEyesFreeMode)
+            narrateCurrentNode()
+        } else {
+            // First time player: start at Character Creation
+            _state.value = StoryState(
+                gameScreen = GameScreen.CHARACTER_CREATION
+            )
+        }
+    }
+
+    /**
+     * Initializes a fresh game from Character Creation.
+     */
+    fun startNewGame(customization: PlayerCustomization) {
+        val initialSave = saveManager.createInitialSave(customization)
+        _state.value = StoryState(
+            currentScene = StoryScript.SCENE_COTTAGE,
+            currentNode = StoryScript.ALL_NODES["cottage_intro"]!!,
+            gameScreen = GameScreen.STORY_EXPLORATION,
+            player = customization,
+            decisionsMade = emptyList(),
+            narrativeFlags = emptyMap(),
+            defeatedEncounters = emptyList(),
+            achievements = initialSave.achievements,
+            partyStats = initialSave.partyStats
+        )
+        persistCurrentState()
         narrateCurrentNode()
+    }
+
+    fun resetGame() {
+        saveManager.deleteSave()
+        _state.value = StoryState(
+            gameScreen = GameScreen.CHARACTER_CREATION
+        )
     }
 
     fun advanceDialogue() {
         val node = _state.value.currentNode
         if (node.choices.isNotEmpty()) {
-            // Cannot blind advance when choices are waiting; player must select a choice
             return
         }
 
@@ -68,12 +129,13 @@ class StoryViewModel(
     fun selectChoice(choice: DialogueChoice) {
         val nextNode = StoryScript.ALL_NODES[choice.nextNodeId]
         if (nextNode != null) {
+            val updatedDecisions = _state.value.decisionsMade + choice.id
+            _state.value = _state.value.copy(decisionsMade = updatedDecisions)
             applyNodeTransition(nextNode)
         }
     }
 
     private fun applyNodeTransition(newNode: DialogueNode) {
-        // Check if current or target node triggers scene transition
         val sceneIdToUse = newNode.changeSceneId ?: _state.value.currentNode.changeSceneId
         val targetScene = if (sceneIdToUse != null) {
             StoryScript.ALL_SCENES[sceneIdToUse] ?: _state.value.currentScene
@@ -86,6 +148,7 @@ class StoryViewModel(
             currentNode = newNode
         )
 
+        persistCurrentState()
         narrateCurrentNode()
     }
 
@@ -103,12 +166,18 @@ class StoryViewModel(
     }
 
     fun onCombatVictory() {
-        // Return to exploration mode and progress story
         val lastNode = _state.value.currentNode
-        val postBattleNodeId = when (lastNode.triggerBattleEncounterId) {
+        val encounterId = lastNode.triggerBattleEncounterId ?: _state.value.activeEncounter?.id ?: "unknown"
+        val postBattleNodeId = when (encounterId) {
             "prologue_solo" -> "village_post_battle"
             "forest_ambush" -> "crossroads_post_battle"
             else -> null
+        }
+
+        val updatedDefeated = if (encounterId !in _state.value.defeatedEncounters) {
+            _state.value.defeatedEncounters + encounterId
+        } else {
+            _state.value.defeatedEncounters
         }
 
         val nextNode = if (postBattleNodeId != null) StoryScript.ALL_NODES[postBattleNodeId] else lastNode
@@ -116,10 +185,48 @@ class StoryViewModel(
         _state.value = _state.value.copy(
             gameScreen = GameScreen.STORY_EXPLORATION,
             activeEncounter = null,
-            currentNode = nextNode ?: lastNode
+            currentNode = nextNode ?: lastNode,
+            defeatedEncounters = updatedDefeated
         )
 
+        persistCurrentState()
         narrateCurrentNode()
+    }
+
+    fun updatePartyStatsFromCombat(updatedParty: List<PartyMember>) {
+        val mappedStats = updatedParty.map { member ->
+            SavedCharacterStats(
+                id = member.id,
+                name = member.name,
+                loreClass = member.loreClass,
+                currentHp = member.currentHp,
+                maxHp = member.maxHp,
+                currentMp = member.currentMp,
+                maxMp = member.maxMp,
+                speed = member.speed,
+                spellIds = member.spells.map { it.id }
+            )
+        }
+        _state.value = _state.value.copy(partyStats = mappedStats)
+        persistCurrentState()
+    }
+
+    fun persistCurrentState() {
+        val s = _state.value
+        val saveData = GameSaveData(
+            player = s.player,
+            currentSceneId = s.currentScene.id,
+            currentNodeId = s.currentNode.id,
+            decisionsMade = s.decisionsMade,
+            narrativeFlags = s.narrativeFlags,
+            partyStats = s.partyStats,
+            defeatedEncounters = s.defeatedEncounters,
+            achievements = s.achievements,
+            isEyesFreeMode = combatNarrator.isEyesFreeMode.value,
+            isAutoListen = speechManager.isAutoListen.value,
+            isChimeMuted = speechManager.isChimeMuted.value
+        )
+        saveManager.save(saveData)
     }
 
     fun switchToCombat() {
@@ -165,6 +272,7 @@ class StoryViewModel(
     }
 
     private fun narrateCurrentNode() {
+        if (_state.value.gameScreen != GameScreen.STORY_EXPLORATION) return
         val node = _state.value.currentNode
         val textToSpeak = "${node.speaker.name}: ${node.text}"
 

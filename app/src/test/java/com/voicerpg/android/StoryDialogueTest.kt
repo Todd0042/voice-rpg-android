@@ -32,6 +32,7 @@ class StoryDialogueTest {
             combatNarrator = dummyNarrator,
             scopeOverride = testScope
         )
+        storyViewModel.startNewGame(com.voicerpg.android.model.PlayerCustomization(name = "Kaelen"))
     }
 
     @Test

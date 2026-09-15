@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.voicerpg.android.audio.CombatNarrator
 import com.voicerpg.android.audio.SfxManager
 import com.voicerpg.android.audio.SpeechManager
+import com.voicerpg.android.engine.ClassSpellLibrary
 import com.voicerpg.android.engine.IntentParser
 import com.voicerpg.android.engine.ResonanceEngine
 import com.voicerpg.android.engine.StoryEncounters
@@ -13,6 +14,8 @@ import com.voicerpg.android.model.BattleEnvironment
 import com.voicerpg.android.model.CharacterStance
 import com.voicerpg.android.model.CombatPhase
 import com.voicerpg.android.model.EncounterDefinition
+import com.voicerpg.android.model.PlayerCustomization
+import com.voicerpg.android.model.SavedCharacterStats
 import com.voicerpg.android.model.Enemy
 import com.voicerpg.android.model.FloatingCombatText
 import com.voicerpg.android.model.MetaCommand
@@ -658,7 +661,9 @@ class CombatViewModel(
         val aliveParty = _state.value.party.filter { it.isAlive }
 
         val heroByName = aliveParty.firstOrNull { member ->
-            when (member.id) {
+            val matchesCustomName = member.name.isNotBlank() && lower.contains(member.name.lowercase())
+            val matchesClassTitle = member.loreClass.isNotBlank() && lower.contains(member.loreClass.lowercase())
+            matchesCustomName || matchesClassTitle || when (member.id) {
                 "hero" -> lower.contains("aethel") || lower.contains("elementalist") || (lower.contains("mage") && !lower.contains("shaman"))
                 "cedric" -> lower.contains("cedric") || lower.contains("templar") || lower.contains("paladin") || lower.contains("knight")
                 "lyra" -> lower.contains("lyra") || lower.contains("warden") || lower.contains("druid")
@@ -1043,8 +1048,49 @@ class CombatViewModel(
 
     fun spawnEnemy(enemy: Enemy): Boolean = summonReinforcements(listOf(enemy)) > 0
 
+    var activeCustomization: PlayerCustomization = PlayerCustomization()
+        private set
+
+    fun applyPlayerCustomization(
+        customization: PlayerCustomization,
+        savedStats: List<SavedCharacterStats> = emptyList()
+    ) {
+        activeCustomization = customization
+        val spells = ClassSpellLibrary.getSpellsForClass(customization.heroClass)
+        val heroStats = savedStats.firstOrNull { it.id == "hero" }
+        val hp = heroStats?.currentHp ?: customization.heroClass.startingHp
+        val maxHp = heroStats?.maxHp ?: customization.heroClass.startingHp
+        val mp = heroStats?.currentMp ?: customization.heroClass.startingMp
+        val maxMp = heroStats?.maxMp ?: customization.heroClass.startingMp
+        val tint = try {
+            Color(android.graphics.Color.parseColor(customization.auraColor.hexColor))
+        } catch (_: Exception) {
+            Color(0xFF90CAF9)
+        }
+
+        val updatedHero = PartyMember(
+            id = "hero",
+            name = customization.name,
+            loreClass = customization.heroClass.title,
+            currentHp = hp,
+            maxHp = maxHp,
+            currentMp = mp,
+            maxMp = maxMp,
+            spells = spells,
+            avatarTint = tint,
+            speed = customization.heroClass.startingSpeed,
+            atbGauge = 0.85f
+        )
+
+        val updatedParty = _state.value.party.map {
+            if (it.id == "hero") updatedHero else it
+        }
+
+        _state.value = _state.value.copy(party = updatedParty)
+    }
+
     fun startEncounter(encounter: EncounterDefinition) {
-        val partyToUse = encounter.initialParty ?: if (_state.value.party.isNotEmpty()) {
+        val baseParty = encounter.initialParty ?: if (_state.value.party.isNotEmpty()) {
             _state.value.party.map {
                 it.copy(
                     currentHp = it.maxHp,
@@ -1056,6 +1102,26 @@ class CombatViewModel(
         } else {
             StoryEncounters.createStandardParty()
         }
+
+        // Apply active player customization (custom name, class, starter spells, aura color) to the hero
+        val partyToUse = baseParty.map { member ->
+            if (member.id == "hero") {
+                val spells = ClassSpellLibrary.getSpellsForClass(activeCustomization.heroClass)
+                val tint = try {
+                    Color(android.graphics.Color.parseColor(activeCustomization.auraColor.hexColor))
+                } catch (_: Exception) {
+                    member.avatarTint
+                }
+                member.copy(
+                    name = activeCustomization.name,
+                    loreClass = activeCustomization.heroClass.title,
+                    spells = spells,
+                    avatarTint = tint,
+                    speed = activeCustomization.heroClass.startingSpeed
+                )
+            } else member
+        }
+
         startEncounter(partyToUse, encounter.enemies, encounter.environment)
     }
 

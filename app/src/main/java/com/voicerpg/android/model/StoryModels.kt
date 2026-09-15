@@ -87,6 +87,7 @@ data class StoryScene(
 )
 
 enum class GameScreen {
+    CHARACTER_CREATION,
     STORY_EXPLORATION,
     COMBAT_ARENA
 }
