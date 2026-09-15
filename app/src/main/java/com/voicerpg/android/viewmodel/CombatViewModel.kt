@@ -109,6 +109,8 @@ class CombatViewModel(
     var isPhase3Triggered: Boolean = false
         internal set
 
+    var onContinueStory: (() -> Unit)? = null
+
     fun setPlayerInputPhaseForTesting(heroId: String = "hero") {
         val hero = _state.value.party.firstOrNull { it.id == heroId } ?: _state.value.party.firstOrNull()
         _state.value = _state.value.copy(
@@ -242,6 +244,14 @@ class CombatViewModel(
             val aliveHeroes = _state.value.party.filter { it.isAlive }
             if (aliveHeroes.isEmpty()) {
                 _state.value = _state.value.copy(phase = CombatPhase.BATTLE_LOST)
+                combatNarrator.narrateConclusion(isVictory = false) {
+                    if (speechManager.isAutoListen.value) {
+                        activeScope.launch {
+                            delay(150)
+                            startVoiceListening()
+                        }
+                    }
+                }
                 return@launch
             }
 
@@ -362,7 +372,14 @@ class CombatViewModel(
             // Check defeat
             if (_state.value.party.none { it.isAlive }) {
                 _state.value = _state.value.copy(phase = CombatPhase.BATTLE_LOST)
-                combatNarrator.narrateConclusion(isVictory = false)
+                combatNarrator.narrateConclusion(isVictory = false) {
+                    if (speechManager.isAutoListen.value) {
+                        activeScope.launch {
+                            delay(150)
+                            startVoiceListening()
+                        }
+                    }
+                }
                 return@launch
             }
 
@@ -780,6 +797,32 @@ class CombatViewModel(
             return
         }
 
+        // 0b. Intercept Battle Victory / Defeat Voice Commands
+        if (_state.value.phase == CombatPhase.BATTLE_WON || _state.value.phase == CombatPhase.BATTLE_LOST) {
+            val conclusionAction = com.voicerpg.android.engine.StoryChoiceMatcher.parseBattleConclusionIntent(utterance)
+            when (conclusionAction) {
+                com.voicerpg.android.engine.StoryChoiceMatcher.ConclusionAction.CONTINUE_STORY -> {
+                    speechManager.cancel()
+                    onContinueStory?.invoke()
+                }
+                com.voicerpg.android.engine.StoryChoiceMatcher.ConclusionAction.RESTART_BATTLE -> {
+                    speechManager.cancel()
+                    restartBattle()
+                }
+                com.voicerpg.android.engine.StoryChoiceMatcher.ConclusionAction.NONE -> {
+                    if (speechManager.isAutoListen.value) {
+                        activeScope.launch {
+                            delay(200)
+                            if (_state.value.phase == CombatPhase.BATTLE_WON || _state.value.phase == CombatPhase.BATTLE_LOST) {
+                                startVoiceListening()
+                            }
+                        }
+                    }
+                }
+            }
+            return
+        }
+
         if (_state.value.phase != CombatPhase.PLAYER_INPUT) return
 
         if (lower == "defend" || lower == "guard" || lower == "pass" || lower.contains("defend")) {
@@ -954,7 +997,14 @@ class CombatViewModel(
             // Check victory
             if (_state.value.enemies.none { it.isAlive }) {
                 _state.value = _state.value.copy(phase = CombatPhase.BATTLE_WON)
-                combatNarrator.narrateConclusion(isVictory = true)
+                combatNarrator.narrateConclusion(isVictory = true) {
+                    if (speechManager.isAutoListen.value) {
+                        activeScope.launch {
+                            delay(150)
+                            startVoiceListening()
+                        }
+                    }
+                }
                 return@launch
             }
 

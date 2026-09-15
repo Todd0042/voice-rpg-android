@@ -7,6 +7,7 @@ import com.voicerpg.android.audio.CombatNarrator
 import com.voicerpg.android.audio.SpeechManager
 import com.voicerpg.android.engine.IntentParser
 import com.voicerpg.android.engine.SaveManager
+import com.voicerpg.android.engine.StoryChoiceMatcher
 import com.voicerpg.android.engine.StoryEncounters
 import com.voicerpg.android.engine.StoryScript
 import com.voicerpg.android.model.DialogueChoice
@@ -190,6 +191,10 @@ class StoryViewModel(
                 applyNodeTransition(nextNode)
             }
         } else if (node.choices.isEmpty()) {
+            if (node.id == "epilogue_credits" || node.setFlagOnEnter == "game_completed") {
+                resetGame()
+                return
+            }
             if (node.id.startsWith("ch3_") || node.id.startsWith("ch4_") || node.id.startsWith("ch5_") || node.id.startsWith("ch6_") || node.id.startsWith("ch7_") || node.id.startsWith("ch8_") || node.id.startsWith("ch9_") || node.id.startsWith("ch10_") || node.id.startsWith("ch11_") || node.id.startsWith("ch12_") || node.id.startsWith("ch13_") || node.id.startsWith("ch14_") || node.id.startsWith("ch15_") || node.id.startsWith("ch16_") || node.id.startsWith("epilogue_") || node.id == "ch4_act1_complete") {
                 return
             }
@@ -603,20 +608,31 @@ class StoryViewModel(
             else -> Unit
         }
 
-        // 1. Advance command
-        if (lower == "next" || lower == "continue" || lower == "proceed" || lower.contains("go on")) {
-            if (node.choices.isEmpty()) {
+        // 1. Epilogue restart command
+        if (node.id == "epilogue_credits" || node.setFlagOnEnter == "game_completed") {
+            val restartKeywords = listOf("play again", "new game", "start over", "restart", "awaken", "embark", "begin again")
+            if (restartKeywords.any { lower.contains(it) }) {
+                startNewGame(_state.value.player)
+                return
+            }
+        }
+
+        // 2. Battle trigger command
+        if (node.triggerBattleEncounterId != null) {
+            val combatKeywords = listOf("fight", "battle", "attack", "fireball", "commence", "strike", "charge", "to battle", "engage", "slay", "ready", "start", "draw blade")
+            if (combatKeywords.any { lower.contains(it) }) {
                 advanceDialogue()
                 return
             }
         }
 
-        // 2. Choice selection by voice keywords
+        // 3. Flexible choice selection with loud & nerdy roleplay matching
         if (node.choices.isNotEmpty()) {
-            val matchedChoice = node.choices.firstOrNull { choice ->
-                choice.voiceKeywords.any { keyword -> lower.contains(keyword.lowercase()) } ||
-                        lower.contains(choice.text.lowercase())
-            }
+            val matchedChoice = StoryChoiceMatcher.matchChoice(
+                utterance = utterance,
+                choices = node.choices,
+                completedFlags = _state.value.narrativeFlags
+            )
             if (matchedChoice != null) {
                 if (matchedChoice.completionFlag != null && _state.value.narrativeFlags[matchedChoice.completionFlag] == true) {
                     combatNarrator.speak("That objective has already been completed. Please select a remaining task.", force = true)
@@ -627,12 +643,10 @@ class StoryViewModel(
             }
         }
 
-        // 3. Battle trigger command
-        if (node.triggerBattleEncounterId != null) {
-            if (lower.contains("fight") || lower.contains("battle") || lower.contains("attack") || lower.contains("fireball")) {
-                advanceDialogue()
-                return
-            }
+        // 4. Non-branching progression command (natural & nerdy progression phrases)
+        if (node.choices.isEmpty() && StoryChoiceMatcher.isProgressionUtterance(utterance)) {
+            advanceDialogue()
+            return
         }
 
         // If in hands-free auto-listen mode and no action triggered, keep listening!

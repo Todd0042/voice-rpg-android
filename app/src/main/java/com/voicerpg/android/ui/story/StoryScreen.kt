@@ -771,6 +771,7 @@ private fun RetroSpeechBubble(
 
                 if (node.choices.isEmpty()) {
                     val promptText = when {
+                        node.id == "epilogue_credits" -> "👑 PLAY AGAIN"
                         node.triggerBattleEncounterId != null -> "⚔️ TO BATTLE"
                         isEyesFreeMode && node.nextNodeId != null -> "⏩ AUTO NEXT (1.5s)"
                         node.nextNodeId != null -> "▼ NEXT"

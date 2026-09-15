@@ -90,7 +90,8 @@ fun ResonanceConsole(
     var typedText by remember { mutableStateOf("") }
     var selectedTier by remember { mutableStateOf(ResonanceTier.TRANSCENDENTAL) }
     val isListening = speechState is SpeechState.Listening
-    val isInputEnabled = phase == CombatPhase.PLAYER_INPUT
+    val isConclusionPhase = phase == CombatPhase.BATTLE_WON || phase == CombatPhase.BATTLE_LOST
+    val isInputEnabled = phase == CombatPhase.PLAYER_INPUT || isConclusionPhase
 
     val pulseTransition = rememberInfiniteTransition(label = "mic_pulse")
     val pulseScale by pulseTransition.animateFloat(
@@ -231,6 +232,7 @@ fun ResonanceConsole(
                     speechState is SpeechState.Error -> "Speech error: ${(speechState as SpeechState.Error).message}"
                     liveTranscript.isNotBlank() -> liveTranscript
                     lastResonance != null -> "\"${lastResonance.rawText}\""
+                    isConclusionPhase -> "Say \"Commence Story\" or \"Restart Battle\"..."
                     isInputEnabled -> "Tap 🎙️ or select a spell chip to act..."
                     else -> "ATB time ticking... waiting for turn..."
                 }
@@ -460,7 +462,12 @@ fun ResonanceConsole(
                 onValueChange = { typedText = it },
                 modifier = Modifier.weight(1f),
                 placeholder = {
-                    Text("Type custom chant...", fontSize = 11.sp, color = Color.Gray, fontFamily = FontFamily.Monospace)
+                    Text(
+                        text = if (isConclusionPhase) "Type 'commence' or 'restart'..." else "Type custom chant...",
+                        fontSize = 11.sp,
+                        color = Color.Gray,
+                        fontFamily = FontFamily.Monospace
+                    )
                 },
                 singleLine = true,
                 enabled = isInputEnabled,

@@ -70,6 +70,10 @@ class MainActivity : ComponentActivity() {
             combatViewModel.openOptions()
         }
         storyViewModel.onCloseOptions = { combatViewModel.closeOptions() }
+        combatViewModel.onContinueStory = {
+            storyViewModel.onCombatVictory()
+            storyViewModel.updatePartyStatsFromCombat(combatViewModel.state.value.party)
+        }
 
         checkAudioPermission()
 
@@ -104,6 +108,8 @@ class MainActivity : ComponentActivity() {
                         GameScreen.CHARACTER_CREATION -> {
                             CharacterCreationScreen(
                                 initialCustomization = storyState.player,
+                                speechManager = speechManager,
+                                combatNarrator = combatNarrator,
                                 onConfirmCharacter = { customization ->
                                     storyViewModel.startNewGame(customization)
                                     combatViewModel.applyPlayerCustomization(customization)

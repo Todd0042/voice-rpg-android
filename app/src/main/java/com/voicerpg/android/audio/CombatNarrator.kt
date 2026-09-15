@@ -440,14 +440,17 @@ class CombatNarrator(
         speak(text, force = true, onDone = onDone)
     }
 
-    fun narrateConclusion(isVictory: Boolean) {
-        if (!_isEyesFreeMode.value) return
+    fun narrateConclusion(isVictory: Boolean, onDone: (() -> Unit)? = null) {
+        if (!_isEyesFreeMode.value) {
+            onDone?.invoke()
+            return
+        }
         val text = if (isVictory) {
             "Victory achieved! The Logos resonates through the sanctum."
         } else {
             "Defeat. Your voice fades into the Silent Blight."
         }
-        speak(text, force = true)
+        speak(text, force = true, onDone = onDone)
     }
 
     fun destroy() {

@@ -321,6 +321,16 @@ private fun BattleConclusionOverlay(
                     fontWeight = FontWeight.Bold
                 )
             }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Text(
+                text = if (isVictory) "🎤 Say \"Commence Story\" or \"Restart Battle\"" else "🎤 Say \"Restart Battle\" to fight again",
+                color = LogosGold.copy(alpha = 0.9f),
+                fontSize = 11.sp,
+                fontFamily = FontFamily.Monospace,
+                fontWeight = FontWeight.SemiBold
+            )
         }
     }
 }

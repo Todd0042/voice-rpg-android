@@ -27,10 +27,18 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import com.voicerpg.android.audio.CombatNarrator
+import com.voicerpg.android.audio.SpeechManager
+import com.voicerpg.android.audio.SpeechState
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -58,6 +66,8 @@ import com.voicerpg.android.ui.theme.RetroPanel
 @Composable
 fun CharacterCreationScreen(
     initialCustomization: PlayerCustomization = PlayerCustomization(),
+    speechManager: SpeechManager? = null,
+    combatNarrator: CombatNarrator? = null,
     onConfirmCharacter: (PlayerCustomization) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -66,6 +76,10 @@ fun CharacterCreationScreen(
     var selectedTitle by remember { mutableStateOf(initialCustomization.title) }
     var selectedAura by remember { mutableStateOf(initialCustomization.auraColor) }
     var selectedAffinity by remember { mutableStateOf(initialCustomization.voiceAffinityBonusSchool) }
+
+    val isAutoListen = speechManager?.isAutoListen?.collectAsState()?.value ?: false
+    val speechState = speechManager?.speechState?.collectAsState()?.value ?: SpeechState.Idle
+    val coroutineScope = rememberCoroutineScope()
 
     val context = LocalContext.current
     val aethelBitmap = remember {
@@ -81,6 +95,83 @@ fun CharacterCreationScreen(
     )
 
     val quickNames = listOf("Aethel", "Rowan", "Kaelen", "Elira", "Vaelen")
+
+    fun confirmAndAwaken() {
+        speechManager?.cancel()
+        val finalCustomization = PlayerCustomization(
+            name = if (name.isBlank()) "Aethel" else name.trim(),
+            heroClass = selectedClass,
+            title = selectedTitle,
+            auraColor = selectedAura,
+            voiceAffinityBonusSchool = selectedClass.preferredSchool
+        )
+        onConfirmCharacter(finalCustomization)
+    }
+
+    fun processCreationVoiceInput(utterance: String) {
+        val lower = utterance.lowercase().trim()
+        if (lower.isBlank()) return
+
+        // 1. Awaken / Embark command
+        val embarkKeywords = listOf(
+            "awaken", "embark", "begin", "start", "enter", "let us begin", "ready",
+            "venture", "let's go", "awaken in aethelgard", "begin journey", "start game",
+            "play", "lets go", "confirm", "forward", "onward"
+        )
+        if (embarkKeywords.any { lower.contains(it) }) {
+            confirmAndAwaken()
+            return
+        }
+
+        // 2. Class selection commands
+        when {
+            lower.contains("elementalist") || lower.contains("mage") || lower.contains("sorcerer") || lower.contains("wizard") || lower.contains("pyromancer") -> {
+                selectedClass = HeroClass.ELEMENTALIST
+                selectedAffinity = SpellSchool.PYROMANCY
+                combatNarrator?.speak("Elementalist selected. Master of pyromancy and destructive elements.", force = true)
+            }
+            lower.contains("battlemage") || lower.contains("templar") || lower.contains("paladin") || lower.contains("knight") || lower.contains("crusader") || lower.contains("warrior") || lower.contains("spellblade") -> {
+                selectedClass = HeroClass.BATTLEMAGE
+                selectedAffinity = SpellSchool.PHYSICAL
+                combatNarrator?.speak("Battlemage selected. Frontline spellblade vanguard.", force = true)
+            }
+            lower.contains("chanter") || lower.contains("chronomancer") || lower.contains("bard") || lower.contains("acoustic") || lower.contains("lightning") -> {
+                selectedClass = HeroClass.CHANTER
+                selectedAffinity = SpellSchool.ELECTROMANCY
+                combatNarrator?.speak("Chanter selected. Acoustic chronomancer and master of cadence.", force = true)
+            }
+            lower.contains("shadowweaver") || lower.contains("shadowblade") || lower.contains("rogue") || lower.contains("assassin") || lower.contains("shadow") || lower.contains("thief") || lower.contains("occultist") -> {
+                selectedClass = HeroClass.SHADOWWEAVER
+                selectedAffinity = SpellSchool.SHADOW
+                combatNarrator?.speak("Shadowweaver selected. Umbral occultist of lethal precision.", force = true)
+            }
+        }
+
+        // 3. Title selection
+        titles.firstOrNull { lower.contains(it.lowercase()) }?.let {
+            selectedTitle = it
+        }
+
+        // 4. Quick name selection
+        quickNames.firstOrNull { lower.contains(it.lowercase()) }?.let {
+            name = it
+        }
+
+        // Re-listen if auto-listen is enabled
+        if (speechManager != null && speechManager.isAutoListen.value) {
+            coroutineScope.launch {
+                delay(200)
+                speechManager.startListening { next -> processCreationVoiceInput(next) }
+            }
+        }
+    }
+
+    LaunchedEffect(isAutoListen) {
+        if (isAutoListen && speechManager != null) {
+            delay(300)
+            speechManager.startListening { utterance -> processCreationVoiceInput(utterance) }
+        }
+    }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -356,16 +447,7 @@ fun CharacterCreationScreen(
 
             // Confirm & Enter Adventure Button
             Button(
-                onClick = {
-                    val finalCustomization = PlayerCustomization(
-                        name = if (name.isBlank()) "Aethel" else name.trim(),
-                        heroClass = selectedClass,
-                        title = selectedTitle,
-                        auraColor = selectedAura,
-                        voiceAffinityBonusSchool = selectedClass.preferredSchool
-                    )
-                    onConfirmCharacter(finalCustomization)
-                },
+                onClick = { confirmAndAwaken() },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = LogosGold,
                     contentColor = RetroBlack
@@ -381,6 +463,47 @@ fun CharacterCreationScreen(
                     fontWeight = FontWeight.Black,
                     fontSize = 14.sp
                 )
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Voice Prompt Bar for Hands-free Interaction
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "🎤 Speak class or say 'Awaken' to start",
+                    color = Color.Gray,
+                    fontSize = 10.sp,
+                    fontFamily = FontFamily.Monospace
+                )
+
+                if (speechManager != null) {
+                    Box(
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .background(if (speechState is SpeechState.Listening) Color(0xFFEF5350) else RetroPanel)
+                            .border(1.dp, LogosGold, CircleShape)
+                            .clickable {
+                                if (speechState is SpeechState.Listening) {
+                                    speechManager.stopListening()
+                                } else {
+                                    speechManager.startListening { utterance -> processCreationVoiceInput(utterance) }
+                                }
+                            }
+                            .padding(horizontal = 10.dp, vertical = 5.dp)
+                    ) {
+                        Text(
+                            text = if (speechState is SpeechState.Listening) "🎙️ LISTENING..." else "🎤 SPEAK",
+                            color = LogosGold,
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    }
+                }
             }
         }
     }
