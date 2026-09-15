@@ -67,7 +67,7 @@ class DynamicEncounterTest {
         viewModel.startEncounter(StoryEncounters.CASTLE_HORDE)
         val state = viewModel.state.value
 
-        assertEquals(4, state.party.size)
+        assertEquals(2, state.party.size)
         assertEquals(6, state.enemies.size)
         assertEquals(BattleEnvironment.CASTLE, state.currentEnvironment)
 
@@ -207,5 +207,30 @@ class DynamicEncounterTest {
 
         assertEquals("holy_smite", intent.spell.id)
         assertEquals("minion_bone_guard", intent.targetEnemyId)
+    }
+
+    @Test
+    fun testActIEncountersOnlyIncludeDuoPartyAndExcludeLyra() {
+        val actIEncounters = listOf(
+            StoryEncounters.FOREST_AMBUSH,
+            StoryEncounters.DUNGEON_DESCENT,
+            StoryEncounters.CASTLE_HORDE,
+            StoryEncounters.CAVE_BROODMOTHER,
+            StoryEncounters.BLIGHT_TRACKERS,
+            StoryEncounters.CH3_SENTINELS
+        )
+
+        for (encounter in actIEncounters) {
+            val party = encounter.initialParty ?: emptyList()
+            assertEquals("Encounter ${encounter.id} should have exactly 2 heroes in Act I", 2, party.size)
+            assertTrue("Encounter ${encounter.id} must not contain Lyra before Chapter 5", party.none { it.id == "lyra" })
+            assertTrue("Encounter ${encounter.id} should contain Aethel", party.any { it.id == "hero" })
+            assertTrue("Encounter ${encounter.id} should contain Sir Cedric", party.any { it.id == "cedric" })
+        }
+
+        // SWAMP_BEHEMOTH is Chapter 5 and introduces Lyra
+        val ch5Party = StoryEncounters.SWAMP_BEHEMOTH.initialParty ?: emptyList()
+        assertEquals(3, ch5Party.size)
+        assertTrue(ch5Party.any { it.id == "lyra" })
     }
 }

@@ -86,6 +86,23 @@ class NarrationAndOptionsTest {
     }
 
     @Test
+    fun testCombatNarratorMultiVoiceConfiguration() {
+        // When running in headless context, installed voices default safely to empty
+        assertTrue(narrator.getInstalledVoices().isEmpty())
+        assertEquals(0, narrator.availableVoiceCount.value)
+
+        // Verifying speaker voice mapping getters return gracefully without throwing
+        val cedricVoice = narrator.getVoiceForSpeaker(DialogueSpeaker.CEDRIC)
+        val aethelVoice = narrator.getVoiceForSpeaker(DialogueSpeaker.AETHEL)
+        val narratorVoice = narrator.getVoiceForSpeaker(DialogueSpeaker.NARRATOR)
+
+        // Without hardware TTS engine, speaker voices are null
+        assertEquals(null, cedricVoice)
+        assertEquals(null, aethelVoice)
+        assertEquals(null, narratorVoice)
+    }
+
+    @Test
     fun testNarrateDialogueInvokesCompletionCallbackEvenWhenMuted() {
         narrator.setNarrationEnabled(false)
         narrator.setEyesFreeMode(false)

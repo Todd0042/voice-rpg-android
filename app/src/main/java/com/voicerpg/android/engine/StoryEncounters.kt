@@ -33,6 +33,11 @@ object StoryEncounters {
         Spell("venom_flurry", "Venom Flurry", SpellSchool.SHADOW, basePower = 50, mpCost = 15, hitsAll = true, description = "Poisoned twin daggers", exampleChant = "Abyssal venom coat my blades!")
     )
 
+    fun createDuoParty(): List<PartyMember> = listOf(
+        PartyMember("hero", "Aethel", "Elementalist", currentHp = 240, maxHp = 240, currentMp = 140, maxMp = 140, spells = aethelSpells, avatarTint = Color(0xFF90CAF9), speed = 70, atbGauge = 0.85f),
+        PartyMember("cedric", "Sir Cedric", "Templar", currentHp = 310, maxHp = 420, currentMp = 80, maxMp = 80, spells = cedricSpells, avatarTint = Color(0xFFFFD54F), speed = 55, atbGauge = 0.50f)
+    )
+
     fun createStandardParty(): List<PartyMember> = listOf(
         PartyMember("hero", "Aethel", "Elementalist", currentHp = 240, maxHp = 240, currentMp = 140, maxMp = 140, spells = aethelSpells, avatarTint = Color(0xFF90CAF9), speed = 70, atbGauge = 0.85f),
         PartyMember("cedric", "Sir Cedric", "Templar", currentHp = 310, maxHp = 420, currentMp = 80, maxMp = 80, spells = cedricSpells, avatarTint = Color(0xFFFFD54F), speed = 55, atbGauge = 0.50f),
@@ -72,10 +77,10 @@ object StoryEncounters {
         )
     )
 
-    // 3. Dungeon Descent (4 Heroes vs 3 Enemies with Mid-Battle Reinforcements!)
+    // 3. Dungeon Descent (2 Heroes vs 3 Enemies with Mid-Battle Reinforcements!)
     val DUNGEON_DESCENT = EncounterDefinition(
         id = "dungeon_descent",
-        name = "Chapter 2: Crypt of the Restless",
+        name = "Chapter 4: Crypt of the Restless",
         description = "Deep in the forgotten catacombs, a Bone Acolyte commands skeletal legionnaires.",
         environment = BattleEnvironment.DUNGEON,
         enemies = listOf(
@@ -83,14 +88,14 @@ object StoryEncounters {
             Enemy("bone_archer", "Skeletal Sniper", "Sniper", currentHp = 220, maxHp = 220, baseAttack = 26, isTargeted = true, spriteTint = Color(0xFFB0BEC5), speed = 68, atbGauge = 0.40f),
             Enemy("bone_acolyte", "Bone Acolyte", "Summoner", currentHp = 320, maxHp = 320, baseAttack = 22, isTargeted = false, spriteTint = Color(0xFF7E57C2), speed = 52, atbGauge = 0.20f)
         ),
-        initialParty = createStandardParty()
+        initialParty = createDuoParty()
     )
 
-    // 4. Full 6-Enemy Horde Siege in Castle (4 Heroes vs 6 Enemies)
+    // 4. Full 6-Enemy Horde Siege in Castle (2 Heroes vs 6 Enemies)
     val CASTLE_HORDE = EncounterDefinition(
         id = "castle_horde",
-        name = "Chapter 3: Obsidian Gate Breach",
-        description = "The full party clashes against a 6-man royal garrison in the grand courtyard.",
+        name = "Chapter 4: The Solaria Bell Chamber",
+        description = "The fellowship clashes against the royal vanguard garrison on the belfry parapets.",
         environment = BattleEnvironment.CASTLE,
         enemies = listOf(
             // Front Row (Indices 0, 2, 4)
@@ -102,10 +107,10 @@ object StoryEncounters {
             Enemy("sniper_2", "Castle Arbalest B", "Sniper", currentHp = 210, maxHp = 210, baseAttack = 24, isTargeted = false, spriteTint = Color(0xFFAB47BC), speed = 64, atbGauge = 0.40f),
             Enemy("court_mage", "Court Warlock", "Occultist", currentHp = 260, maxHp = 260, baseAttack = 28, isTargeted = false, spriteTint = Color(0xFF3F51B5), speed = 58, atbGauge = 0.30f)
         ),
-        initialParty = createStandardParty()
+        initialParty = createDuoParty()
     )
 
-    // 5. Cave Broodmother Boss Encounter (4 Heroes vs Boss + Mid-Fight Minion Summons)
+    // 5. Cave Broodmother Boss Encounter (2 Heroes vs Boss + Mid-Fight Minion Summons)
     val CAVE_BROODMOTHER = EncounterDefinition(
         id = "cave_broodmother",
         name = "Boss Trial: The Chittering Queen",
@@ -114,7 +119,7 @@ object StoryEncounters {
         enemies = listOf(
             Enemy("broodmother", "Grave Broodmother", "Boss Summoner", currentHp = 780, maxHp = 780, baseAttack = 32, isBoss = true, isTargeted = true, spriteTint = Color(0xFFFF5722), speed = 52, atbGauge = 0.40f)
         ),
-        initialParty = createStandardParty()
+        initialParty = createDuoParty()
     )
 
     // 6. Swamp Encounter: The Rotting Willow (Trio Party vs Swamp Horrors)

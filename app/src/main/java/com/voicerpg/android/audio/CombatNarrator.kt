@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.Bundle
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
+import android.speech.tts.Voice
 import com.voicerpg.android.model.DialogueChoice
 import com.voicerpg.android.model.DialogueSpeaker
 import com.voicerpg.android.model.Enemy
@@ -26,6 +27,16 @@ class CombatNarrator(
     private var tts: TextToSpeech? = null
     private var isTtsInitialized = false
     private var pendingSpeechOnDone: (() -> Unit)? = null
+
+    // Multi-voice character profile mapping
+    private var defaultVoice: Voice? = null
+    private var cedricVoice: Voice? = null
+    private var aethelVoice: Voice? = null
+    private var shadowWispVoice: Voice? = null
+    private var narratorVoice: Voice? = null
+
+    private val _availableVoiceCount = MutableStateFlow(0)
+    val availableVoiceCount: StateFlow<Int> = _availableVoiceCount.asStateFlow()
 
     private val _isEyesFreeMode = MutableStateFlow(false)
     val isEyesFreeMode: StateFlow<Boolean> = _isEyesFreeMode.asStateFlow()
@@ -82,9 +93,57 @@ class CombatNarrator(
                             cb?.invoke()
                         }
                     })
+                    assignCharacterVoices(engine)
                     isTtsInitialized = true
                 }
             }
+        }
+    }
+
+    /**
+     * Programmatically discovers installed device voices and maps distinct voice models
+     * to different characters (e.g. distinct male/female or tone models).
+     */
+    private fun assignCharacterVoices(engine: TextToSpeech) {
+        try {
+            val voices = engine.voices ?: emptySet()
+            _availableVoiceCount.value = voices.size
+            defaultVoice = engine.voice
+
+            val englishVoices = voices.filter {
+                it.locale.language.equals(Locale.ENGLISH.language, ignoreCase = true) &&
+                        !it.isNetworkConnectionRequired
+            }.ifEmpty {
+                voices.filter { it.locale.language.equals(Locale.ENGLISH.language, ignoreCase = true) }
+            }.toList()
+
+            if (englishVoices.isNotEmpty()) {
+                val maleVoices = englishVoices.filter { v ->
+                    val name = v.name.lowercase(Locale.ROOT)
+                    (name.contains("male") && !name.contains("female")) ||
+                            name.contains("#m") || name.contains("-m-") || name.contains("_male")
+                }
+
+                val femaleVoices = englishVoices.filter { v ->
+                    val name = v.name.lowercase(Locale.ROOT)
+                    name.contains("female") || name.contains("#f") || name.contains("-f-") || name.contains("_female")
+                }
+
+                cedricVoice = maleVoices.firstOrNull()
+                    ?: englishVoices.getOrNull(1)
+                    ?: defaultVoice
+
+                aethelVoice = femaleVoices.firstOrNull()
+                    ?: englishVoices.firstOrNull { it != cedricVoice }
+                    ?: defaultVoice
+
+                narratorVoice = defaultVoice ?: englishVoices.firstOrNull()
+
+                shadowWispVoice = englishVoices.firstOrNull { it != cedricVoice && it != aethelVoice }
+                    ?: cedricVoice
+            }
+        } catch (_: Exception) {
+            // Headless / mock safety fallback
         }
     }
 
@@ -126,6 +185,26 @@ class CombatNarrator(
         _isCharacterPitchEnabled.value = enabled
     }
 
+    fun getInstalledVoices(): Set<Voice> = tts?.voices ?: emptySet()
+
+    fun getVoiceForSpeaker(speaker: DialogueSpeaker): Voice? = when (speaker.id) {
+        DialogueSpeaker.CEDRIC.id -> cedricVoice
+        DialogueSpeaker.AETHEL.id -> aethelVoice
+        DialogueSpeaker.SHADOW_WISP.id -> shadowWispVoice
+        DialogueSpeaker.NARRATOR.id -> narratorVoice
+        else -> narratorVoice
+    }
+
+    fun setSpeakerVoice(speaker: DialogueSpeaker, voice: Voice) {
+        when (speaker.id) {
+            DialogueSpeaker.CEDRIC.id -> cedricVoice = voice
+            DialogueSpeaker.AETHEL.id -> aethelVoice = voice
+            DialogueSpeaker.SHADOW_WISP.id -> shadowWispVoice = voice
+            DialogueSpeaker.NARRATOR.id -> narratorVoice = voice
+            else -> narratorVoice = voice
+        }
+    }
+
     /**
      * Narrates a story dialogue node, including the speaker line and optionally
      * reading available choices/options aloud.
@@ -147,23 +226,35 @@ class CombatNarrator(
             return
         }
 
+        // Dynamically assign physical voice model per speaker if available
+        val speakerVoice = getVoiceForSpeaker(speaker)
+        if (speakerVoice != null) {
+            try {
+                tts?.voice = speakerVoice
+            } catch (_: Exception) {}
+        }
+
         // Apply character vocal inflection/pitch if enabled
         if (_isCharacterPitchEnabled.value) {
-            when (speaker) {
-                DialogueSpeaker.CEDRIC -> {
+            when (speaker.id) {
+                DialogueSpeaker.CEDRIC.id -> {
                     tts?.setPitch(0.82f) // Deep baritone noble knight
                     tts?.setSpeechRate(_speechRate.value * 0.95f)
                 }
-                DialogueSpeaker.AETHEL -> {
+                DialogueSpeaker.AETHEL.id -> {
                     tts?.setPitch(1.08f) // Clear, spirited invocator
                     tts?.setSpeechRate(_speechRate.value)
                 }
-                DialogueSpeaker.SHADOW_WISP -> {
+                DialogueSpeaker.SHADOW_WISP.id -> {
                     tts?.setPitch(0.70f) // Raspy sibilant phantom
                     tts?.setSpeechRate(_speechRate.value * 0.88f)
                 }
-                DialogueSpeaker.NARRATOR -> {
+                DialogueSpeaker.NARRATOR.id -> {
                     tts?.setPitch(1.0f) // Measured storyteller cadence
+                    tts?.setSpeechRate(_speechRate.value)
+                }
+                else -> {
+                    tts?.setPitch(1.0f)
                     tts?.setSpeechRate(_speechRate.value)
                 }
             }
@@ -202,6 +293,13 @@ class CombatNarrator(
         if (tts == null || !isTtsInitialized) {
             onDone?.invoke()
             return
+        }
+
+        // Reset to Narrator voice for system / tactical announcements
+        narratorVoice?.let {
+            try {
+                tts?.voice = it
+            } catch (_: Exception) {}
         }
 
         pendingSpeechOnDone = onDone
