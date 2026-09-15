@@ -390,8 +390,18 @@ class StoryViewModel(
             }
         }
         if (effective.id == "ch7_intro" || effective.id == "ch7_hub") {
-            if (flags["ch7_tuning_complete"] == true && flags["ch7_stele_complete"] == true && flags["ch7_cedric_complete"] == true) {
+            if (flags["ch7_tuning_complete"] == true && flags["ch7_stele_complete"] == true && flags["ch7_cedric_complete"] == true && flags["ch7_dagger_complete"] == true) {
                 StoryScript.ALL_NODES["ch7_all_completed"]?.let { effective = it }
+            }
+        }
+        if (effective.id == "ch7_camp_intro" || effective.id == "ch7_camp_hub") {
+            if (flags["ch7_camp_lyra_complete"] == true && flags["ch7_camp_cedric_complete"] == true && flags["ch7_camp_watch_complete"] == true) {
+                StoryScript.ALL_NODES["ch7_camp_all_completed"]?.let { effective = it }
+            }
+        }
+        if (effective.id == "ch8_scout_hub") {
+            if (flags["ch8_wire_complete"] == true && flags["ch8_herbs_scout_complete"] == true) {
+                StoryScript.ALL_NODES["ch8_scout_all_completed"]?.let { effective = it }
             }
         }
         if (effective.id == "ch8_hub") {

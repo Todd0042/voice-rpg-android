@@ -293,7 +293,7 @@ class StoryDialogueTest {
         // Advance to hub
         storyViewModel.advanceDialogue()
         assertEquals("ch7_hub", storyViewModel.state.value.currentNode.id)
-        assertEquals(3, storyViewModel.state.value.currentNode.choices.size)
+        assertEquals(4, storyViewModel.state.value.currentNode.choices.size)
 
         // Choose Tuning
         val tuningChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "ch7_tuning_choice" }
@@ -317,13 +317,23 @@ class StoryDialogueTest {
         storyViewModel.advanceDialogue()
         assertEquals("ch7_hub", storyViewModel.state.value.currentNode.id)
 
+        // Choose Dagger
+        val daggerChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "ch7_dagger_choice" }
+        storyViewModel.selectChoice(daggerChoice)
+        assertEquals("ch7_dagger_dialogue", storyViewModel.state.value.currentNode.id)
+        assertTrue(storyViewModel.state.value.narrativeFlags["ch7_dagger_complete"] == true)
+
+        // Back to hub
+        storyViewModel.advanceDialogue()
+        assertEquals("ch7_hub", storyViewModel.state.value.currentNode.id)
+
         // Choose Cedric
         val cedricChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "ch7_cedric_choice" }
         storyViewModel.selectChoice(cedricChoice)
         assertEquals("ch7_cedric_dialogue", storyViewModel.state.value.currentNode.id)
         assertTrue(storyViewModel.state.value.narrativeFlags["ch7_cedric_complete"] == true)
 
-        // Back to hub: all 3 done -> transitions to ch7_all_completed
+        // Back to hub: all 4 done -> transitions to ch7_all_completed
         storyViewModel.advanceDialogue()
         assertEquals("ch7_all_completed", storyViewModel.state.value.currentNode.id)
 
@@ -355,9 +365,30 @@ class StoryDialogueTest {
         assertEquals("scene_shadowed_crags", state.currentScene.id)
         assertEquals("ch8_intro", state.currentNode.id)
 
-        // Advance to ambush warning
+        // Advance to scout hub
         storyViewModel.advanceDialogue()
-        assertEquals("ch8_ambush_warning", storyViewModel.state.value.currentNode.id)
+        assertEquals("ch8_scout_hub", storyViewModel.state.value.currentNode.id)
+
+        val wireChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "ch8_wire_choice" }
+        storyViewModel.selectChoice(wireChoice)
+        storyViewModel.advanceDialogue()
+
+        val scoutHerbsChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "ch8_herbs_scout_choice" }
+        storyViewModel.selectChoice(scoutHerbsChoice)
+        storyViewModel.advanceDialogue()
+
+        assertEquals("ch8_scout_all_completed", storyViewModel.state.value.currentNode.id)
+        storyViewModel.advanceDialogue()
+        assertEquals("ch8_zephyr_standoff", storyViewModel.state.value.currentNode.id)
+        storyViewModel.advanceDialogue()
+        assertEquals("ch8_zephyr_reply", storyViewModel.state.value.currentNode.id)
+        storyViewModel.advanceDialogue()
+        assertEquals("ch8_zephyr_demand", storyViewModel.state.value.currentNode.id)
+
+        val fireChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "ch8_chant_fire" }
+        storyViewModel.selectChoice(fireChoice)
+        storyViewModel.advanceDialogue()
+        assertEquals("ch8_zephyr_awakened", storyViewModel.state.value.currentNode.id)
         storyViewModel.advanceDialogue()
         assertEquals("ch8_ambush_strike", storyViewModel.state.value.currentNode.id)
 
@@ -674,6 +705,97 @@ class StoryDialogueTest {
         // Return
         storyViewModel.returnFromAudioSetup()
         assertEquals(GameScreen.STORY_EXPLORATION, storyViewModel.state.value.gameScreen)
+    }
+
+    @Test
+    fun testChapter6ClimaxToChapter7Transition() {
+        val ch6Climax = StoryScript.ALL_NODES["ch6_act2_climax"]!!
+        storyViewModel.selectChoice(com.voicerpg.android.model.DialogueChoice("force_ch6", "Force Ch6", emptyList(), ch6Climax.id))
+        assertEquals("ch6_act2_climax", storyViewModel.state.value.currentNode.id)
+
+        val advanceChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "ch6_advance_ch7" }
+        storyViewModel.selectChoice(advanceChoice)
+        assertEquals("ch7_intro", storyViewModel.state.value.currentNode.id)
+    }
+
+    @Test
+    fun testChapter7DaggerClueAndHubCompletion() {
+        val ch7Intro = StoryScript.ALL_NODES["ch7_intro"]!!
+        storyViewModel.selectChoice(com.voicerpg.android.model.DialogueChoice("force_ch7", "Force Ch7", emptyList(), ch7Intro.id))
+        storyViewModel.advanceDialogue()
+        assertEquals("ch7_hub", storyViewModel.state.value.currentNode.id)
+
+        val tuningChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "ch7_tuning_choice" }
+        storyViewModel.selectChoice(tuningChoice)
+        storyViewModel.advanceDialogue()
+
+        val steleChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "ch7_stele_choice" }
+        storyViewModel.selectChoice(steleChoice)
+        storyViewModel.advanceDialogue()
+
+        val daggerChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "ch7_dagger_choice" }
+        storyViewModel.selectChoice(daggerChoice)
+        storyViewModel.advanceDialogue()
+
+        val cedricChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "ch7_cedric_choice" }
+        storyViewModel.selectChoice(cedricChoice)
+        storyViewModel.advanceDialogue()
+
+        assertEquals("ch7_all_completed", storyViewModel.state.value.currentNode.id)
+    }
+
+    @Test
+    fun testChapter7CampfireHubToChapter8() {
+        val campIntro = StoryScript.ALL_NODES["ch7_camp_intro"]!!
+        storyViewModel.selectChoice(com.voicerpg.android.model.DialogueChoice("force_camp", "Force Camp", emptyList(), campIntro.id))
+        storyViewModel.advanceDialogue()
+        assertEquals("ch7_camp_hub", storyViewModel.state.value.currentNode.id)
+
+        val lyraChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "ch7_camp_lyra_choice" }
+        storyViewModel.selectChoice(lyraChoice)
+        storyViewModel.advanceDialogue()
+
+        val cedricChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "ch7_camp_cedric_choice" }
+        storyViewModel.selectChoice(cedricChoice)
+        storyViewModel.advanceDialogue()
+
+        val watchChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "ch7_camp_watch_choice" }
+        storyViewModel.selectChoice(watchChoice)
+        storyViewModel.advanceDialogue()
+
+        assertEquals("ch7_camp_all_completed", storyViewModel.state.value.currentNode.id)
+    }
+
+    @Test
+    fun testChapter8ScoutingAndZephyrProofStandoff() {
+        val ch8Intro = StoryScript.ALL_NODES["ch8_intro"]!!
+        storyViewModel.selectChoice(com.voicerpg.android.model.DialogueChoice("force_ch8", "Force Ch8", emptyList(), ch8Intro.id))
+        storyViewModel.advanceDialogue()
+        assertEquals("ch8_scout_hub", storyViewModel.state.value.currentNode.id)
+
+        val wireChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "ch8_wire_choice" }
+        storyViewModel.selectChoice(wireChoice)
+        storyViewModel.advanceDialogue()
+
+        val herbsChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "ch8_herbs_scout_choice" }
+        storyViewModel.selectChoice(herbsChoice)
+        storyViewModel.advanceDialogue()
+
+        assertEquals("ch8_scout_all_completed", storyViewModel.state.value.currentNode.id)
+        storyViewModel.advanceDialogue()
+        assertEquals("ch8_zephyr_standoff", storyViewModel.state.value.currentNode.id)
+        storyViewModel.advanceDialogue()
+        assertEquals("ch8_zephyr_reply", storyViewModel.state.value.currentNode.id)
+        storyViewModel.advanceDialogue()
+        assertEquals("ch8_zephyr_demand", storyViewModel.state.value.currentNode.id)
+
+        val fireChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "ch8_chant_fire" }
+        storyViewModel.selectChoice(fireChoice)
+        assertEquals("ch8_proof_fire", storyViewModel.state.value.currentNode.id)
+        storyViewModel.advanceDialogue()
+        assertEquals("ch8_zephyr_awakened", storyViewModel.state.value.currentNode.id)
+        storyViewModel.advanceDialogue()
+        assertEquals("ch8_ambush_strike", storyViewModel.state.value.currentNode.id)
     }
 }
 

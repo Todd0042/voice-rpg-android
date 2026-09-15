@@ -1094,10 +1094,26 @@ object StoryScript {
             side = SpeakerSide.RIGHT,
             text = "Two Great Bells found... one ringing with dawn, and one awaiting our rite of tuning! Whispering Pines is safe, the Rotting Marsh breathes with life once more, and Grove Warden Lyra fights at our side. Invocator, our fellowship grows mightier each day. Whenever you are ready, we shall tune the Veridian Chime and march toward the Clockwork Bastion!",
             choices = listOf(
-                DialogueChoice("ch6_advance_ch7", "Commence the Harmonic Resonance of the Veridian Chime", listOf("commence", "begin", "harmonic", "resonance", "veridian", "chime", "advance", "next"), "ch7_intro"),
-                DialogueChoice("ch6_view_willow", "Gaze upon the blossoming Weeping Willow Sanctuary", listOf("gaze", "view", "willow", "blossom", "sanctuary"), "ch6_willow_purified"),
-                DialogueChoice("ch6_commune_lyra", "Speak with Lyra beside the sacred pool", listOf("speak", "commune", "lyra", "pool"), "ch6_chime_revealed")
+                DialogueChoice("ch6_advance_ch7", "March north to tune the Veridian Chime (Advance to Chapter 7)", listOf("advance", "chapter 7", "tune", "veridian", "chime", "north", "march", "next"), "ch7_intro"),
+                DialogueChoice("ch6_commune_lyra", "Speak with Lyra regarding the fellowship's path ahead", listOf("speak", "commune", "lyra", "path"), "ch6_lyra_dialogue", "ch6_lyra_dialogue_complete"),
+                DialogueChoice("ch6_view_willow", "Inspect the ancient jade runes along the chime's rim", listOf("inspect", "runes", "rim", "bell", "jade", "chime"), "ch6_runes_dialogue", "ch6_runes_dialogue_complete")
             )
+        ),
+        DialogueNode(
+            id = "ch6_lyra_dialogue",
+            speaker = DialogueSpeaker.LYRA,
+            side = SpeakerSide.LEFT,
+            setFlagOnEnter = "ch6_lyra_dialogue_complete",
+            text = "Lyra clutches her heartwood staff, eyes shining with quiet wonder. 'For five years I believed our grove was dead. Your voice did not merely break the mire, Invocator—it reminded the earth how to sing. Wherever the Logos leads, my bow and spells are pledged to you.'",
+            nextNodeId = "ch6_act2_climax"
+        ),
+        DialogueNode(
+            id = "ch6_runes_dialogue",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            setFlagOnEnter = "ch6_runes_dialogue_complete",
+            text = "The jade carvings along the Veridian Chime glow softly. Inscribed in the script of the First Age are the words: 'That which was silenced in roots shall awaken in song.' The chime vibrates eagerly, attuned to the botanical frequency awaiting your tuning rite!",
+            nextNodeId = "ch6_act2_climax"
         ),
 
         // === CHAPTER 7: TUNING THE VERIDIAN CHIME ===
@@ -1117,6 +1133,7 @@ object StoryScript {
             choices = listOf(
                 DialogueChoice("ch7_tuning_choice", "Strike the botanical tuning fork against the jade bell", listOf("tuning", "fork", "strike", "bell", "chime"), "ch7_tuning_dialogue", "ch7_tuning_complete"),
                 DialogueChoice("ch7_stele_choice", "Inspect the submerged steles of the First Word", listOf("stele", "tablet", "inscriptions", "inspect", "submerged"), "ch7_stele_dialogue", "ch7_stele_complete"),
+                DialogueChoice("ch7_dagger_choice", "Examine an obsidian kunai pinned to a cypress trunk", listOf("dagger", "kunai", "stalker", "examine", "pinned", "trunk", "obsidian"), "ch7_dagger_dialogue", "ch7_dagger_complete"),
                 DialogueChoice("ch7_cedric_choice", "Confer with Cedric regarding the northern crags", listOf("cedric", "crags", "north", "scout", "confer"), "ch7_cedric_dialogue", "ch7_cedric_complete")
             )
         ),
@@ -1137,11 +1154,19 @@ object StoryScript {
             nextNodeId = "ch7_hub"
         ),
         DialogueNode(
+            id = "ch7_dagger_dialogue",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            setFlagOnEnter = "ch7_dagger_complete",
+            text = "Aethel steps toward an ancient cypress and pulls free an obsidian kunai wrapped in silver thread. Pinned beneath the blade is a parchment strip: 'Turn back, Invocator. Grand Executioner Kaelen holds the crags with sonic tripwires. He was ordered to take your tongue in a lead jar. If you march north, tread only the high ledges. —A brother in silence.' Cedric inspects the blade: 'The sigil of the Black Guild of Assassins... but why would one of Malakor's killers warn us?'",
+            nextNodeId = "ch7_hub"
+        ),
+        DialogueNode(
             id = "ch7_cedric_dialogue",
             speaker = DialogueSpeaker.CEDRIC,
             side = SpeakerSide.RIGHT,
             setFlagOnEnter = "ch7_cedric_complete",
-            text = "Cedric gazes north toward the jagged silhouette of the mountains. 'The Inquisition's elite assassin cabal, the Brotherhood of the Mute, patrols those crags. If we sound the Veridian Chime, its resonance will surely alert their strike teams. We must be ready for an ambush the moment the waters drain.'",
+            text = "Cedric gazes north toward the jagged mountain peaks. 'Between the assassin's warning and the tremors beneath our feet, we cannot hesitate. When the chime rings, the water will drain, but the guardian beneath will strike first. Steel your incantations, Invocator!'",
             nextNodeId = "ch7_hub"
         ),
         DialogueNode(
@@ -1172,35 +1197,162 @@ object StoryScript {
             id = "ch7_post_toll",
             speaker = DialogueSpeaker.CEDRIC,
             side = SpeakerSide.RIGHT,
-            text = "The Veridian Chime rings true! Two bells restored, two remain! The northern road is open, Invocator. Forward, into the Shadowed Crags!",
+            text = "The Veridian Chime rings true! Two bells restored, two remain! As dusk falls across the drained marsh, the northern crags loom cold and jagged before us. Let us make camp at the foothills and prepare for the assassin's pass.",
             choices = listOf(
-                DialogueChoice("ch7_advance_ch8", "March into the Shadowed Crags toward Ouros", listOf("march", "crags", "shadowed", "ouros", "advance", "north"), "ch8_intro")
+                DialogueChoice("ch7_to_camp", "Make camp at the foot of the Shadowed Crags", listOf("camp", "make", "rest", "foothills", "crags"), "ch7_camp_intro")
             )
         ),
 
-        // === CHAPTER 8: THE SHADOWED CRAGS & ZEPHYR'S DEFECTION ===
+        // === CHAPTER 7 CAMPFIRE INTERLUDE: THE FOOTHILLS OF THE CRAGS ===
+        DialogueNode(
+            id = "ch7_camp_intro",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            changeSceneId = "scene_camp",
+            text = "A crackling campfire illuminates the cold granite base of the northern mountains. Thin mountain air bites through cloaks, but the fire's warmth provides a safe haven. Lyra brews steeping mint leaves while Cedric checks his shield straps.",
+            nextNodeId = "ch7_camp_hub"
+        ),
+        DialogueNode(
+            id = "ch7_camp_hub",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "The campfire crackles softly under the starry mountain sky. What will you do before turning in for the night?",
+            choices = listOf(
+                DialogueChoice("ch7_camp_lyra_choice", "Speak with Lyra about the song of her elven kin", listOf("lyra", "song", "kin", "sister", "elves"), "ch7_camp_lyra_dialogue", "ch7_camp_lyra_complete"),
+                DialogueChoice("ch7_camp_cedric_choice", "Ask Cedric about the Brotherhood of the Mute", listOf("cedric", "brotherhood", "mute", "assassins", "guild"), "ch7_camp_cedric_dialogue", "ch7_camp_cedric_complete"),
+                DialogueChoice("ch7_camp_watch_choice", "Take the midnight watch and scan the rocky ridge", listOf("watch", "midnight", "scan", "ridge", "guard", "scout"), "ch7_camp_watch_dialogue", "ch7_camp_watch_complete")
+            )
+        ),
+        DialogueNode(
+            id = "ch7_camp_lyra_dialogue",
+            speaker = DialogueSpeaker.LYRA,
+            side = SpeakerSide.LEFT,
+            setFlagOnEnter = "ch7_camp_lyra_complete",
+            text = "Lyra stares into the embers. 'My twin sister, Sylvan, was the chief harmonist of our grove. When the Inquisition marched upon us, she sang the final verse that sealed the Veridian Chime beneath the roots, even as the obsidian draught silenced her. I know her spirit heard that chime toll today. Thank you, Aethel.'",
+            nextNodeId = "ch7_camp_hub"
+        ),
+        DialogueNode(
+            id = "ch7_camp_cedric_dialogue",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            setFlagOnEnter = "ch7_camp_cedric_complete",
+            text = "Cedric's brow furrows as he oils his blade. 'The Brotherhood of the Mute are not mere bandits. Initiates undergo the Severing—drinking boiling obsidian resin to incinerate their vocal cords so they can never betray the Inquisition under interrogation. If someone inside their ranks warned us with that dagger, that soul has risked worse than death to aid our journey.'",
+            nextNodeId = "ch7_camp_hub"
+        ),
+        DialogueNode(
+            id = "ch7_camp_watch_dialogue",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            setFlagOnEnter = "ch7_camp_watch_complete",
+            text = "Aethel climbs onto a flat boulder to take the midnight watch. A tiny pebble clicks on the ledge twenty feet above! A slender, silver-haired rogue crouches in the moonlight, hooded in shadow leather. His violet eyes flash with astonishment. 'You truly speak living words,' the silhouette whispers across the wind. 'Do not take the canyon floor tomorrow. The ledges are your only hope.' The figure drops a pouch of dried mountain wolfsbane tea and vanishes into the dark like mist!",
+            nextNodeId = "ch7_camp_hub"
+        ),
+        DialogueNode(
+            id = "ch7_camp_all_completed",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            text = "Dawn breaks in cold violet and gold across the crags. The fellowship gathers their packs, invigorated by rest and prepared for whatever awaits in the canyon.",
+            choices = listOf(
+                DialogueChoice("ch7_camp_to_ch8", "March into the Shadowed Crags (Begin Chapter 8)", listOf("march", "crags", "shadowed", "begin", "chapter 8", "advance"), "ch8_intro")
+            )
+        ),
+
+        // === CHAPTER 8: THE SHADOWED CRAGS & ZEPHYR'S PARLEY ===
         DialogueNode(
             id = "ch8_intro",
             speaker = DialogueSpeaker.NARRATOR,
             side = SpeakerSide.CENTER_NARRATOR,
             changeSceneId = "scene_shadowed_crags",
-            text = "Cold wind whips through the narrow gorge of the Shadowed Crags. Purple mist clings to obsidian rocks. High above on the canyon ledges, silent figures in dark cowls watch every step of your ascent.",
-            nextNodeId = "ch8_ambush_warning"
+            text = "Freezing winds whistle through the razor-sharp obsidian pillars of the Shadowed Crags. Purple mountain mist snakes across the trail. Following the midnight stalker's advice, the fellowship ascends along the narrow upper cliff ledge.",
+            nextNodeId = "ch8_scout_hub"
         ),
         DialogueNode(
-            id = "ch8_ambush_warning",
+            id = "ch8_scout_hub",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "The canyon path splits before a narrow chasm. Strange metallic glints and caustic smoke catch your attention.",
+            choices = listOf(
+                DialogueChoice("ch8_wire_choice", "Inspect the hair-thin sonic tripwire spanning the gap", listOf("tripwire", "wire", "sonic", "trap", "inspect", "disarm"), "ch8_wire_dialogue", "ch8_wire_complete"),
+                DialogueChoice("ch8_herbs_scout_choice", "Burn the stalker's wolfsbane herbs to clear poison mist", listOf("herbs", "wolfsbane", "burn", "mist", "poison", "clear"), "ch8_herbs_scout_dialogue", "ch8_herbs_scout_complete")
+            )
+        ),
+        DialogueNode(
+            id = "ch8_wire_dialogue",
+            speaker = DialogueSpeaker.LYRA,
+            side = SpeakerSide.LEFT,
+            setFlagOnEnter = "ch8_wire_complete",
+            text = "Lyra kneels and gently points with an arrow. 'An acoustic percussion mine. If anyone steps on the floor below, the soundwaves detonate the whole gorge.' Using the tip of her knife, she snips the lead counter-weight, safely neutralizing the trap!",
+            nextNodeId = "ch8_scout_hub"
+        ),
+        DialogueNode(
+            id = "ch8_herbs_scout_dialogue",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            setFlagOnEnter = "ch8_herbs_scout_complete",
+            text = "Aethel kindles a small handful of the dried wolfsbane herbs. A fragrant lavender smoke billows forward, neutralizing the choking purple gloom in the pass. The trail ahead is clear and safe to traverse!",
+            nextNodeId = "ch8_scout_hub"
+        ),
+        DialogueNode(
+            id = "ch8_scout_all_completed",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "As the mist parts, a silken shadow drops from an overhanging boulder, blocking the pass with twin daggers twirling! The silver-haired rogue stands in broad daylight, his violet eyes locked upon Aethel!",
+            nextNodeId = "ch8_zephyr_standoff"
+        ),
+        DialogueNode(
+            id = "ch8_zephyr_standoff",
             speaker = DialogueSpeaker.CEDRIC,
             side = SpeakerSide.RIGHT,
-            text = "Halt! Look to the ledges! They have severed tripwires across the trail. We are surrounded!",
+            text = "Cedric steps forward with shield raised, blade gleaming! 'Hold, assassin! You have stalked our tracks from the Weeping Willow. Drop your steel or be struck down!'",
+            nextNodeId = "ch8_zephyr_reply"
+        ),
+        DialogueNode(
+            id = "ch8_zephyr_reply",
+            speaker = DialogueSpeaker.ZEPHYR,
+            side = SpeakerSide.LEFT,
+            text = "Zephyr lets out a low, amused breath, twirling his twin daggers before resting them casually against his wrists. 'Put away the heavy iron, Templar. If I wanted your throat opened, that sonic mine would have turned you into red mist twenty paces ago.' He turns to Aethel: 'I am Zephyr of the Black Guild. I left the dagger. I gave you the herbs. But before I commit treason against the Mute Sovereign, I must know the truth from your own mouth.'",
+            nextNodeId = "ch8_zephyr_demand"
+        ),
+        DialogueNode(
+            id = "ch8_zephyr_demand",
+            speaker = DialogueSpeaker.ZEPHYR,
+            side = SpeakerSide.LEFT,
+            text = "Zephyr takes a slow step forward. 'They told us all living voice was an abomination—that silence was peace. But my heart screamed every time they poured boiling lead down an initiate's throat. Prove to me your voice is real, Invocator. Speak a word of living flame or dawn!'",
+            choices = listOf(
+                DialogueChoice("ch8_chant_fire", "Chant 'Fireball' to kindle living solar flame in the gorge", listOf("fireball", "fire", "chant", "solar", "flame"), "ch8_proof_fire"),
+                DialogueChoice("ch8_chant_fellowship", "Speak words of fellowship: 'We seek to free all voices in Aethelgard'", listOf("free", "voices", "fellowship", "speak", "words"), "ch8_proof_words")
+            )
+        ),
+        DialogueNode(
+            id = "ch8_proof_fire",
+            speaker = DialogueSpeaker.AETHEL,
+            side = SpeakerSide.LEFT,
+            setFlagOnEnter = "ch8_proof_given",
+            text = "Aethel draws a deep breath and chants the sacred syllable of fire! A swirling corona of radiant golden warmth erupts between your palms, illuminating the frozen obsidian canyon with brilliant, crackling sunlight! The frozen mist dissolves in an instant!",
+            nextNodeId = "ch8_zephyr_awakened"
+        ),
+        DialogueNode(
+            id = "ch8_proof_words",
+            speaker = DialogueSpeaker.AETHEL,
+            side = SpeakerSide.LEFT,
+            setFlagOnEnter = "ch8_proof_given",
+            text = "Aethel speaks clearly and without fear: 'We do not wield silence, Zephyr. We bring back the songs, the laughter, and the truth of Aethelgard. No soul was meant to live in a cage of quiet.' The warmth and resonance of your words ring against the cold stone like silver chimes!",
+            nextNodeId = "ch8_zephyr_awakened"
+        ),
+        DialogueNode(
+            id = "ch8_zephyr_awakened",
+            speaker = DialogueSpeaker.ZEPHYR,
+            side = SpeakerSide.LEFT,
+            text = "Zephyr's eyes widen with profound reverence. His daggers drop to his sides, trembling slightly. 'It is true... The First Voice lives. Ten years I hid a razor under my tongue so I could die speaking, but now... now I have something to speak for!'",
             nextNodeId = "ch8_ambush_strike"
         ),
         DialogueNode(
             id = "ch8_ambush_strike",
             speaker = DialogueSpeaker.NARRATOR,
             side = SpeakerSide.CENTER_NARRATOR,
-            text = "Grand Executioner Kaelen drops from the cliffside with twin executioner axes, flanked by lethal shadowblades! 'By decree of the Mute Sovereign, your voices end here!' Prepare for battle!",
+            text = "A harsh horn blasts from the cliff above! Boulders tumble down as Grand Executioner Kaelen drops onto the path with twin heavy execution axes, flanked by lethal shadowblade elites! 'Zephyr! Traitorous cur! You were sent to bring the Sovereign their tongues in lead, and you babble with our prey! You will die beside them!'",
             choices = listOf(
-                DialogueChoice("ch8_fight_ambush", "Defend the pass against the Inquisition assassins!", listOf("defend", "fight", "ambush", "kaelen", "battle"), "ch8_assassin_assault")
+                DialogueChoice("ch8_fight_ambush", "Defend the pass alongside Zephyr against Executioner Kaelen!", listOf("defend", "fight", "ambush", "kaelen", "battle", "zephyr"), "ch8_assassin_assault")
             )
         ),
         DialogueNode(
@@ -1208,7 +1360,7 @@ object StoryScript {
             speaker = DialogueSpeaker.NARRATOR,
             side = SpeakerSide.CENTER_NARRATOR,
             triggerBattleEncounterId = "ch8_executioner_ambush",
-            text = "The ambush strikes! The fellowship forms a defensive circle against Kaelen and the shadowblades. Mid-battle, a silken shadow drops from above—Zephyr the Shadowblade defects to the fellowship, turning his twin daggers against Kaelen!"
+            text = "Zephyr spins his blades with deadly grace and steps into formation beside Sir Cedric and Lyra! 'My daggers are yours, Invocator! Let us teach the Inquisition that words will never die!' Prepare for battle!"
         ),
         DialogueNode(
             id = "ch8_executioner_victory",
