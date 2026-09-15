@@ -642,8 +642,38 @@ class CombatViewModel(
     }
 
     fun startVoiceListening() {
-        speechManager.startListening { utterance ->
-            processIncantation(utterance)
+        speechManager.startListening(
+            onStandby = {
+                if (_state.value.phase == CombatPhase.PLAYER_INPUT) {
+                    if (combatNarrator.isEyesFreeMode.value) {
+                        combatNarrator.speak(
+                            "Standing by. Tap the screen when you are ready to command.",
+                            force = true
+                        )
+                    }
+                }
+            },
+            onResult = { utterance ->
+                processIncantation(utterance)
+            }
+        )
+    }
+
+    fun resumeVoiceListening() {
+        if (_state.value.phase == CombatPhase.PLAYER_INPUT) {
+            if (combatNarrator.isEyesFreeMode.value) {
+                val heroName = _state.value.activePartyMember?.name ?: "Hero"
+                combatNarrator.speak("$heroName is ready. Speak your command.", force = true) {
+                    activeScope.launch {
+                        delay(100)
+                        startVoiceListening()
+                    }
+                }
+            } else {
+                startVoiceListening()
+            }
+        } else {
+            startVoiceListening()
         }
     }
 

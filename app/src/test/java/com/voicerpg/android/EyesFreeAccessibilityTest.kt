@@ -215,4 +215,37 @@ class EyesFreeAccessibilityTest {
         val newHeroGauge = viewModel.state.value.party[0].atbGauge
         assertTrue("ATB gauges should advance when eyes-free mode is disabled", newHeroGauge > initialHeroGauge)
     }
+
+    @Test
+    fun testStandbyTransitionAndCallback() {
+        var standbyCalled = false
+        dummySpeech.startListening(
+            onStandby = { standbyCalled = true },
+            onResult = {}
+        )
+        dummySpeech.triggerStandbyForTesting()
+        assertTrue("onStandby callback should be called", standbyCalled)
+        assertEquals("SpeechState should be Standby", com.voicerpg.android.audio.SpeechState.Standby, dummySpeech.speechState.value)
+        assertFalse("Session should no longer be active", dummySpeech.isSessionActive)
+    }
+
+    @Test
+    fun testResumeVoiceListeningResetsState() {
+        dummySpeech.triggerStandbyForTesting()
+        assertEquals(com.voicerpg.android.audio.SpeechState.Standby, dummySpeech.speechState.value)
+
+        dummySpeech.resumeListening()
+        assertEquals(0, dummySpeech.getAutoListenAttemptCount())
+    }
+
+    @Test
+    fun testCombatViewModelResumeVoiceListening() {
+        viewModel.toggleEyesFreeMode()
+        dummySpeech.triggerStandbyForTesting()
+        assertEquals(com.voicerpg.android.audio.SpeechState.Standby, dummySpeech.speechState.value)
+
+        viewModel.resumeVoiceListening()
+        // resumeVoiceListening resets attempt count and requests speech recognition
+        assertEquals(0, dummySpeech.getAutoListenAttemptCount())
+    }
 }

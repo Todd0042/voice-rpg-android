@@ -158,6 +158,11 @@ fun StoryScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                .then(
+                    if (speechState is com.voicerpg.android.audio.SpeechState.Standby) {
+                        Modifier.clickable { storyViewModel.resumeVoiceListening() }
+                    } else Modifier
+                )
         ) {
             // 1. Room / Exploration Scene Background Image (Widescreen 16:9)
             if (backgroundBitmap != null) {
@@ -396,11 +401,7 @@ fun StoryScreen(
                     VoiceInputPromptBar(
                         hasChoices = currentNode.choices.isNotEmpty(),
                         speechState = speechState,
-                        onStartListening = {
-                            storyViewModel.speechManager.startListening { utterance ->
-                                storyViewModel.handleStoryVoiceInput(utterance)
-                            }
-                        }
+                        onStartListening = { storyViewModel.resumeVoiceListening() }
                     )
                 }
             } else {
@@ -557,11 +558,7 @@ fun StoryScreen(
                     VoiceInputPromptBar(
                         hasChoices = currentNode.choices.isNotEmpty(),
                         speechState = speechState,
-                        onStartListening = {
-                            storyViewModel.speechManager.startListening { utterance ->
-                                storyViewModel.handleStoryVoiceInput(utterance)
-                            }
-                        }
+                        onStartListening = { storyViewModel.resumeVoiceListening() }
                     )
                 }
             }
@@ -813,14 +810,21 @@ private fun VoiceInputPromptBar(
     onStartListening: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val isListening = speechState is com.voicerpg.android.audio.SpeechState.Listening
+    val isStandby = speechState is com.voicerpg.android.audio.SpeechState.Standby
+
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = if (!hasChoices) "Tap or say 'Next' to continue" else "Tap choice or speak your decision",
-            color = Color.Gray,
+            text = when {
+                isStandby -> "⏸️ Standing by — tap screen to resume"
+                !hasChoices -> "Tap or say 'Next' to continue"
+                else -> "Tap choice or speak your decision"
+            },
+            color = if (isStandby) Color(0xFFFFD54F) else Color.Gray,
             fontSize = 9.sp,
             fontFamily = FontFamily.Monospace
         )
@@ -829,14 +833,24 @@ private fun VoiceInputPromptBar(
         Box(
             modifier = Modifier
                 .clip(CircleShape)
-                .background(if (speechState is com.voicerpg.android.audio.SpeechState.Listening) Color(0xFFEF5350) else RetroPanel)
-                .border(1.dp, LogosGold, CircleShape)
+                .background(
+                    when {
+                        isListening -> Color(0xFFEF5350)
+                        isStandby -> Color(0xFF423810)
+                        else -> RetroPanel
+                    }
+                )
+                .border(1.dp, if (isStandby) Color(0xFFFFD54F) else LogosGold, CircleShape)
                 .clickable { onStartListening() }
                 .padding(horizontal = 8.dp, vertical = 4.dp)
         ) {
             Text(
-                text = if (speechState is com.voicerpg.android.audio.SpeechState.Listening) "🎙️ LISTENING..." else "🎤 SPEAK",
-                color = LogosGold,
+                text = when {
+                    isListening -> "🎙️ LISTENING..."
+                    isStandby -> "⏸️ STANDBY"
+                    else -> "🎤 SPEAK"
+                },
+                color = if (isStandby) Color(0xFFFFD54F) else LogosGold,
                 fontSize = 9.sp,
                 fontWeight = FontWeight.Bold,
                 fontFamily = FontFamily.Monospace

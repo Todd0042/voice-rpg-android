@@ -73,6 +73,11 @@ fun RetroBattleScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
                 .offset(x = state.screenShakeOffsetX.dp, y = state.screenShakeOffsetY.dp)
+                .then(
+                    if (speechState is com.voicerpg.android.audio.SpeechState.Standby && state.phase == CombatPhase.PLAYER_INPUT) {
+                        Modifier.clickable { viewModel.resumeVoiceListening() }
+                    } else Modifier
+                )
         ) {
             // Main Battle Arena Layout
             Column(
@@ -238,7 +243,7 @@ fun RetroBattleScreen(
                     liveTranscript = liveTranscript,
                     lastResonance = state.lastResonance,
                     activePartyMember = state.activePartyMember,
-                    onStartListening = { viewModel.startVoiceListening() },
+                    onStartListening = { viewModel.resumeVoiceListening() },
                     onStopListening = { viewModel.stopVoiceListening() },
                     onSubmitChant = { chant, acoustic -> viewModel.submitTypedChant(chant, acoustic) },
                     onCycleHero = { viewModel.cycleNextPartyMember() },

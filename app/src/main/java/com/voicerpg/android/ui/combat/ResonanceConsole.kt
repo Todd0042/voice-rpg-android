@@ -228,6 +228,7 @@ fun ResonanceConsole(
             ) {
                 val displayPrompt = when {
                     isListening -> if (liveTranscript.isBlank()) "🔴 READY — CHANT INCANTATION NOW!" else liveTranscript
+                    speechState is SpeechState.Standby -> "⏸️ STANDBY — TAP TO CHANT"
                     speechState is SpeechState.Processing -> "⚡ Evaluating Logos resonance..."
                     speechState is SpeechState.Error -> "Speech error: ${(speechState as SpeechState.Error).message}"
                     liveTranscript.isNotBlank() -> liveTranscript
@@ -239,6 +240,7 @@ fun ResonanceConsole(
 
                 val textColor = when {
                     isListening -> FrostCyan
+                    speechState is SpeechState.Standby -> Color(0xFFFFD54F)
                     speechState is SpeechState.Error -> Color(0xFFFF8A80)
                     lastResonance != null && lastResonance.bonusPercent >= 100 -> LogosGold
                     lastResonance != null && lastResonance.bonusPercent >= 50 -> LightningViolet

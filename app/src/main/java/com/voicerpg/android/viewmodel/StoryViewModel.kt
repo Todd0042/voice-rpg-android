@@ -692,11 +692,49 @@ class StoryViewModel(
             activeScope.launch {
                 delay(200)
                 if (speechManager.isAutoListen.value && _state.value.gameScreen == GameScreen.STORY_EXPLORATION) {
-                    speechManager.startListening { nextUtterance ->
-                        handleStoryVoiceInput(nextUtterance)
-                    }
+                    speechManager.startListening(
+                        onStandby = {
+                            if (combatNarrator.isEyesFreeMode.value) {
+                                combatNarrator.speak("Standing by. Tap the screen when you are ready to continue.", force = true)
+                            }
+                        },
+                        onResult = { nextUtterance ->
+                            handleStoryVoiceInput(nextUtterance)
+                        }
+                    )
                 }
             }
+        }
+    }
+
+    fun resumeVoiceListening() {
+        if (combatNarrator.isEyesFreeMode.value) {
+            combatNarrator.speak("Ready. What is your decision?", force = true) {
+                activeScope.launch {
+                    delay(100)
+                    speechManager.startListening(
+                        onStandby = {
+                            if (combatNarrator.isEyesFreeMode.value) {
+                                combatNarrator.speak("Standing by. Tap the screen when you are ready to continue.", force = true)
+                            }
+                        },
+                        onResult = { utterance ->
+                            handleStoryVoiceInput(utterance)
+                        }
+                    )
+                }
+            }
+        } else {
+            speechManager.startListening(
+                onStandby = {
+                    if (combatNarrator.isEyesFreeMode.value) {
+                        combatNarrator.speak("Standing by. Tap the screen when you are ready to continue.", force = true)
+                    }
+                },
+                onResult = { utterance ->
+                    handleStoryVoiceInput(utterance)
+                }
+            )
         }
     }
 
@@ -720,9 +758,16 @@ class StoryViewModel(
             } else if (speechManager.isAutoListen.value) {
                 activeScope.launch {
                     delay(120)
-                    speechManager.startListening { utterance ->
-                        handleStoryVoiceInput(utterance)
-                    }
+                    speechManager.startListening(
+                        onStandby = {
+                            if (combatNarrator.isEyesFreeMode.value) {
+                                combatNarrator.speak("Standing by. Tap the screen when you are ready to continue.", force = true)
+                            }
+                        },
+                        onResult = { utterance ->
+                            handleStoryVoiceInput(utterance)
+                        }
+                    )
                 }
             }
         }
