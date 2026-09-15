@@ -151,68 +151,68 @@ class CombatNarrator(
             val installedVoices = voices.filter { isVoiceInstalledAndUsable(engine, it) }
             _installedVoiceCount.value = installedVoices.size
 
-            val installedEnglishVoices = installedVoices.filter {
+            // Filter out generic language aliases (e.g. en-US-language, en-AU-language)
+            val physicalVoices = installedVoices.filter { v ->
+                !v.name.endsWith("-language", ignoreCase = true) &&
+                        !(v.features?.contains("legacySetLanguageVoice") ?: false)
+            }.ifEmpty { installedVoices }
+
+            val englishPhysicalVoices = physicalVoices.filter {
                 it.locale.language.equals(Locale.ENGLISH.language, ignoreCase = true)
-            }.ifEmpty {
-                installedVoices
+            }.ifEmpty { physicalVoices }
+
+            android.util.Log.d("VoiceRPG_TTS", "Installed: ${installedVoices.size}, Physical English: ${englishPhysicalVoices.size}")
+
+            // Google TTS & third-party voice classification tokens:
+            // Female codes: sfg (Voice 1), iom (Voice 3), tpd (Voice 5), tpf (Voice 7), gba, gbb, gbd, aua, auc, or "female"
+            // Male codes: iob (Voice 2), iog (Voice 4), tpc (Voice 6), iol (Voice 8), rjs, gbc, gbg, aub, aud, or "male"
+            val femaleTokens = listOf("female", "#f", "-f-", "_female", "sfg", "iom", "tpd", "tpf", "gba", "gbb", "gbd", "aua", "auc")
+            val maleTokens = listOf("male", "#m", "-m-", "_male", "iob", "iog", "tpc", "iol", "rjs", "gbc", "gbg", "aub", "aud")
+
+            val femaleVoices = englishPhysicalVoices.filter { v ->
+                val lower = v.name.lowercase(Locale.ROOT)
+                femaleTokens.any { lower.contains(it) } && !lower.contains("male")
             }
 
-            if (installedEnglishVoices.isNotEmpty()) {
-                val maleVoices = installedEnglishVoices.filter { v ->
-                    val name = v.name.lowercase(Locale.ROOT)
-                    (name.contains("male") && !name.contains("female")) ||
-                            name.contains("#m") || name.contains("-m-") || name.contains("_male")
-                }
+            val maleVoices = englishPhysicalVoices.filter { v ->
+                val lower = v.name.lowercase(Locale.ROOT)
+                maleTokens.any { lower.contains(it) } && !lower.contains("female")
+            }
 
-                val femaleVoices = installedEnglishVoices.filter { v ->
-                    val name = v.name.lowercase(Locale.ROOT)
-                    name.contains("female") || name.contains("#f") || name.contains("-f-") || name.contains("_female")
-                }
+            // Remaining unclassified voices to supplement pools
+            val otherVoices = englishPhysicalVoices.filter { it !in maleVoices && it !in femaleVoices }
 
-                cedricVoice = maleVoices.firstOrNull() ?: defaultVoice
-                aethelVoice = femaleVoices.firstOrNull() ?: defaultVoice
+            val malePool = (maleVoices + otherVoices.filterIndexed { i, _ -> i % 2 == 1 }).ifEmpty { englishPhysicalVoices }
+            val femalePool = (femaleVoices + otherVoices.filterIndexed { i, _ -> i % 2 == 0 }).ifEmpty { englishPhysicalVoices }
 
-                // Only assign a separate voice to Lyra if there is a distinct, confirmed INSTALLED second female voice;
-                // otherwise fallback safely to defaultVoice so speech is never skipped!
-                lyraVoice = if (femaleVoices.size > 1 && femaleVoices[1] != aethelVoice) {
-                    femaleVoices[1]
-                } else {
-                    defaultVoice
-                }
+            // British narrator voice if present, else default
+            val britishStoryteller = englishPhysicalVoices.firstOrNull {
+                it.name.contains("rjs") || (it.locale.country.equals("GB", ignoreCase = true) && it.name in maleTokens)
+            } ?: defaultVoice
 
-                narratorVoice = defaultVoice ?: installedEnglishVoices.firstOrNull()
-
-                shadowWispVoice = if (maleVoices.size > 1) {
-                    maleVoices[1]
-                } else {
-                    defaultVoice
-                }
-
-                zephyrVoice = if (maleVoices.size > 2) {
-                    maleVoices[2]
-                } else if (femaleVoices.size > 2) {
-                    femaleVoices[2]
-                } else {
-                    defaultVoice
-                }
-
-                malakorVoice = if (maleVoices.size > 3) {
-                    maleVoices[3]
-                } else if (maleVoices.size > 1) {
-                    maleVoices[1]
-                } else {
-                    defaultVoice
-                }
+            val distinctMalePool = if (britishStoryteller != null && malePool.size > 1) {
+                malePool.filter { it != britishStoryteller }
             } else {
-                cedricVoice = defaultVoice
-                aethelVoice = defaultVoice
-                lyraVoice = defaultVoice
-                zephyrVoice = defaultVoice
-                malakorVoice = defaultVoice
-                narratorVoice = defaultVoice
-                shadowWispVoice = defaultVoice
+                malePool
             }
-        } catch (_: Exception) {
+
+            narratorVoice = britishStoryteller ?: defaultVoice
+            cedricVoice = distinctMalePool.firstOrNull() ?: defaultVoice
+            aethelVoice = femalePool.firstOrNull() ?: defaultVoice
+            lyraVoice = femalePool.getOrNull(1) ?: femalePool.firstOrNull() ?: defaultVoice
+            zephyrVoice = distinctMalePool.getOrNull(1) ?: distinctMalePool.firstOrNull() ?: defaultVoice
+            malakorVoice = distinctMalePool.getOrNull(2) ?: distinctMalePool.getOrNull(1) ?: defaultVoice
+            shadowWispVoice = distinctMalePool.getOrNull(3) ?: distinctMalePool.lastOrNull() ?: defaultVoice
+
+            android.util.Log.d("VoiceRPG_TTS", "Assigned Cedric: ${cedricVoice?.name}")
+            android.util.Log.d("VoiceRPG_TTS", "Assigned Aethel: ${aethelVoice?.name}")
+            android.util.Log.d("VoiceRPG_TTS", "Assigned Lyra: ${lyraVoice?.name}")
+            android.util.Log.d("VoiceRPG_TTS", "Assigned Zephyr: ${zephyrVoice?.name}")
+            android.util.Log.d("VoiceRPG_TTS", "Assigned Malakor: ${malakorVoice?.name}")
+            android.util.Log.d("VoiceRPG_TTS", "Assigned ShadowWisp: ${shadowWispVoice?.name}")
+            android.util.Log.d("VoiceRPG_TTS", "Assigned Narrator: ${narratorVoice?.name}")
+        } catch (e: Exception) {
+            android.util.Log.e("VoiceRPG_TTS", "Error assigning voices", e)
             cedricVoice = defaultVoice
             aethelVoice = defaultVoice
             lyraVoice = defaultVoice
@@ -314,6 +314,21 @@ class CombatNarrator(
             DialogueSpeaker.SHADOW_WISP.id -> shadowWispVoice = voice
             DialogueSpeaker.NARRATOR.id -> narratorVoice = voice
             else -> narratorVoice = voice
+        }
+    }
+
+    fun previewSpeakerVoice(speaker: DialogueSpeaker, onDone: (() -> Unit)? = null) {
+        val samplePhrase = when (speaker.id) {
+            DialogueSpeaker.CEDRIC.id -> "By the light of the dawn, our shields will hold the line."
+            DialogueSpeaker.LYRA.id -> "The ancient grove whispers its secrets to those who listen."
+            DialogueSpeaker.AETHEL.id -> "The aether responds to our command. Let us begin."
+            DialogueSpeaker.ZEPHYR.id -> "Keep your senses sharp and stay in the shadows."
+            DialogueSpeaker.MALAKOR.id -> "The void harbors power far older than this kingdom."
+            DialogueSpeaker.SHADOW_WISP.id -> "The shadows will consume all who dare enter."
+            else -> "The chronicle of Aethelgard unfolds with every step."
+        }
+        narrateDialogue(speaker, samplePhrase, emptyList()) {
+            onDone?.invoke()
         }
     }
 

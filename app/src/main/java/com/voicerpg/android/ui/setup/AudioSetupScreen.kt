@@ -46,6 +46,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import com.voicerpg.android.audio.CombatNarrator
 import com.voicerpg.android.audio.SpeechManager
 import com.voicerpg.android.audio.SpeechState
+import com.voicerpg.android.model.DialogueSpeaker
 import com.voicerpg.android.ui.theme.FrostCyan
 import com.voicerpg.android.ui.theme.HolyYellow
 import com.voicerpg.android.ui.theme.LogosGold
@@ -132,7 +133,33 @@ fun AudioSetupScreen(
             return
         }
 
-        // 4. Voice command toggles
+        // 4. Preview / sample companion voices
+        if (lower.contains("cedric")) {
+            combatNarrator.previewSpeakerVoice(DialogueSpeaker.CEDRIC)
+            return
+        }
+        if (lower.contains("lyra")) {
+            combatNarrator.previewSpeakerVoice(DialogueSpeaker.LYRA)
+            return
+        }
+        if (lower.contains("aethel")) {
+            combatNarrator.previewSpeakerVoice(DialogueSpeaker.AETHEL)
+            return
+        }
+        if (lower.contains("zephyr")) {
+            combatNarrator.previewSpeakerVoice(DialogueSpeaker.ZEPHYR)
+            return
+        }
+        if (lower.contains("malakor")) {
+            combatNarrator.previewSpeakerVoice(DialogueSpeaker.MALAKOR)
+            return
+        }
+        if (lower.contains("narrator") || lower.contains("storyteller")) {
+            combatNarrator.previewSpeakerVoice(DialogueSpeaker.NARRATOR)
+            return
+        }
+
+        // 5. Voice command toggles
         if (lower.contains("pocket mode") || lower.contains("screenless")) {
             val enabled = combatNarrator.toggleEyesFreeMode()
             combatNarrator.speak(if (enabled) "Screenless Pocket Mode enabled." else "Pocket mode disabled.", force = true)
@@ -232,18 +259,42 @@ fun AudioSetupScreen(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // Companion voice breakdown
-                    CompanionVoiceBadge("🛡️ Sir Cedric", "Oathkeeper Templar", "Resonant baritone", HolyYellow)
-                    CompanionVoiceBadge("🌿 Lyra", "Grove Warden", "Soothing woodland cadence", Color(0xFFA5D6A7))
-                    CompanionVoiceBadge("⚔️ Aethel", "Elemental Invocator", "Clear spirited vanguard", FrostCyan)
-                    CompanionVoiceBadge("🌪️ Zephyr", "Shadowblade Scout", "Swift jaunty cadence", Color(0xFFCE93D8))
-                    CompanionVoiceBadge("🔮 Malakor", "Grand Inquisitor", "Dark brooding sorcery", Color(0xFFFF8A80))
-                    CompanionVoiceBadge("🌫️ Shadow Wisps", "Blighted Specters", "Raspy sibilant shades", ShadowPurple)
+                    // Companion voice breakdown with live assigned model and preview button
+                    CompanionVoiceBadge(
+                        speaker = DialogueSpeaker.CEDRIC,
+                        assignedVoiceName = combatNarrator.getVoiceForSpeaker(DialogueSpeaker.CEDRIC)?.name,
+                        onPreview = { combatNarrator.previewSpeakerVoice(DialogueSpeaker.CEDRIC) }
+                    )
+                    CompanionVoiceBadge(
+                        speaker = DialogueSpeaker.LYRA,
+                        assignedVoiceName = combatNarrator.getVoiceForSpeaker(DialogueSpeaker.LYRA)?.name,
+                        onPreview = { combatNarrator.previewSpeakerVoice(DialogueSpeaker.LYRA) }
+                    )
+                    CompanionVoiceBadge(
+                        speaker = DialogueSpeaker.AETHEL,
+                        assignedVoiceName = combatNarrator.getVoiceForSpeaker(DialogueSpeaker.AETHEL)?.name,
+                        onPreview = { combatNarrator.previewSpeakerVoice(DialogueSpeaker.AETHEL) }
+                    )
+                    CompanionVoiceBadge(
+                        speaker = DialogueSpeaker.ZEPHYR,
+                        assignedVoiceName = combatNarrator.getVoiceForSpeaker(DialogueSpeaker.ZEPHYR)?.name,
+                        onPreview = { combatNarrator.previewSpeakerVoice(DialogueSpeaker.ZEPHYR) }
+                    )
+                    CompanionVoiceBadge(
+                        speaker = DialogueSpeaker.MALAKOR,
+                        assignedVoiceName = combatNarrator.getVoiceForSpeaker(DialogueSpeaker.MALAKOR)?.name,
+                        onPreview = { combatNarrator.previewSpeakerVoice(DialogueSpeaker.MALAKOR) }
+                    )
+                    CompanionVoiceBadge(
+                        speaker = DialogueSpeaker.NARRATOR,
+                        assignedVoiceName = combatNarrator.getVoiceForSpeaker(DialogueSpeaker.NARRATOR)?.name,
+                        onPreview = { combatNarrator.previewSpeakerVoice(DialogueSpeaker.NARRATOR) }
+                    )
 
                     Spacer(modifier = Modifier.height(10.dp))
 
                     Text(
-                        text = "Why install extra voices? Android devices typically provide only 1 default TTS voice model. Installing additional English voices in Android Settings gives each companion their own physical voice actor model for maximum immersion!",
+                        text = "Why multiple voices? Android devices often provide only 1 active system voice by default. When extra voices are installed, each companion receives their own distinct voice actor model for full immersion!",
                         color = Color(0xFFB0BEC5),
                         fontSize = 10.sp,
                         fontFamily = FontFamily.Monospace,
@@ -251,8 +302,8 @@ fun AudioSetupScreen(
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "✦ If you stay with 1 voice, the game still modulates pitch and cadence curves for every speaker.",
-                        color = Color.Gray,
+                        text = "✦ Tap \"▶ SAMPLE\" on any companion above to hear their assigned voice in action.",
+                        color = LogosGold,
                         fontSize = 9.sp,
                         fontFamily = FontFamily.Monospace
                     )
@@ -296,7 +347,7 @@ fun AudioSetupScreen(
                         ) {
                             Text(
                                 text = if (installedVoiceCount > 1) {
-                                    "✨ $installedVoiceCount VOICES VERIFIED"
+                                    "✨ $installedVoiceCount OFFLINE VOICES VERIFIED"
                                 } else {
                                     "⚡ $installedVoiceCount DEFAULT VOICE"
                                 },
@@ -312,7 +363,7 @@ fun AudioSetupScreen(
 
                     Text(
                         text = if (installedVoiceCount > 1) {
-                            "Great news! Your device has $installedVoiceCount verified offline voices ready. Each companion will speak with their assigned voice."
+                            "Your device has $installedVoiceCount verified offline voices. All companion roles have been populated with distinct physical voice models!"
                         } else {
                             "Would you like to install additional voices now? Tap below to open Android's Text-to-Speech Settings and install Google Voice data."
                         },
@@ -320,6 +371,14 @@ fun AudioSetupScreen(
                         fontSize = 11.sp,
                         fontFamily = FontFamily.Monospace,
                         lineHeight = 15.sp
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "✦ Note: If Android settings opens without a download icon, all Google voice models are already downloaded on your device.",
+                        color = Color.Gray,
+                        fontSize = 9.sp,
+                        fontFamily = FontFamily.Monospace
                     )
 
                     Spacer(modifier = Modifier.height(10.dp))
@@ -608,40 +667,60 @@ fun AudioSetupScreen(
 
 @Composable
 private fun CompanionVoiceBadge(
-    name: String,
-    title: String,
-    voiceTone: String,
-    color: Color
+    speaker: DialogueSpeaker,
+    assignedVoiceName: String?,
+    onPreview: () -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 2.dp),
+            .padding(vertical = 3.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Column(modifier = Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = speaker.name,
+                    color = speaker.themeColor,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Monospace
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = "(${speaker.title})",
+                    color = Color.Gray,
+                    fontSize = 9.sp,
+                    fontFamily = FontFamily.Monospace
+                )
+            }
             Text(
-                text = name,
-                color = color,
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Bold,
-                fontFamily = FontFamily.Monospace
-            )
-            Spacer(modifier = Modifier.width(6.dp))
-            Text(
-                text = "($title)",
-                color = Color.Gray,
+                text = if (assignedVoiceName != null) "Voice Model: $assignedVoiceName" else "Default System Voice",
+                color = Color(0xFF90CAF9),
                 fontSize = 9.sp,
                 fontFamily = FontFamily.Monospace
             )
         }
-        Text(
-            text = voiceTone,
-            color = Color.LightGray,
-            fontSize = 9.sp,
-            fontFamily = FontFamily.Monospace
-        )
+
+        Spacer(modifier = Modifier.width(6.dp))
+
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(6.dp))
+                .background(RetroPanel)
+                .border(1.dp, speaker.themeColor.copy(alpha = 0.8f), RoundedCornerShape(6.dp))
+                .clickable { onPreview() }
+                .padding(horizontal = 8.dp, vertical = 4.dp)
+        ) {
+            Text(
+                text = "▶ SAMPLE",
+                color = speaker.themeColor,
+                fontSize = 9.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = FontFamily.Monospace
+            )
+        }
     }
 }
 
