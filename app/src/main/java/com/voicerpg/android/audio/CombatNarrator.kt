@@ -92,7 +92,14 @@ class CombatNarrator(
 
                         @Deprecated("Deprecated in Java")
                         override fun onError(utteranceId: String?) {
+                            onError(utteranceId, TextToSpeech.ERROR)
+                        }
+
+                        override fun onError(utteranceId: String?, errorCode: Int) {
                             if (utteranceId != null && utteranceId == activeUtteranceId) {
+                                try {
+                                    defaultVoice?.let { tts?.voice = it }
+                                } catch (_: Exception) {}
                                 _isSpeaking.value = false
                                 activeUtteranceId = null
                                 val cb = pendingSpeechOnDone
@@ -108,9 +115,25 @@ class CombatNarrator(
         }
     }
 
+    private fun isVoiceInstalledAndUsable(engine: TextToSpeech, voice: Voice?): Boolean {
+        if (voice == null) return false
+        val features = voice.features ?: emptySet()
+        val isNotInstalled = features.contains(TextToSpeech.Engine.KEY_FEATURE_NOT_INSTALLED) ||
+                features.contains("notInstalled")
+        if (isNotInstalled) return false
+        if (voice.isNetworkConnectionRequired) return false
+        return try {
+            engine.isLanguageAvailable(voice.locale) >= TextToSpeech.LANG_AVAILABLE
+        } catch (_: Exception) {
+            false
+        }
+    }
+
     /**
      * Programmatically discovers installed device voices and maps distinct voice models
      * to different characters (e.g. distinct male/female or tone models).
+     * Strictly verifies that voices are downloaded and installed offline on the device
+     * before assigning, safely falling back to defaultVoice to prevent speech skipping.
      */
     private fun assignCharacterVoices(engine: TextToSpeech) {
         try {
@@ -118,44 +141,58 @@ class CombatNarrator(
             _availableVoiceCount.value = voices.size
             defaultVoice = engine.voice
 
-            val englishVoices = voices.filter {
-                it.locale.language.equals(Locale.ENGLISH.language, ignoreCase = true) &&
-                        !it.isNetworkConnectionRequired
-            }.ifEmpty {
-                voices.filter { it.locale.language.equals(Locale.ENGLISH.language, ignoreCase = true) }
-            }.toList()
+            // Only consider voices that are verified to be installed and available offline on this device
+            val installedVoices = voices.filter { isVoiceInstalledAndUsable(engine, it) }
 
-            if (englishVoices.isNotEmpty()) {
-                val maleVoices = englishVoices.filter { v ->
+            val installedEnglishVoices = installedVoices.filter {
+                it.locale.language.equals(Locale.ENGLISH.language, ignoreCase = true)
+            }.ifEmpty {
+                installedVoices
+            }
+
+            if (installedEnglishVoices.isNotEmpty()) {
+                val maleVoices = installedEnglishVoices.filter { v ->
                     val name = v.name.lowercase(Locale.ROOT)
                     (name.contains("male") && !name.contains("female")) ||
                             name.contains("#m") || name.contains("-m-") || name.contains("_male")
                 }
 
-                val femaleVoices = englishVoices.filter { v ->
+                val femaleVoices = installedEnglishVoices.filter { v ->
                     val name = v.name.lowercase(Locale.ROOT)
                     name.contains("female") || name.contains("#f") || name.contains("-f-") || name.contains("_female")
                 }
 
-                cedricVoice = maleVoices.firstOrNull()
-                    ?: englishVoices.getOrNull(1)
-                    ?: defaultVoice
+                cedricVoice = maleVoices.firstOrNull() ?: defaultVoice
+                aethelVoice = femaleVoices.firstOrNull() ?: defaultVoice
 
-                aethelVoice = femaleVoices.firstOrNull()
-                    ?: englishVoices.firstOrNull { it != cedricVoice }
-                    ?: defaultVoice
+                // Only assign a separate voice to Lyra if there is a distinct, confirmed INSTALLED second female voice;
+                // otherwise fallback safely to defaultVoice so speech is never skipped!
+                lyraVoice = if (femaleVoices.size > 1 && femaleVoices[1] != aethelVoice) {
+                    femaleVoices[1]
+                } else {
+                    defaultVoice
+                }
 
-                lyraVoice = femaleVoices.getOrNull(1)
-                    ?: englishVoices.firstOrNull { it != cedricVoice && it != aethelVoice }
-                    ?: aethelVoice
+                narratorVoice = defaultVoice ?: installedEnglishVoices.firstOrNull()
 
-                narratorVoice = defaultVoice ?: englishVoices.firstOrNull()
-
-                shadowWispVoice = englishVoices.firstOrNull { it != cedricVoice && it != aethelVoice && it != lyraVoice }
-                    ?: cedricVoice
+                shadowWispVoice = if (maleVoices.size > 1) {
+                    maleVoices[1]
+                } else {
+                    defaultVoice
+                }
+            } else {
+                cedricVoice = defaultVoice
+                aethelVoice = defaultVoice
+                lyraVoice = defaultVoice
+                narratorVoice = defaultVoice
+                shadowWispVoice = defaultVoice
             }
         } catch (_: Exception) {
-            // Headless / mock safety fallback
+            cedricVoice = defaultVoice
+            aethelVoice = defaultVoice
+            lyraVoice = defaultVoice
+            narratorVoice = defaultVoice
+            shadowWispVoice = defaultVoice
         }
     }
 
@@ -240,12 +277,16 @@ class CombatNarrator(
             return
         }
 
-        // Dynamically assign physical voice model per speaker if available
+        // Dynamically assign physical voice model per speaker if verified installed
         val speakerVoice = getVoiceForSpeaker(speaker)
-        if (speakerVoice != null) {
+        if (speakerVoice != null && isVoiceInstalledAndUsable(tts!!, speakerVoice)) {
             try {
                 tts?.voice = speakerVoice
-            } catch (_: Exception) {}
+            } catch (_: Exception) {
+                try { defaultVoice?.let { tts?.voice = it } } catch (_: Exception) {}
+            }
+        } else {
+            try { defaultVoice?.let { tts?.voice = it } } catch (_: Exception) {}
         }
 
         // Apply character vocal inflection/pitch if enabled
@@ -329,7 +370,22 @@ class CombatNarrator(
         val params = Bundle().apply {
             putFloat(TextToSpeech.Engine.KEY_PARAM_VOLUME, 1.0f)
         }
-        tts?.speak(text, TextToSpeech.QUEUE_FLUSH, params, utteranceId)
+        var result = tts?.speak(text, TextToSpeech.QUEUE_FLUSH, params, utteranceId)
+        if (result != TextToSpeech.SUCCESS) {
+            // Safety fallback: if custom voice failed, reset to defaultVoice and retry immediately
+            try {
+                defaultVoice?.let { tts?.voice = it }
+                result = tts?.speak(text, TextToSpeech.QUEUE_FLUSH, params, utteranceId)
+            } catch (_: Exception) {}
+        }
+
+        if (result != TextToSpeech.SUCCESS) {
+            _isSpeaking.value = false
+            activeUtteranceId = null
+            val cb = pendingSpeechOnDone
+            pendingSpeechOnDone = null
+            cb?.invoke()
+        }
     }
 
     fun stop() {
