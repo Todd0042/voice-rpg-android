@@ -90,13 +90,13 @@ class CombatViewModel(
     private val lyraSpells = listOf(
         Spell("soothing_rain", "Soothing Rain", SpellSchool.HOLY, basePower = 65, mpCost = 18, isHeal = true, hitsAll = true, description = "Grove restorative mist", exampleChant = "Spirits of the grove, grant soothing rain upon our party!"),
         Spell("briar_entangle", "Briar Entangle", SpellSchool.HOLY, basePower = 60, mpCost = 12, description = "Thorny vines snare the foe", exampleChant = "Thorny vines and briars ensnare that archer!"),
-        Spell("verdant_cataclysm", "Verdant Cataclysm", SpellSchool.HOLY, basePower = 140, mpCost = 25, hitsAll = true, description = "Roots surge and reclaim the earth", exampleChant = "Ancient roots of the deep earth awaken!")
+        Spell("verdant_cataclysm", "Verdant Cataclysm", SpellSchool.HOLY, basePower = 140, mpCost = 25, hitsAll = true, description = "Cataclysmic grove-cry shook the whole field", exampleChant = "Ancient roots of the deep earth awaken!")
     )
 
     private val zephyrSpells = listOf(
         Spell("shadow_strike", "Shadow Strike", SpellSchool.SHADOW, basePower = 75, mpCost = 12, description = "Lethal strike from behind", exampleChant = "From the silent umbra, strike the shaman's throat!"),
         Spell("venom_flurry", "Venom Flurry", SpellSchool.SHADOW, basePower = 50, mpCost = 15, hitsAll = true, description = "Poisoned twin daggers", exampleChant = "Abyssal venom coat my blades!"),
-        Spell("umbral_oblivion", "Umbral Oblivion", SpellSchool.SHADOW, basePower = 160, mpCost = 25, description = "Fourfold shadow execution", exampleChant = "From the shadow between heartbeats, cut the tether of the void!")
+        Spell("umbral_siphon", "Umbral Siphon", SpellSchool.SHADOW, basePower = 60, mpCost = 14, isHeal = true, description = "Siphons shadow essence to mend wounds", exampleChant = "Abyssal shadow mend Zephyr's wounds!")
     )
 
     private val _state = MutableStateFlow(createInitialState())

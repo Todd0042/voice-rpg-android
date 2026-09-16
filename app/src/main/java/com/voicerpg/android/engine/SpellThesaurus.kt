@@ -37,7 +37,7 @@ object SpellThesaurus {
         "umbra", "abyss", "abyssal", "venom", "venomous", "phantom", "whisper",
         "shroud", "eclipse", "silent", "silence", "strike", "hollow", "dark",
         "darkness", "shade", "shadow", "void", "backstab", "stealth", "dread",
-        "nocturnal", "creeping"
+        "nocturnal", "creeping", "siphon", "mend", "drain"
     )
 
     private val MARTIAL_ROOTS = setOf(

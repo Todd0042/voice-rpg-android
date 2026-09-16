@@ -96,6 +96,20 @@ object SpellChantPresets {
                 ResonanceTier.MYTHIC -> "Arise abyssal venom strike all foes now!" to AcousticProfile.MYTHIC
                 ResonanceTier.TRANSCENDENTAL -> "O dark spirits of the abyssal void awaken and unleash a flurry of venomous phantom blades to strike all enemies in lethal umbral dread!" to AcousticProfile.TRANSCENDENTAL
             }
+            "verdant_cataclysm" -> when (tier) {
+                ResonanceTier.BASIC -> "Grove erupt all" to AcousticProfile.BASIC
+                ResonanceTier.ADEPT -> "Cast grove-warcry all" to AcousticProfile.ADEPT
+                ResonanceTier.MASTER -> "Spirits of the grove surge and awaken!" to AcousticProfile.MASTER
+                ResonanceTier.MYTHIC -> "Arise ancient grove cataclysm crush all enemies!" to AcousticProfile.MYTHIC
+                ResonanceTier.TRANSCENDENTAL -> "O ancient spirits of the deep earth awaken and unleash the full fury of the grove-warcry to crush all foes within an erupting cataclysm of vines and stone!" to AcousticProfile.TRANSCENDENTAL
+            }
+            "umbral_siphon" -> when (tier) {
+                ResonanceTier.BASIC -> "Mend Zephyr" to AcousticProfile.BASIC
+                ResonanceTier.ADEPT -> "Shadow mend Zephyr" to AcousticProfile.ADEPT
+                ResonanceTier.MASTER -> "Spirits of umbra mend Zephyr" to AcousticProfile.MASTER
+                ResonanceTier.MYTHIC -> "Arise abyssal shadow mend Zephyr with healing!" to AcousticProfile.MYTHIC
+                ResonanceTier.TRANSCENDENTAL -> "O primordial abyss of the endless umbra awaken from the void and siphon a torrent of restorative shadow to mend and rejuvenate Zephyr with eldritch healing!" to AcousticProfile.TRANSCENDENTAL
+            }
             else -> fallbackPreset(spell, tier)
         }
 

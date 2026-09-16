@@ -399,7 +399,7 @@ class StoryViewModel(
                 speed = 65,
                 level = 1,
                 xp = 0,
-                spellIds = listOf("soothing_rain", "briar_entangle")
+                spellIds = listOf("soothing_rain", "briar_entangle", "verdant_cataclysm")
             )
             updatedPartyStats = updatedPartyStats + lyraStats
         }
@@ -427,7 +427,7 @@ class StoryViewModel(
                 speed = 85,
                 level = 1,
                 xp = 0,
-                spellIds = listOf("shadow_strike", "venom_flurry", "umbral_oblivion")
+                spellIds = listOf("shadow_strike", "venom_flurry", "umbral_siphon")
             )
             updatedPartyStats = updatedPartyStats + zephyrStats
         }
@@ -449,8 +449,8 @@ class StoryViewModel(
         }
         if (updatedFlags["zephyr_trial_complete"] == true) {
             updatedPartyStats = updatedPartyStats.map { member ->
-                if (member.id == "zephyr" && !member.spellIds.contains("umbral_oblivion")) {
-                    member.copy(spellIds = member.spellIds + "umbral_oblivion")
+                if (member.id == "zephyr" && !member.spellIds.contains("umbral_siphon")) {
+                    member.copy(spellIds = member.spellIds + "umbral_siphon")
                 } else member
             }
         }

@@ -646,7 +646,7 @@ class StoryDialogueTest {
         state = storyViewModel.state.value
         assertTrue(state.narrativeFlags["zephyr_trial_complete"] == true)
         val zephyr = state.partyStats.first { it.id == "zephyr" }
-        assertTrue(zephyr.spellIds.contains("umbral_oblivion"))
+        assertTrue(zephyr.spellIds.contains("umbral_siphon"))
         assertEquals("ch11_nocturne_victory", state.currentNode.id)
 
         // Post-boss severing memory interlude
@@ -782,7 +782,7 @@ class StoryDialogueTest {
         val lyra = state.partyStats.first { it.id == "lyra" }
         val zephyr = state.partyStats.first { it.id == "zephyr" }
         assertTrue(lyra.spellIds.contains("verdant_cataclysm"))
-        assertTrue(zephyr.spellIds.contains("umbral_oblivion"))
+        assertTrue(zephyr.spellIds.contains("umbral_siphon"))
 
         // Warping backward trims companions not yet recruited
         storyViewModel.debugWarpToChapter("camp_intro")
