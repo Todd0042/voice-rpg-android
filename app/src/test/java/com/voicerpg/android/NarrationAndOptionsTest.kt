@@ -104,6 +104,86 @@ class NarrationAndOptionsTest {
     }
 
     @Test
+    fun testCombatNarratorPreferredVoiceIdsConfiguredForAllSpeakers() {
+        val preferred = CombatNarrator.PREFERRED_VOICE_IDS
+        assertEquals(6, preferred.size)
+        assertEquals("en-gb-x-gbd-local", preferred[DialogueSpeaker.CEDRIC.id]) // Sir Cedric
+        assertEquals("en-gb-x-gba-local", preferred[DialogueSpeaker.AETHEL.id]) // Aethel the Invocator
+        assertEquals("en-us-x-tpf-local", preferred[DialogueSpeaker.LYRA.id]) // Lyra the Grove Warden
+        assertEquals("en-us-x-tpc-local", preferred[DialogueSpeaker.ZEPHYR.id]) // Zephyr the Shadowblade
+        assertEquals("en-us-x-tpd-local", preferred[DialogueSpeaker.MALAKOR.id]) // Grand Inquisitor Malakor
+        assertEquals("en-gb-x-rjs-local", preferred[DialogueSpeaker.NARRATOR.id]) // The Chronicle
+    }
+
+    @Test
+    fun testResolvePreferredVoiceNameRespectsPersistedThenPreferredThenHeuristic() {
+        val installed = setOf(
+            "en-gb-x-gbd-local", "en-us-x-tpf-local", "en-gb-x-rjs-local",
+            "en-us-x-tpc-local", "en-us-x-tpd-local", "en-gb-x-gba-local", "en-us-x-iob-local"
+        )
+        val preferredDefault = CombatNarrator.PREFERRED_VOICE_IDS
+
+        // Heuristic alone is used when neither a persisted override nor the preferred pack is installed
+        assertEquals(
+            "en-us-x-iob-local",
+            CombatNarrator.resolvePreferredVoiceName(
+                DialogueSpeaker.CEDRIC.id, "en-us-x-iob-local",
+                setOf("en-us-x-iob-local", "en-gb-x-rjs-local"), emptyMap(), preferredDefault
+            )
+        )
+
+        // First-try preferred pack overrides the heuristic when its voice model is installed
+        assertEquals(
+            "en-gb-x-gbd-local",
+            CombatNarrator.resolvePreferredVoiceName(
+                DialogueSpeaker.CEDRIC.id, "en-us-x-iob-local", installed, emptyMap(), preferredDefault
+            )
+        )
+
+        // Persisted player override wins over both when its voice is still installed
+        assertEquals(
+            "en-us-x-iob-local",
+            CombatNarrator.resolvePreferredVoiceName(
+                DialogueSpeaker.CEDRIC.id, "en-us-x-iob-local", installed,
+                mapOf(DialogueSpeaker.CEDRIC.id to "en-us-x-iob-local"), preferredDefault
+            )
+        )
+
+        // Persisted override to a no-longer-installed voice falls back to the preferred pack
+        assertEquals(
+            "en-gb-x-gbd-local",
+            CombatNarrator.resolvePreferredVoiceName(
+                DialogueSpeaker.CEDRIC.id, "en-us-x-iob-local", installed,
+                mapOf(DialogueSpeaker.CEDRIC.id to "en-us-x-gone-local"), preferredDefault
+            )
+        )
+    }
+
+    @Test
+    fun testVoiceAssignmentsStayPendingHeadlessAndEmptySnapshot() {
+        // Headless JVM has no TTS engine: assignments are held in reserve for onInit/refresh,
+        // and the snapped assignments map is empty because no real voice models exist.
+        val assignments = mapOf(
+            DialogueSpeaker.CEDRIC.id to "en-gb-x-gbd-local",
+            DialogueSpeaker.AETHEL.id to "en-gb-x-gba-local",
+            DialogueSpeaker.LYRA.id to "en-us-x-tpf-local",
+            DialogueSpeaker.ZEPHYR.id to "en-us-x-tpc-local",
+            DialogueSpeaker.MALAKOR.id to "en-us-x-tpd-local",
+            DialogueSpeaker.NARRATOR.id to "en-gb-x-rjs-local"
+        )
+        narrator.setVoiceAssignments(assignments)
+        narrator.refreshInstalledVoices()
+
+        assertTrue(narrator.getVoiceAssignments().isEmpty())
+
+        // Persisting over a fresh save must not crash and the load path stays stable
+        storyViewModel.persistCurrentState()
+        val save = saveManager.load()
+        assertNotNull(save)
+        assertTrue(save!!.voiceAssignments.isEmpty())
+    }
+
+    @Test
     fun testNarrateDialogueInvokesCompletionCallbackEvenWhenMuted() {
         narrator.setNarrationEnabled(false)
         narrator.setEyesFreeMode(false)

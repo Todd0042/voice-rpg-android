@@ -120,6 +120,9 @@ class MainActivity : ComponentActivity() {
                                 onBack = {
                                     storyViewModel.returnFromAudioSetup()
                                 },
+                                onVoiceChanged = {
+                                    storyViewModel.persistCurrentState()
+                                },
                                 onProceed = {
                                     if (storyState.previousScreen != null) {
                                         storyViewModel.returnFromAudioSetup()

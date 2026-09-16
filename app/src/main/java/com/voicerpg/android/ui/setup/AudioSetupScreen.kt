@@ -75,6 +75,7 @@ fun AudioSetupScreen(
     onProceed: () -> Unit,
     isFromGame: Boolean = false,
     onBack: (() -> Unit)? = null,
+    onVoiceChanged: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -154,6 +155,7 @@ fun AudioSetupScreen(
             if (targetSpeaker != null) {
                 combatNarrator.cycleSpeakerVoice(targetSpeaker)
                 voiceUpdateKey++
+                onVoiceChanged()
                 return
             }
         }
@@ -348,6 +350,7 @@ fun AudioSetupScreen(
                         onCycle = {
                             combatNarrator.cycleSpeakerVoice(DialogueSpeaker.CEDRIC)
                             voiceUpdateKey++
+                            onVoiceChanged()
                         }
                     )
                     CompanionVoiceBadge(
@@ -357,6 +360,7 @@ fun AudioSetupScreen(
                         onCycle = {
                             combatNarrator.cycleSpeakerVoice(DialogueSpeaker.LYRA)
                             voiceUpdateKey++
+                            onVoiceChanged()
                         }
                     )
                     CompanionVoiceBadge(
@@ -366,6 +370,7 @@ fun AudioSetupScreen(
                         onCycle = {
                             combatNarrator.cycleSpeakerVoice(DialogueSpeaker.AETHEL)
                             voiceUpdateKey++
+                            onVoiceChanged()
                         }
                     )
                     CompanionVoiceBadge(
@@ -375,6 +380,7 @@ fun AudioSetupScreen(
                         onCycle = {
                             combatNarrator.cycleSpeakerVoice(DialogueSpeaker.ZEPHYR)
                             voiceUpdateKey++
+                            onVoiceChanged()
                         }
                     )
                     CompanionVoiceBadge(
@@ -384,6 +390,7 @@ fun AudioSetupScreen(
                         onCycle = {
                             combatNarrator.cycleSpeakerVoice(DialogueSpeaker.MALAKOR)
                             voiceUpdateKey++
+                            onVoiceChanged()
                         }
                     )
                     CompanionVoiceBadge(
@@ -393,6 +400,7 @@ fun AudioSetupScreen(
                         onCycle = {
                             combatNarrator.cycleSpeakerVoice(DialogueSpeaker.NARRATOR)
                             voiceUpdateKey++
+                            onVoiceChanged()
                         }
                     )
 

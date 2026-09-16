@@ -133,6 +133,33 @@ class SaveSystemTest {
     }
 
     @Test
+    fun testVoiceAssignmentsRoundTripSerialization() {
+        val save = saveManager.createInitialSave(PlayerCustomization(name = "Lyra"))
+        val withVoices = save.copy(
+            voiceAssignments = mapOf(
+                "cedric" to "en-gb-x-gbd-local",
+                "aethel" to "en-gb-x-gba-local",
+                "lyra" to "en-us-x-tpf-local",
+                "zephyr" to "en-us-x-tpc-local",
+                "malakor" to "en-us-x-tpd-local",
+                "narrator" to "en-gb-x-rjs-local"
+            )
+        )
+
+        assertTrue(saveManager.save(withVoices))
+
+        val loaded = saveManager.load()
+        assertNotNull(loaded)
+        assertEquals("en-gb-x-gbd-local", loaded!!.voiceAssignments["cedric"])
+        assertEquals("en-gb-x-gba-local", loaded.voiceAssignments["aethel"])
+        assertEquals("en-us-x-tpf-local", loaded.voiceAssignments["lyra"])
+        assertEquals("en-us-x-tpc-local", loaded.voiceAssignments["zephyr"])
+        assertEquals("en-us-x-tpd-local", loaded.voiceAssignments["malakor"])
+        assertEquals("en-gb-x-rjs-local", loaded.voiceAssignments["narrator"])
+        assertEquals(6, loaded.voiceAssignments.size)
+    }
+
+    @Test
     fun testDeleteSave() {
         val custom = PlayerCustomization(name = "Kael")
         val save = saveManager.createInitialSave(custom)

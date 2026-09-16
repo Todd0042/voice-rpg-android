@@ -28,10 +28,45 @@ class CombatNarrator(
     private val context: Context? = null
 ) : TextToSpeech.OnInitListener {
 
+    companion object {
+        /**
+         * First-try preferred voice packs per speaker, set by the player for auditioning.
+         * These are used only when the exact Android voice model is installed on the device;
+         * otherwise the heuristic assignment below falls back gracefully.
+         */
+        val PREFERRED_VOICE_IDS: Map<String, String> = mapOf(
+            DialogueSpeaker.CEDRIC.id to "en-gb-x-gbd-local",
+            DialogueSpeaker.AETHEL.id to "en-gb-x-gba-local",
+            DialogueSpeaker.LYRA.id to "en-us-x-tpf-local",
+            DialogueSpeaker.ZEPHYR.id to "en-us-x-tpc-local",
+            DialogueSpeaker.MALAKOR.id to "en-us-x-tpd-local",
+            DialogueSpeaker.NARRATOR.id to "en-gb-x-rjs-local"
+        )
+
+        /**
+         * Resolves the voice a speaker should use: a persisted player override wins when its
+         * voice model is still installed, then the first-try preferred pack, then the heuristic.
+         */
+        internal fun resolvePreferredVoiceName(
+            speakerId: String,
+            heuristicName: String?,
+            installedNames: Set<String>,
+            persistedAssignments: Map<String, String>,
+            preferredByDefault: Map<String, String>
+        ): String? {
+            persistedAssignments[speakerId]?.let { if (it in installedNames) return it }
+            preferredByDefault[speakerId]?.let { if (it in installedNames) return it }
+            return heuristicName
+        }
+    }
+
     private var tts: TextToSpeech? = null
     private var isTtsInitialized = false
     private var pendingSpeechOnDone: (() -> Unit)? = null
     private var activeUtteranceId: String? = null
+
+    // Persisted per-speaker voice assignments restored from the save file (speakerId -> voice name)
+    private var pendingVoiceAssignments: Map<String, String> = emptyMap()
 
     // Multi-voice character profile mapping
     private var defaultVoice: Voice? = null
@@ -139,6 +174,25 @@ class CombatNarrator(
     }
 
     /**
+     * Selects the most appropriate installed voice for a speaker: any persisted player override
+     * for that speaker, else the first-try preferred pack, else the heuristic candidate.
+     */
+    private fun applyVoicePreference(
+        speakerId: String,
+        heuristic: Voice?,
+        installed: List<Voice>
+    ): Voice? {
+        val chosenName = resolvePreferredVoiceName(
+            speakerId = speakerId,
+            heuristicName = heuristic?.name,
+            installedNames = installed.map { it.name }.toSet(),
+            persistedAssignments = pendingVoiceAssignments,
+            preferredByDefault = PREFERRED_VOICE_IDS
+        )
+        return installed.firstOrNull { it.name == chosenName } ?: heuristic
+    }
+
+    /**
      * Programmatically discovers installed device voices and maps distinct voice models
      * to different characters (e.g. distinct male/female or tone models).
      * Strictly verifies that voices are downloaded and installed offline on the device
@@ -199,45 +253,50 @@ class CombatNarrator(
                 malePool
             }
 
-            narratorVoice = britishStoryteller ?: defaultVoice
+            narratorVoice = applyVoicePreference(DialogueSpeaker.NARRATOR.id, britishStoryteller ?: defaultVoice, englishPhysicalVoices)
 
             // Sir Cedric is a noble knight templar: prioritize deep, resonant US baritone male (iob or iog)
             val cedricCandidate = distinctMalePool.firstOrNull { it.name.contains("iob") }
                 ?: distinctMalePool.firstOrNull { it.name.contains("iog") }
                 ?: distinctMalePool.firstOrNull { it.name.contains("gbc") }
                 ?: distinctMalePool.firstOrNull() ?: defaultVoice
-            cedricVoice = cedricCandidate
+            cedricVoice = applyVoicePreference(DialogueSpeaker.CEDRIC.id, cedricCandidate, englishPhysicalVoices)
 
             val remainingMaleAfterCedric = distinctMalePool.filter { it != cedricCandidate }
 
             // Zephyr: swift agile rogue
-            zephyrVoice = remainingMaleAfterCedric.firstOrNull { it.name.contains("tpc") }
+            val zephyrCandidate = remainingMaleAfterCedric.firstOrNull { it.name.contains("tpc") }
                 ?: remainingMaleAfterCedric.firstOrNull() ?: defaultVoice
+            zephyrVoice = applyVoicePreference(DialogueSpeaker.ZEPHYR.id, zephyrCandidate, englishPhysicalVoices)
 
             val remainingMaleAfterZephyr = remainingMaleAfterCedric.filter { it != zephyrVoice }
 
             // Malakor: dark brooding voidwalker inquisitor
-            malakorVoice = remainingMaleAfterZephyr.firstOrNull { it.name.contains("iog") }
+            val malakorCandidate = remainingMaleAfterZephyr.firstOrNull { it.name.contains("iog") }
                 ?: remainingMaleAfterZephyr.firstOrNull { it.name.contains("aub") }
                 ?: remainingMaleAfterZephyr.firstOrNull() ?: defaultVoice
+            malakorVoice = applyVoicePreference(DialogueSpeaker.MALAKOR.id, malakorCandidate, englishPhysicalVoices)
 
             val remainingMaleAfterMalakor = remainingMaleAfterZephyr.filter { it != malakorVoice }
 
             // Shadow Wisp: raspy sibilant shade
-            shadowWispVoice = remainingMaleAfterMalakor.firstOrNull { it.name.contains("iol") }
+            val shadowWispCandidate = remainingMaleAfterMalakor.firstOrNull { it.name.contains("iol") }
                 ?: remainingMaleAfterMalakor.firstOrNull() ?: defaultVoice
+            shadowWispVoice = applyVoicePreference(DialogueSpeaker.SHADOW_WISP.id, shadowWispCandidate, englishPhysicalVoices)
 
             // Aethel: spirited elemental invocator (female)
-            aethelVoice = femalePool.firstOrNull { it.name.contains("gba") }
+            val aethelCandidate = femalePool.firstOrNull { it.name.contains("gba") }
                 ?: femalePool.firstOrNull { it.name.contains("sfg") }
                 ?: femalePool.firstOrNull() ?: defaultVoice
+            aethelVoice = applyVoicePreference(DialogueSpeaker.AETHEL.id, aethelCandidate, englishPhysicalVoices)
 
             val remainingFemaleAfterAethel = femalePool.filter { it != aethelVoice }
 
             // Lyra: lyrical soothing woodland grove warden (female)
-            lyraVoice = remainingFemaleAfterAethel.firstOrNull { it.name.contains("tpf") }
+            val lyraCandidate = remainingFemaleAfterAethel.firstOrNull { it.name.contains("tpf") }
                 ?: remainingFemaleAfterAethel.firstOrNull { it.name.contains("iom") }
                 ?: remainingFemaleAfterAethel.firstOrNull() ?: defaultVoice
+            lyraVoice = applyVoicePreference(DialogueSpeaker.LYRA.id, lyraCandidate, englishPhysicalVoices)
 
             android.util.Log.d("VoiceRPG_TTS", "Assigned Cedric: ${cedricVoice?.name}")
             android.util.Log.d("VoiceRPG_TTS", "Assigned Aethel: ${aethelVoice?.name}")
@@ -303,6 +362,36 @@ class CombatNarrator(
             assignCharacterVoices(engine)
         }
     }
+
+    /**
+     * Restores persisted per-speaker voice assignments from a save file. The assignments are held
+     * in reserve and applied whenever voices are (re)assigned, with graceful fallback to the
+     * first-try preferred pack or heuristic if a saved voice is no longer installed.
+     */
+    fun setVoiceAssignments(assignments: Map<String, String>) {
+        pendingVoiceAssignments = assignments
+        tts?.let { engine ->
+            try {
+                assignCharacterVoices(engine)
+            } catch (_: Exception) {}
+        }
+    }
+
+    /**
+     * Snapshots the currently assigned voice model name for every tracked speaker, suitable for
+     * persisting into the save file.
+     */
+    fun getVoiceAssignments(): Map<String, String> =
+        listOf(
+            DialogueSpeaker.CEDRIC,
+            DialogueSpeaker.AETHEL,
+            DialogueSpeaker.LYRA,
+            DialogueSpeaker.ZEPHYR,
+            DialogueSpeaker.MALAKOR,
+            DialogueSpeaker.SHADOW_WISP,
+            DialogueSpeaker.NARRATOR
+        ).mapNotNull { speaker -> getVoiceForSpeaker(speaker)?.name?.let { speaker.id to it } }
+            .toMap()
 
     fun openVoiceSettings(context: Context) {
         val installIntent = Intent(TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA).apply {
