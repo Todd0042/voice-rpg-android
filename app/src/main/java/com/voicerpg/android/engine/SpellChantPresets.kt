@@ -92,9 +92,9 @@ object SpellChantPresets {
             "venom_flurry" -> when (tier) {
                 ResonanceTier.BASIC -> "Venom all" to AcousticProfile.BASIC
                 ResonanceTier.ADEPT -> "Cast swift venom all" to AcousticProfile.ADEPT
-                ResonanceTier.MASTER -> "Spirits of venom strike all" to AcousticProfile.MASTER
-                ResonanceTier.MYTHIC -> "Arise abyssal venom strike all foes now!" to AcousticProfile.MYTHIC
-                ResonanceTier.TRANSCENDENTAL -> "O dark spirits of the abyssal void awaken and unleash a flurry of venomous phantom blades to strike all enemies in lethal umbral dread!" to AcousticProfile.TRANSCENDENTAL
+                ResonanceTier.MASTER -> "Spirits of venom drench all" to AcousticProfile.MASTER
+                ResonanceTier.MYTHIC -> "Arise abyssal venom surge drench all foes now!" to AcousticProfile.MYTHIC
+                ResonanceTier.TRANSCENDENTAL -> "O dark spirits of the void awaken and unleash a drenching flurry of venomous serpents to engulf all enemies in lethal poison!" to AcousticProfile.TRANSCENDENTAL
             }
             "verdant_cataclysm" -> when (tier) {
                 ResonanceTier.BASIC -> "Grove erupt all" to AcousticProfile.BASIC
@@ -105,10 +105,10 @@ object SpellChantPresets {
             }
             "umbral_siphon" -> when (tier) {
                 ResonanceTier.BASIC -> "Mend Zephyr" to AcousticProfile.BASIC
-                ResonanceTier.ADEPT -> "Shadow mend Zephyr" to AcousticProfile.ADEPT
-                ResonanceTier.MASTER -> "Spirits of umbra mend Zephyr" to AcousticProfile.MASTER
-                ResonanceTier.MYTHIC -> "Arise abyssal shadow mend Zephyr with healing!" to AcousticProfile.MYTHIC
-                ResonanceTier.TRANSCENDENTAL -> "O primordial abyss of the endless umbra awaken from the void and siphon a torrent of restorative shadow to mend and rejuvenate Zephyr with eldritch healing!" to AcousticProfile.TRANSCENDENTAL
+                ResonanceTier.ADEPT -> "Siphon essence mend Zephyr" to AcousticProfile.ADEPT
+                ResonanceTier.MASTER -> "Spirits of umbral essence mend Zephyr" to AcousticProfile.MASTER
+                ResonanceTier.MYTHIC -> "Arise abyssal siphon all essence mend Zephyr with healing!" to AcousticProfile.MYTHIC
+                ResonanceTier.TRANSCENDENTAL -> "O primordial abyss of the endless umbra awaken and siphon a torrent of restorative essence to mend and rejuvenate Zephyr with eldritch healing!" to AcousticProfile.TRANSCENDENTAL
             }
             else -> fallbackPreset(spell, tier)
         }

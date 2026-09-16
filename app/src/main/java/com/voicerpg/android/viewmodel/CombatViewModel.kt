@@ -96,7 +96,7 @@ class CombatViewModel(
     private val zephyrSpells = listOf(
         Spell("shadow_strike", "Shadow Strike", SpellSchool.SHADOW, basePower = 75, mpCost = 12, description = "Lethal strike from behind", exampleChant = "From the silent umbra, strike the shaman's throat!"),
         Spell("venom_flurry", "Venom Flurry", SpellSchool.SHADOW, basePower = 50, mpCost = 15, hitsAll = true, description = "Poisoned twin daggers", exampleChant = "Abyssal venom coat my blades!"),
-        Spell("umbral_siphon", "Umbral Siphon", SpellSchool.SHADOW, basePower = 60, mpCost = 14, isHeal = true, description = "Siphons shadow essence to mend wounds", exampleChant = "Abyssal shadow mend Zephyr's wounds!")
+        Spell("umbral_siphon", "Umbral Siphon", SpellSchool.SHADOW, basePower = 60, mpCost = 14, isHeal = true, description = "Siphons essence to mend wounds", exampleChant = "Abyssal siphon mend Zephyr's wounds!")
     )
 
     private val _state = MutableStateFlow(createInitialState())

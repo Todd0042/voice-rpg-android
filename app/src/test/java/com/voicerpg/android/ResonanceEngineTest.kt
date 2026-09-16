@@ -169,6 +169,26 @@ class ResonanceEngineTest {
     }
 
     @Test
+    fun testZephyrVenomFlurryAndUmbralSiphonPresetsResolveToTheirOwnSpells() {
+        val zephyrSpells = listOf(
+            Spell("shadow_strike", "Shadow Strike", SpellSchool.SHADOW, 75, 12, false, false, "Backstab", "From the silent umbra, strike the shaman's throat!"),
+            Spell("venom_flurry", "Venom Flurry", SpellSchool.SHADOW, 50, 15, false, true, "Poison", "Abyssal venom coat my blades"),
+            Spell("umbral_siphon", "Umbral Siphon", SpellSchool.SHADOW, 60, 14, true, false, "Siphon", "Abyssal siphon mend Zephyr's wounds!")
+        )
+
+        ResonanceTier.entries.forEach { tier ->
+            val venomPreset = SpellChantPresets.getPreset(zephyrSpells[1], tier)
+            val venomIntent = IntentParser.parse(venomPreset.chantText, zephyrSpells)
+            assertEquals("venom_flurry resolved to ${venomIntent.spell.id}", "venom_flurry", venomIntent.spell.id)
+
+            val siphonPreset = SpellChantPresets.getPreset(zephyrSpells[2], tier)
+            val siphonIntent = IntentParser.parse(siphonPreset.chantText, zephyrSpells)
+            assertEquals("umbral_siphon resolved to ${siphonIntent.spell.id}", "umbral_siphon", siphonIntent.spell.id)
+            assertTrue("Umbral Siphon must be a heal for tier $tier", siphonIntent.spell.isHeal)
+        }
+    }
+
+    @Test
     fun testDeadCombatantsZeroResources() {
         val deadHero = com.voicerpg.android.model.PartyMember(
             id = "hero",
