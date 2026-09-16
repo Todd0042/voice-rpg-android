@@ -49,8 +49,7 @@ data class CombatState(
     val screenShakeOffsetY: Float = 0f,
     val currentEnvironment: BattleEnvironment = BattleEnvironment.DUNGEON,
     val isEyesFreeMode: Boolean = false,
-    val isOptionsOpen: Boolean = false,
-    val isDeveloperToolsEnabled: Boolean = false
+    val isOptionsOpen: Boolean = false
 ) {
     val activePartyMember: PartyMember?
         get() = party.firstOrNull { it.id == activePartyMemberId }
@@ -102,6 +101,15 @@ class CombatViewModel(
 
     private val _state = MutableStateFlow(createInitialState())
     val state: StateFlow<CombatState> = _state.asStateFlow()
+
+    // Debug-only developer tools visibility. Kept OUT of CombatState so that
+    // encounter/restart state reconstructions can never reset it.
+    private val _isDeveloperToolsEnabled = MutableStateFlow(false)
+    val isDeveloperToolsEnabled: StateFlow<Boolean> = _isDeveloperToolsEnabled.asStateFlow()
+
+    fun toggleDeveloperTools() {
+        _isDeveloperToolsEnabled.value = !_isDeveloperToolsEnabled.value
+    }
 
     var currentEncounterId: String? = null
         internal set
@@ -705,15 +713,6 @@ class CombatViewModel(
     fun setEyesFreeMode(enabled: Boolean) {
         combatNarrator.setEyesFreeMode(enabled)
         _state.value = _state.value.copy(isEyesFreeMode = enabled)
-    }
-
-    /**
-     * Debug-only: reveals/hides the battle test controls (cheat HUD, sandbox
-     * switchers, escape button). Defaults to hidden in every build; only the
-     * debug options dialog can flip it.
-     */
-    fun toggleDeveloperTools() {
-        _state.value = _state.value.copy(isDeveloperToolsEnabled = !_state.value.isDeveloperToolsEnabled)
     }
 
     fun openOptions() {

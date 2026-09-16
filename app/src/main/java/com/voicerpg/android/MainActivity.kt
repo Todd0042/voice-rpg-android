@@ -94,6 +94,7 @@ class MainActivity : ComponentActivity() {
             val isAutoListen by speechManager.isAutoListen.collectAsState()
             val isChimeMuted by speechManager.isChimeMuted.collectAsState()
             var showDebugWarp by remember { mutableStateOf(false) }
+            val isDeveloperToolsEnabled by combatViewModel.isDeveloperToolsEnabled.collectAsState()
 
             LaunchedEffect(storyState.player) {
                 combatViewModel.applyPlayerCustomization(
@@ -212,7 +213,7 @@ class MainActivity : ComponentActivity() {
                     DebugWarpDialog(
                         isOpen = showDebugWarp,
                         targets = StoryViewModel.DEBUG_CHAPTER_TARGETS,
-                        developerToolsEnabled = BuildConfig.DEBUG_WARP_MENU && combatState.isDeveloperToolsEnabled,
+                        developerToolsEnabled = BuildConfig.DEBUG_WARP_MENU && isDeveloperToolsEnabled,
                         onToggleDeveloperTools = { combatViewModel.toggleDeveloperTools() },
                         onWarpTo = { nodeId ->
                             showDebugWarp = false

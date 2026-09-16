@@ -49,13 +49,20 @@ class DynamicEncounterTest {
     @Test
     fun testDeveloperToolsToggleDefaultsHidden() {
         // Battle test controls must be hidden by default in every build
-        assertFalse(viewModel.state.value.isDeveloperToolsEnabled)
+        assertFalse(viewModel.isDeveloperToolsEnabled.value)
 
         // Toggle on reveals them, toggle again hides them
         viewModel.toggleDeveloperTools()
-        assertTrue(viewModel.state.value.isDeveloperToolsEnabled)
+        assertTrue(viewModel.isDeveloperToolsEnabled.value)
         viewModel.toggleDeveloperTools()
-        assertFalse(viewModel.state.value.isDeveloperToolsEnabled)
+        assertFalse(viewModel.isDeveloperToolsEnabled.value)
+
+        // Survives encounter start/restart state reconstructions
+        viewModel.startEncounter(StoryEncounters.FOREST_AMBUSH)
+        viewModel.toggleDeveloperTools()
+        assertTrue(viewModel.isDeveloperToolsEnabled.value)
+        viewModel.restartBattle()
+        assertTrue(viewModel.isDeveloperToolsEnabled.value)
     }
 
     @Test
