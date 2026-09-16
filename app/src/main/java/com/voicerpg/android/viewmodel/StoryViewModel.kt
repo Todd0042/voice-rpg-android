@@ -51,6 +51,34 @@ class StoryViewModel(
     private val scopeOverride: CoroutineScope? = null
 ) : ViewModel() {
 
+    data class DebugChapterTarget(
+        val label: String,
+        val introNodeId: String,
+        val chapterIndex: Int
+    )
+
+    companion object {
+        val DEBUG_CHAPTER_TARGETS: List<DebugChapterTarget> = listOf(
+            DebugChapterTarget("Prologue", "cottage_intro", 0),
+            DebugChapterTarget("Chapter 1", "crossroads_intro", 1),
+            DebugChapterTarget("Chapter 2", "camp_intro", 2),
+            DebugChapterTarget("Chapter 3", "chapter3_intro", 3),
+            DebugChapterTarget("Chapter 4", "chapter4_intro", 4),
+            DebugChapterTarget("Chapter 5", "ch5_intro", 5),
+            DebugChapterTarget("Chapter 6", "ch6_intro", 6),
+            DebugChapterTarget("Chapter 7", "ch7_intro", 7),
+            DebugChapterTarget("Chapter 8", "ch8_intro", 8),
+            DebugChapterTarget("Chapter 9", "ch9_intro", 9),
+            DebugChapterTarget("Chapter 10", "ch10_intro", 10),
+            DebugChapterTarget("Chapter 11", "ch11_intro", 11),
+            DebugChapterTarget("Chapter 12", "ch12_intro", 12),
+            DebugChapterTarget("Chapter 13", "ch13_intro", 13),
+            DebugChapterTarget("Chapter 14", "ch14_intro", 14),
+            DebugChapterTarget("Chapter 15", "ch15_intro", 15),
+            DebugChapterTarget("Chapter 16", "ch16_intro", 16)
+        )
+    }
+
     private val activeScope: CoroutineScope
         get() = scopeOverride ?: viewModelScope
 
@@ -178,6 +206,57 @@ class StoryViewModel(
         _state.value = StoryState(
             gameScreen = GameScreen.AUDIO_SETUP
         )
+    }
+
+    /**
+     * Debug-only helper: instantly jumps to a chapter's intro node, seeding the
+     * companion roster and master spells valid as of that chapter. Only exposed
+     * through the debug-build Options dialog (see BuildConfig.DEBUG_WARP_MENU).
+     */
+    fun debugWarpToChapter(introNodeId: String) {
+        val target = DEBUG_CHAPTER_TARGETS.firstOrNull { it.introNodeId == introNodeId } ?: return
+        val introNode = StoryScript.ALL_NODES[introNodeId] ?: return
+        cancelPendingAutoAdvance()
+        combatNarrator.stop()
+        speechManager.cancel()
+
+        val seededFlags = buildMap {
+            if (target.chapterIndex >= 2) put("cedric_recruited", true)
+            if (target.chapterIndex >= 6) put("lyra_recruited", true)
+            if (target.chapterIndex >= 9) put("zephyr_recruited", true)
+            if (target.chapterIndex >= 9) put("cedric_trial_complete", true)
+            if (target.chapterIndex >= 10) put("lyra_trial_complete", true)
+            if (target.chapterIndex >= 11) put("zephyr_trial_complete", true)
+        }
+        // Overwrite, not union, the roster and trial flags so a downward warp
+        // cannot drag companions from later chapters back into the story.
+        val rosterAndTrialFlags = setOf(
+            "cedric_recruited", "lyra_recruited", "zephyr_recruited",
+            "cedric_trial_complete", "lyra_trial_complete", "zephyr_trial_complete"
+        )
+        val clearedFlags = _state.value.narrativeFlags.filterKeys { it !in rosterAndTrialFlags }
+
+        // Trim any companions who have not joined the fellowship as of this chapter.
+        val allowedRosterIds = buildList {
+            add("hero")
+            if (target.chapterIndex >= 2) add("cedric")
+            if (target.chapterIndex >= 6) add("lyra")
+            if (target.chapterIndex >= 9) add("zephyr")
+        }
+        val trimmedParty = _state.value.partyStats.filter { it.id in allowedRosterIds }
+
+        val introScene = StoryScript.ALL_SCENES.values.firstOrNull { it.initialNodeId == introNodeId }
+            ?: _state.value.currentScene
+
+        _state.value = _state.value.copy(
+            currentScene = introScene,
+            currentNode = introNode,
+            gameScreen = GameScreen.STORY_EXPLORATION,
+            activeEncounter = null,
+            narrativeFlags = clearedFlags + seededFlags,
+            partyStats = trimmedParty
+        )
+        applyNodeTransition(introNode)
     }
 
     fun advanceDialogue() {

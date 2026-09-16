@@ -760,6 +760,46 @@ class StoryDialogueTest {
         assertTrue(storyViewModel.state.value.currentNode.text.contains("CONGRATULATIONS"))
     }
 
+    @Test
+    fun testDebugWarpToChapterSeedsRosterAndFlags() {
+        // Warp to the Prologue start
+        storyViewModel.debugWarpToChapter("cottage_intro")
+        var state = storyViewModel.state.value
+        assertEquals("scene_cottage", state.currentScene.id)
+        assertEquals("cottage_intro", state.currentNode.id)
+        assertEquals(GameScreen.STORY_EXPLORATION, state.gameScreen)
+        assertNull(state.activeEncounter)
+        assertFalse(state.narrativeFlags["cedric_recruited"] == true)
+
+        // Warp straight to Chapter 9: full party + Cedric's master spell seeded
+        storyViewModel.debugWarpToChapter("ch9_intro")
+        state = storyViewModel.state.value
+        assertEquals("ch9_intro", state.currentNode.id)
+        assertEquals("scene_mausoleum", state.currentScene.id)
+        assertTrue(state.narrativeFlags["cedric_recruited"] == true)
+        assertTrue(state.narrativeFlags["lyra_recruited"] == true)
+        assertTrue(state.narrativeFlags["zephyr_recruited"] == true)
+        assertTrue(state.narrativeFlags["cedric_trial_complete"] == true)
+        val cedric = state.partyStats.first { it.id == "cedric" }
+        assertTrue(cedric.spellIds.contains("aegis_dawn"))
+
+        // Warp to Chapter 11: Lyra + Zephyr master spells also seeded
+        storyViewModel.debugWarpToChapter("ch11_intro")
+        state = storyViewModel.state.value
+        assertEquals("ch11_intro", state.currentNode.id)
+        val lyra = state.partyStats.first { it.id == "lyra" }
+        val zephyr = state.partyStats.first { it.id == "zephyr" }
+        assertTrue(lyra.spellIds.contains("verdant_cataclysm"))
+        assertTrue(zephyr.spellIds.contains("umbral_oblivion"))
+
+        // Warping backward trims companions not yet recruited
+        storyViewModel.debugWarpToChapter("camp_intro")
+        state = storyViewModel.state.value
+        assertEquals("camp_intro", state.currentNode.id)
+        assertTrue(state.partyStats.any { it.id == "cedric" })
+        assertFalse(state.partyStats.any { it.id == "lyra" || it.id == "zephyr" })
+    }
+
     @After
     fun tearDown() {
         storyViewModel.cancelPendingAutoAdvance()

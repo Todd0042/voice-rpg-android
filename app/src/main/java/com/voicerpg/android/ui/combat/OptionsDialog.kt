@@ -58,6 +58,8 @@ fun OptionsDialog(
     onToggleChimeMute: () -> Unit,
     onOpenVoiceSettings: (() -> Unit)? = null,
     onOpenVoiceAssignment: (() -> Unit)? = null,
+    isDebugWarpEnabled: Boolean = false,
+    onOpenDebugWarp: (() -> Unit)? = null,
     onClose: () -> Unit
 ) {
     if (!isOpen) return
@@ -322,6 +324,40 @@ fun OptionsDialog(
                             Text(
                                 text = "ASSIGN ➔",
                                 color = Color(0xFF90CAF9),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+                    }
+                }
+
+                if (isDebugWarpEnabled && onOpenDebugWarp != null) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(RetroBlack.copy(alpha = 0.6f))
+                            .border(1.dp, Color(0xFFAB47BC), RoundedCornerShape(8.dp))
+                            .clickable { onOpenDebugWarp() }
+                            .padding(10.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "up up down down left right left right b a start",
+                                color = Color(0xFFCE93D8),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = FontFamily.Monospace
+                            )
+                            Text(
+                                text = "➔",
+                                color = Color(0xFFCE93D8),
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
                                 fontFamily = FontFamily.Monospace

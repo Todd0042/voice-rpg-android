@@ -10,6 +10,9 @@ import androidx.core.content.ContextCompat
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
@@ -17,6 +20,7 @@ import com.voicerpg.android.audio.CombatNarrator
 import com.voicerpg.android.audio.SpeechManager
 import com.voicerpg.android.engine.SaveManager
 import com.voicerpg.android.model.GameScreen
+import com.voicerpg.android.ui.combat.DebugWarpDialog
 import com.voicerpg.android.ui.combat.OptionsDialog
 import com.voicerpg.android.ui.combat.RetroBattleScreen
 import com.voicerpg.android.ui.creation.CharacterCreationScreen
@@ -89,6 +93,7 @@ class MainActivity : ComponentActivity() {
             val speechRate by combatNarrator.speechRate.collectAsState()
             val isAutoListen by speechManager.isAutoListen.collectAsState()
             val isChimeMuted by speechManager.isChimeMuted.collectAsState()
+            var showDebugWarp by remember { mutableStateOf(false) }
 
             LaunchedEffect(storyState.player) {
                 combatViewModel.applyPlayerCustomization(
@@ -198,7 +203,21 @@ class MainActivity : ComponentActivity() {
                             combatViewModel.closeOptions()
                             storyViewModel.openAudioSetup()
                         },
+                        isDebugWarpEnabled = BuildConfig.DEBUG_WARP_MENU,
+                        onOpenDebugWarp = { showDebugWarp = true },
                         onClose = { combatViewModel.closeOptions() }
+                    )
+
+                    // Debug-only chapter warp dialog (never shown in release builds)
+                    DebugWarpDialog(
+                        isOpen = showDebugWarp,
+                        targets = StoryViewModel.DEBUG_CHAPTER_TARGETS,
+                        onWarpTo = { nodeId ->
+                            showDebugWarp = false
+                            combatViewModel.closeOptions()
+                            storyViewModel.debugWarpToChapter(nodeId)
+                        },
+                        onClose = { showDebugWarp = false }
                     )
                 }
             }

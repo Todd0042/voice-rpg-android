@@ -25,10 +25,12 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            buildConfigField("boolean", "DEBUG_WARP_MENU", "false")
         }
         debug {
             isMinifyEnabled = false
             isDebuggable = true
+            buildConfigField("boolean", "DEBUG_WARP_MENU", "true")
         }
     }
 
@@ -43,6 +45,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     packaging {
