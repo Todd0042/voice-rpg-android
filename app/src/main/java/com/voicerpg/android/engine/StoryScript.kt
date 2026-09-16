@@ -2376,6 +2376,7 @@ object StoryScript {
             side = SpeakerSide.CENTER_NARRATOR,
             changeSceneId = "scene_umbral_trench",
             text = "The Leviathan does not wait on the shore — it retreats down the umbilical trench that feeds the reservoir, trailing thick black silk. Following it means entering the drowned dark where the voices of the reservoir are drawn and buried.",
+            nextNodeId = "ch14_trench_entry",
         ),
         DialogueNode(
             id = "ch14_trench_entry",

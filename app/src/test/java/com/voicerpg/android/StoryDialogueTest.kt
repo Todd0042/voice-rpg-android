@@ -1016,5 +1016,44 @@ class StoryDialogueTest {
         assertEquals("ch3_chime_approach", storyViewModel.state.value.currentNode.id)
         assertTrue(storyViewModel.state.value.decisionsMade.contains("ch3_chime"))
     }
+
+    @Test
+    fun testCh14TrenchDescentAdvancesToTrenchEntry() {
+        // Jump to the Chapter 14 progression capstone (the Leviathan breach)
+        storyViewModel.selectChoice(com.voicerpg.android.model.DialogueChoice("jump_ch14", "Jump to Ch 14", emptyList(), "ch14_all_completed"))
+
+        // Advance into the trench descent (scene change applies)
+        storyViewModel.advanceDialogue()
+        var state = storyViewModel.state.value
+        assertEquals("ch14_trench_descent", state.currentNode.id)
+        assertEquals("scene_umbral_trench", state.currentScene.id)
+
+        // Regression: this node used to be a dead end with no nextNodeId.
+        storyViewModel.advanceDialogue()
+        state = storyViewModel.state.value
+        assertEquals("ch14_trench_entry", state.currentNode.id)
+
+        // The trench fork merges back into the leech battle trigger
+        val diveChoice = state.currentNode.choices.first { it.id == "ch14_trench_dive" }
+        storyViewModel.selectChoice(diveChoice)
+        assertEquals("ch14_trench_dive_scene", storyViewModel.state.value.currentNode.id)
+        storyViewModel.advanceDialogue()
+        assertEquals("ch14_trench_trigger", storyViewModel.state.value.currentNode.id)
+        assertNotNull(storyViewModel.state.value.currentNode.triggerBattleEncounterId)
+    }
+
+    @Test
+    fun testNoDialogueNodeIsDeadEnd() {
+        // Every node must branch via choices, trigger a battle, advance via nextNodeId,
+        // or be the dedicated epilogue credits terminal.
+        StoryScript.ALL_NODES.values.forEach { node ->
+            if (node.choices.isEmpty() && node.triggerBattleEncounterId == null && node.id != "epilogue_credits") {
+                assertNotNull(
+                    "Node '${node.id}' is a dead end: no choices, no battle trigger, and no nextNodeId",
+                    node.nextNodeId
+                )
+            }
+        }
+    }
 }
 
