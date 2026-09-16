@@ -200,6 +200,33 @@ object StoryScript {
         ambientDescription = "The colossal Fourth Great Bell hangs beneath cosmic auroras where Grand Inquisitor Malakor waits."
     )
 
+    val SCENE_OBSIDIAN_VAULTS = StoryScene(
+        id = "scene_obsidian_vaults",
+        name = "The Obsidian Vaults of the Black Guild",
+        chapterTitle = "Chapter 11: The Silent Blade's Reckoning",
+        backgroundAsset = "environments/dungeon.jpg",
+        initialNodeId = "ch11_vaults_entry",
+        ambientDescription = "Racks of severed tongues sealed in lead, and the ledgers that record them, line the guild's subterranean reliquary."
+    )
+
+    val SCENE_UMBRAL_TRENCH = StoryScene(
+        id = "scene_umbral_trench",
+        name = "The Umbral Trench",
+        chapterTitle = "Chapter 14: The Void Reservoir",
+        backgroundAsset = "environments/cave.jpg",
+        initialNodeId = "ch14_trench_entry",
+        ambientDescription = "Starlight is muted here; the stolen voices of the drowned pool thicken into a living, breathing dark."
+    )
+
+    val SCENE_CELESTIAL_VESTIBULE = StoryScene(
+        id = "scene_celestial_vestibule",
+        name = "The Vestibule of Echoes",
+        chapterTitle = "Chapter 16: The Primordial Syllable",
+        backgroundAsset = "environments/dungeon.jpg",
+        initialNodeId = "ch16_vestibule_entry",
+        ambientDescription = "Frozen supplicants kneel in rings around four pillars of glass, each a severed fragment of the world's song."
+    )
+
     val SCENE_EPILOGUE = StoryScene(
         id = "scene_epilogue",
         name = "Whispering Pines Awakened",
@@ -231,6 +258,9 @@ object StoryScript {
         SCENE_VOID_RESERVOIR.id to SCENE_VOID_RESERVOIR,
         SCENE_CELESTIAL_SPIRE.id to SCENE_CELESTIAL_SPIRE,
         SCENE_FINAL_SUMMIT.id to SCENE_FINAL_SUMMIT,
+        SCENE_OBSIDIAN_VAULTS.id to SCENE_OBSIDIAN_VAULTS,
+        SCENE_UMBRAL_TRENCH.id to SCENE_UMBRAL_TRENCH,
+        SCENE_CELESTIAL_VESTIBULE.id to SCENE_CELESTIAL_VESTIBULE,
         SCENE_EPILOGUE.id to SCENE_EPILOGUE
     )
 
@@ -1422,6 +1452,52 @@ object StoryScript {
             side = SpeakerSide.CENTER_NARRATOR,
             changeSceneId = "scene_mausoleum",
             text = "Cold marble echoes beneath your boots. The Mausoleum of the Sun lies buried beneath the forgotten foundations of Sol-Aethel. Shattered statues of knights kneel before weeping golden sunburst banners.",
+            nextNodeId = "ch9_peristyle_entry"
+        ),
+        DialogueNode(
+            id = "ch9_peristyle_entry",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "A ring of marble columns circles a sunken peristyle where petrified golden knights still stand in formation, swords drawn against a foe that came upon them from within. Dust motes hang in the slanting shafts of pale light, and beyond the far arch a sprawl of tombs and shrines waits.",
+            choices = listOf(
+                DialogueChoice("ch9_peristyle_cautious", "Advance cautiously between the petrified sentinels", listOf("advance", "cautious", "sentinels", "peristyle"), "ch9_peristyle_cautious_scene"),
+                DialogueChoice("ch9_peristyle_ward", "Trace a warding sigil of dawn-light before proceeding", listOf("ward", "sigil", "dawn", "bless"), "ch9_peristyle_ward_scene")
+            )
+        ),
+        DialogueNode(
+            id = "ch9_peristyle_cautious_scene",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            text = "Cedric moves as silently as a hunting wolf, his mailed palm hovering over the pommel of his greatsword. 'They fell facing the altar, not the door,' he murmurs. 'Whatever they were ordered to guard, it stood behind them.'",
+            nextNodeId = "ch9_penitent_trigger"
+        ),
+        DialogueNode(
+            id = "ch9_peristyle_ward_scene",
+            speaker = DialogueSpeaker.AETHEL,
+            side = SpeakerSide.LEFT,
+            text = "You trace the old Sunburst sigil in the air; it hangs like a fallen star, and the darkness between the columns recoils. Somewhere in the depths, stone grinds against stone in answer, as if the tomb itself has begun to wake.",
+            nextNodeId = "ch9_penitent_trigger"
+        ),
+        DialogueNode(
+            id = "ch9_penitent_trigger",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            triggerBattleEncounterId = "ch9_penitent_gate",
+            text = "The threshold guardians of the Sun's Penitence rise from the flagstones — knights who broke their vows and were buried alive at the gate itself. Wreathed in cold fire, they advance to bar the way to the Grandmaster's crypt hall!"
+        ),
+        DialogueNode(
+            id = "ch9_penitent_victory",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            setFlagOnEnter = "ch9_penitent_complete",
+            text = "The penitent knights crumble, at last released from their vigil. Cedric bows his head to them. 'They asked for judgment and were given only silence. May the dawn be kinder to them than their order was.'",
+            nextNodeId = "ch9_descent_hall"
+        ),
+        DialogueNode(
+            id = "ch9_descent_hall",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "Beyond the gate, the sunken hall descends in tiers lined with the sealed urns of long-dead orders. At its center stands the monument where the Golden Chime kept its truest oaths — and where Grandmaster Galahault now dreams in obsidian.",
             nextNodeId = "ch9_hub"
         ),
         DialogueNode(
@@ -1431,7 +1507,8 @@ object StoryScript {
             text = "Cedric touches his golden cross. 'Here lies the tomb of Sir Galahault, Grandmaster of the Golden Chime. When the Blight came, he ordered the gates sealed from within, damning thirty thousand innocent citizens to become obsidian statues so our order might survive. I broke my vow and opened the sally port to save the children. His ghost cursed me with eternal shame.'",
             choices = listOf(
                 DialogueChoice("ch9_knights_choice", "Examine the petrified statues of the Golden Chime knights", listOf("knights", "statues", "examine", "petrified"), "ch9_knights_dialogue", "ch9_knights_complete"),
-                DialogueChoice("ch9_altar_choice", "Offer a prayer of renewal at the Solar Sunburst Altar", listOf("altar", "prayer", "solar", "sunburst", "offer"), "ch9_altar_dialogue", "ch9_altar_complete")
+                DialogueChoice("ch9_altar_choice", "Offer a prayer of renewal at the Solar Sunburst Altar", listOf("altar", "prayer", "solar", "sunburst", "offer"), "ch9_altar_dialogue", "ch9_altar_complete"),
+                DialogueChoice("ch9_reliquary_choice", "Visit the reliquary of broken oaths and unfulfilled vows", listOf("reliquary", "oaths", "vows", "shrine"), "ch9_reliquary_dialogue", "ch9_reliquary_complete")
             )
         ),
         DialogueNode(
@@ -1448,6 +1525,14 @@ object StoryScript {
             side = SpeakerSide.CENTER_NARRATOR,
             setFlagOnEnter = "ch9_altar_complete",
             text = "You kindle sacred embers upon the solar altar. Golden light washes across the crypt, dispelling the suffocating gloom. Cedric's shield begins to glow with blinding morning luminescence!",
+            nextNodeId = "ch9_hub"
+        ),
+        DialogueNode(
+            id = "ch9_reliquary_dialogue",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            setFlagOnEnter = "ch9_reliquary_complete",
+            text = "In the reliquary, rows of bronze plaques bear the names of ordained knights whose vows were never fulfilled. A single inscription catches the light: 'Here lies Sir Marrok, who chose mercy over command.' Cedric reads it in silence, then touches the plaque. 'Grandmaster Galahault struck his name from our records,' he says quietly, 'but the dawn remembers it.'",
             nextNodeId = "ch9_hub"
         ),
         DialogueNode(
@@ -1472,6 +1557,53 @@ object StoryScript {
             side = SpeakerSide.RIGHT,
             setFlagOnEnter = "cedric_trial_complete",
             text = "Sir Galahault drops to one knee as the obsidian plate fractures and dissolves into golden sparks. The Grandmaster smiles gently: 'You did not break the vow, Cedric... you fulfilled its truest meaning. The dawn belongs to you.' He dissolves peacefully into celestial light. Sir Cedric unlocks the Master Chant: Aegis of the Dawn!",
+            nextNodeId = "ch9_dawn_benediction"
+        ),
+        DialogueNode(
+            id = "ch9_dawn_benediction",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "Through the shattered roof of the mausoleum, the first true dawn of the old realm pours down in a column of honeyed light. The obsidian encasing the fallen knights begins to fall away like shed scales, and beneath it, still and serene, lie the unblemished bodies of the Golden Chime.",
+            nextNodeId = "ch9_cedric_kneel"
+        ),
+        DialogueNode(
+            id = "ch9_cedric_kneel",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            text = "Sir Cedric kneels before the empty tomb of his Grandmaster, his greatsword resting across his knees. 'I carried his shame for twenty years,' he says, voice rough as quarry stone. 'A vow broken is either a wound that never heals... or the hinge a door was always meant to swing on. I ask you to witness which it was.'",
+            choices = listOf(
+                DialogueChoice("ch9_kneel_sister", "Kneel beside him and name his mercy his truest vow", listOf("kneel", "witness", "mercy", "vow", "sister"), "ch9_cedric_sister"),
+                DialogueChoice("ch9_kneel_pray", "Offer a prayer over the tomb for the thirty thousand lost", listOf("pray", "tomb", "thirty", "thousand", "lost"), "ch9_cedric_prayer")
+            )
+        ),
+        DialogueNode(
+            id = "ch9_cedric_sister",
+            speaker = DialogueSpeaker.AETHEL,
+            side = SpeakerSide.LEFT,
+            text = "You kneel at his side, the flagstones cold beneath you both. 'Mercy is not weakness, Sir Cedric,' you say. 'It is the one command the order never taught you to obey — and the only one that ever made you a knight worth naming.'",
+            nextNodeId = "ch9_cedric_absolution"
+        ),
+        DialogueNode(
+            id = "ch9_cedric_prayer",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "You raise your voice in the old prayer of the Sunburst, and the motes of golden light respond, drifting like a congregation of candles to gather above the tomb of the thirty thousand. For a moment the mausoleum is not a tomb at all, but a cathedral full of answered grief.",
+            nextNodeId = "ch9_cedric_absolution"
+        ),
+        DialogueNode(
+            id = "ch9_cedric_absolution",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            setFlagOnEnter = "ch9_vigil_complete",
+            text = "Sir Cedric rises, and the weight that has stooped his shoulders for two decades lifts like a winter fog burned off by morning. He sets his gauntlet over his heart and bows. 'The dawn will find me in the sally port again, choosing the children every time. Thank you, Invocator. You buried my ghost.'",
+            nextNodeId = "ch9_grave_vigil"
+        ),
+        DialogueNode(
+            id = "ch9_grave_vigil",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            setFlagOnEnter = "ch9_vigil_rest_complete",
+            text = "The fellowship keeps a long vigil in the new light, breaking bread in the Grandmaster's tomb and tending each other's wounds. When at last you rise, rested and whole, the Mausoleum of the Sun is quiet behind you, its ghosts finally at peace.",
             nextNodeId = "ch9_post_victory"
         ),
         DialogueNode(
@@ -1491,6 +1623,52 @@ object StoryScript {
             side = SpeakerSide.CENTER_NARRATOR,
             changeSceneId = "scene_emerald_choir",
             text = "The fellowship arrives in the secluded sunken glade of the Emerald Choir. Massive ancient redwoods loom overhead, completely motionless. Dozens of singing dryads stand petrified in obsidian around a bubbling black spring.",
+            nextNodeId = "ch10_thicket_entry"
+        ),
+        DialogueNode(
+            id = "ch10_thicket_entry",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "Between you and the central spring lies a dense tangle of fallen redwoods and black-mossed briars, the last patch of the choir's wildwood. The silence here is wrong — the thorns have begun to whisper, and where the bracken thins, something pale watches from the shadows between the roots.",
+            choices = listOf(
+                DialogueChoice("ch10_thicket_light", "Raise a soft song of light to thread the tangled thicket", listOf("sing", "light", "thicket", "song"), "ch10_thicket_light_scene"),
+                DialogueChoice("ch10_thicket_tread", "Slip through the black briars on a silent hunter's path", listOf("tread", "silent", "path", "briars"), "ch10_thicket_tread_scene")
+            )
+        ),
+        DialogueNode(
+            id = "ch10_thicket_light_scene",
+            speaker = DialogueSpeaker.LYRA,
+            side = SpeakerSide.LEFT,
+            text = "Lyra hums the old root-song of the grove, and the briars part like a door held open by shy green hands. Light returns to the leaves inch by inch. 'The wood remembers its own name,' she murmurs, 'if only someone will say it out loud.'",
+            nextNodeId = "ch10_ambush_trigger"
+        ),
+        DialogueNode(
+            id = "ch10_thicket_tread_scene",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "You move as the hunters of Sol-Aethel once moved, quiet as the shadow of a leaf. Behind you, Cedric follows without a single chime of armor. The choking smog grows thicker, and ahead, the first colossal fern stirs of its own accord.",
+            nextNodeId = "ch10_ambush_trigger"
+        ),
+        DialogueNode(
+            id = "ch10_ambush_trigger",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            triggerBattleEncounterId = "ch10_thicket_guardians",
+            text = "The colossal ferns tear themselves free of the earth! Vines of glass and bark, infected with the same obsidian venom that froze the choir, rise up as the thicket's poisoned guardians to bar every path to the spring!"
+        ),
+        DialogueNode(
+            id = "ch10_thicket_victory",
+            speaker = DialogueSpeaker.LYRA,
+            side = SpeakerSide.LEFT,
+            setFlagOnEnter = "ch10_thicket_cleared",
+            text = "The glass vines splinter and fall still. Lyra touches the broken veins of infected bark, and the sickly black sap bleeds out of the earth, soaking into the deep roots. 'Whatever poisoned them,' she says, 'we have cut it loose from the wood.'",
+            nextNodeId = "ch10_choir_heart"
+        ),
+        DialogueNode(
+            id = "ch10_choir_heart",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "The thicket gives way at last to the marrow of the grove: the silent spring where thirty frozen dryads stand around the blackened waters, waiting for a voice. You step onto the living shore and the wait ends.",
             nextNodeId = "ch10_hub"
         ),
         DialogueNode(
@@ -1500,8 +1678,17 @@ object StoryScript {
             text = "Lyra kneels beside a statue of an elder dryad with tears of crystallized sap on her cheeks. 'When Malakor's priests came, they dumped obsidian venom into the spring. The dryads sang until their voices turned to glass. I was too afraid to sing loud enough to save them... But now, with your fellowship, I will not be quiet!'",
             choices = listOf(
                 DialogueChoice("ch10_dryads_choice", "Touch the weeping obsidian statues of Lyra's sisters", listOf("dryads", "statues", "sisters", "touch", "weeping"), "ch10_dryads_dialogue", "ch10_dryads_complete"),
-                DialogueChoice("ch10_seed_choice", "Prepare the Living Seed of the Sacred Willow", listOf("seed", "willow", "sacred", "prepare", "spring"), "ch10_seed_dialogue", "ch10_seed_complete")
+                DialogueChoice("ch10_seed_choice", "Prepare the Living Seed of the Sacred Willow", listOf("seed", "willow", "sacred", "prepare", "spring"), "ch10_seed_dialogue", "ch10_seed_complete"),
+                DialogueChoice("ch10_hymn_choice", "Sing the lost Breviary Hymn to the choir of frozen dryads", listOf("hymn", "breviary", "sing", "choir", "frozen"), "ch10_hymn_dialogue", "ch10_hymn_complete")
             )
+        ),
+        DialogueNode(
+            id = "ch10_hymn_dialogue",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            setFlagOnEnter = "ch10_hymn_complete",
+            text = "You lend your voice to a verse of the old Breviary Hymn — the one the choir sang before woven silence took them. Faint emerald shimmer runs along the dryads' glass cheeks, and from one frozen throat, a syllable answers back.",
+            nextNodeId = "ch10_hub"
         ),
         DialogueNode(
             id = "ch10_dryads_dialogue",
@@ -1541,6 +1728,45 @@ object StoryScript {
             side = SpeakerSide.LEFT,
             setFlagOnEnter = "lyra_trial_complete",
             text = "The Broodmother shatters into harmless green loam! Lyra drops the living seed into the bubbling waters. Crystal pure turquoise water erupts in geysers! Across the grove, the obsidian crusts peel away, and thirty dryads awaken, singing a glorious four-part hymn of thanksgiving! Lyra unlocks the Master Chant: Verdant Cataclysm!",
+            nextNodeId = "ch10_spring_of_voices"
+        ),
+        DialogueNode(
+            id = "ch10_spring_of_voices",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "The awakened dryads do not scatter like startled deer — they form a great ring around the spring and bow to the four winds, their voices braided into a harmony that has not been sung since before the Blight. At the heart of the ring, the eldest dryad slowly opens her eyes.",
+            nextNodeId = "ch10_dryad_matron"
+        ),
+        DialogueNode(
+            id = "ch10_dryad_matron",
+            speaker = DialogueSpeaker.DRYAD_MATRON,
+            side = SpeakerSide.LEFT,
+            text = "The Elder Dryad rises to her full height, bark and blossom woven through her silver hair. 'Little One of the Grove,' she says to Lyra, her voice deep as summer rain, 'you fled the choir when the priests came. We were proud of you for it. To burn beside us would have served nothing; to return with the dawn serves everything. There is one debt the grove still owes.'",
+            choices = listOf(
+                DialogueChoice("ch10_offer_seed", "Offer the sprouting Living Seed to the Elder Dryad", listOf("offer", "seed", "elder", "grove"), "ch10_seed_bloom"),
+                DialogueChoice("ch10_join_hymn", "Ask Lyra to join the dryads in the closing hymn", listOf("join", "hymn", "lyra", "sing"), "ch10_hymn_scene")
+            )
+        ),
+        DialogueNode(
+            id = "ch10_seed_bloom",
+            speaker = DialogueSpeaker.LYRA,
+            side = SpeakerSide.LEFT,
+            text = "Lyra lowers the sprouting seed into the Elder Dryad's cupped hands. The seed bursts into a cascade of blossoms, and the Elder Dryad weaves them into a crown. 'Wear this until the woodlands wake,' she says. 'You are no longer the smallest voice of the Grove. You are its promise.'",
+            nextNodeId = "ch10_choir_rest"
+        ),
+        DialogueNode(
+            id = "ch10_hymn_scene",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "Lyra steps into the ring and the dryads part for her like grass under wind. When she sings, her voice no longer trembles — and for the first time since leaving the Grove, she holds a note so true the frozen pond at the wood's edge begins to thaw.",
+            nextNodeId = "ch10_choir_rest"
+        ),
+        DialogueNode(
+            id = "ch10_choir_rest",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            setFlagOnEnter = "ch10_choir_rest_complete",
+            text = "The choir shelters the fellowship for the night in nests of living boughs, singing softly as the stars come out. By morning you wake healed and restored, the greenwood's blessing settled deep in your bones.",
             nextNodeId = "ch10_post_victory"
         ),
         DialogueNode(
@@ -1560,6 +1786,52 @@ object StoryScript {
             side = SpeakerSide.CENTER_NARRATOR,
             changeSceneId = "scene_blind_gorge",
             text = "The Blind Gorge is a labyrinth of razor obsidian slabs and subterranean thermal vents. An oppressive silence hangs in the air, muffled by dark alchemical smog.",
+            nextNodeId = "ch11_gorge_entry"
+        ),
+        DialogueNode(
+            id = "ch11_gorge_entry",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "The gorge narrows ahead into the killing lanes Nocturne staked out decades ago: glass-edged culverts, blackened shrines to the mute, and cauterized scaffolding where the Black Guild once trained its apprentices in silence. Now the smog has begun to move against the wind.",
+            choices = listOf(
+                DialogueChoice("ch11_lane_traps", "Advance down the trap-laden culverts with blade in hand", listOf("advance", "culverts", "traps", "blade"), "ch11_lane_traps_scene"),
+                DialogueChoice("ch11_lane_shadow", "Stalk the smog in silence, a step behind your own shadow", listOf("stalk", "shadow", "silence", "smog"), "ch11_lane_shadow_scene")
+            )
+        ),
+        DialogueNode(
+            id = "ch11_lane_traps_scene",
+            speaker = DialogueSpeaker.ZEPHYR,
+            side = SpeakerSide.LEFT,
+            text = "Zephyr graces his old master's traps, snapping wires and cutting garrotes with the flat of his daggers. 'Every one of these,' he says without breaking pace, 'was invented to teach apprentices to feel an enemy before it moves. Nocturne has been teaching me how to beat him since I was nine.'",
+            nextNodeId = "ch11_first_strike_trigger"
+        ),
+        DialogueNode(
+            id = "ch11_lane_shadow_scene",
+            speaker = DialogueSpeaker.AETHEL,
+            side = SpeakerSide.LEFT,
+            text = "You walk the gorge the way its keepers did — no heartbeat of sound, no chink of mail. Even the smog seems unsure where you are. Somewhere ahead, a footstep falters, and you know the hunt has gone in the wrong direction.",
+            nextNodeId = "ch11_first_strike_trigger"
+        ),
+        DialogueNode(
+            id = "ch11_first_strike_trigger",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            triggerBattleEncounterId = "ch11_gorge_stalkers",
+            text = "The gorge widens into a killing bowl — and it is already occupied. Nocturne's stalkers, masked assassins of the Black Guild, drift out of the culverts in a silent ring, crossbows nocked and poisoned blades dripping!"
+        ),
+        DialogueNode(
+            id = "ch11_first_strike_victory",
+            speaker = DialogueSpeaker.ZEPHYR,
+            side = SpeakerSide.LEFT,
+            setFlagOnEnter = "ch11_gorge_cleared",
+            text = "The stalkers fall, and with them the guild's watch on the approach. Zephyr gathers a handful of their broken mask-class tokens and casts them into the vents. 'They were children, once. So was I. Nocturne made us all the same blade — and dulled us with it.'",
+            nextNodeId = "ch11_gorge_cleared"
+        ),
+        DialogueNode(
+            id = "ch11_gorge_cleared",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "The path to Nocturne's sanctum lies open and silent. In the hush, the gorge feels less like a hunting ground and more like a tomb waiting to be emptied of its ghost.",
             nextNodeId = "ch11_hub"
         ),
         DialogueNode(
@@ -1569,8 +1841,17 @@ object StoryScript {
             text = "Zephyr tests the wind. 'Nocturne is the deadliest assassin in Aethelgard. He moves without sound or shadow. Watch your footing—the gorge is rigged with sonic mines and poisoned garrotes.'",
             choices = listOf(
                 DialogueChoice("ch11_traps_choice", "Disarm the acoustic tripwires strung across the canyon", listOf("traps", "tripwires", "disarm", "acoustic", "mines"), "ch11_traps_dialogue", "ch11_traps_complete"),
-                DialogueChoice("ch11_vials_choice", "Identify the obsidian venom vials left along the trail", listOf("vials", "venom", "poison", "identify", "trail"), "ch11_vials_dialogue", "ch11_vials_complete")
+                DialogueChoice("ch11_vials_choice", "Identify the obsidian venom vials left along the trail", listOf("vials", "venom", "poison", "identify", "trail"), "ch11_vials_dialogue", "ch11_vials_complete"),
+                DialogueChoice("ch11_doctrine_choice", "Study the Black Guild's doctrine of stolen breath in the sanctum", listOf("doctrine", "guild", "stolen", "breath", "sanctum"), "ch11_doctrine_dialogue", "ch11_doctrine_complete")
             )
+        ),
+        DialogueNode(
+            id = "ch11_doctrine_dialogue",
+            speaker = DialogueSpeaker.ZEPHYR,
+            side = SpeakerSide.LEFT,
+            setFlagOnEnter = "ch11_doctrine_complete",
+            text = "Zephyr unrolls a blackened parchment stolen from the sanctum: the Doctrine of the Mute, written in the guild's breath-code. 'It teaches that a voice is only a weakness to be removed,' he says, reading a line aloud. 'I kept mine. I think that is the whole war, in the end.'",
+            nextNodeId = "ch11_hub"
         ),
         DialogueNode(
             id = "ch11_traps_dialogue",
@@ -1594,7 +1875,7 @@ object StoryScript {
             side = SpeakerSide.RIGHT,
             text = "A whirlpool of black mist congeals on the canyon floor. Master Nocturne steps forward, masked in obsidian bone. 'You were my prize pupil, Zephyr. Yet you trade the perfection of silence for the babbling of fools.' Zephyr uncrosses his daggers: 'Silence is death. Words are how we choose each other!'",
             choices = listOf(
-                DialogueChoice("ch11_boss_ready", "Strike down Master Nocturne and shatter the Black Guild!", listOf("strike", "nocturne", "guild", "battle", "master"), "ch11_nocturne_assault")
+                DialogueChoice("ch11_boss_ready", "Pursue Nocturne into the Obsidian Vaults beneath the gorge", listOf("pursue", "nocturne", "obsidian", "vaults", "strike"), "ch11_vaults_entry")
             )
         ),
         DialogueNode(
@@ -1610,7 +1891,87 @@ object StoryScript {
             side = SpeakerSide.LEFT,
             setFlagOnEnter = "zephyr_trial_complete",
             text = "Zephyr's twin daggers pierce Nocturne's shadow core. The master's obsidian mask splits in half and clatters to the stone floor. Nocturne dissolves into drifting soot. Zephyr breathes deeply, tearing the Black Guild insignias from his cloak: 'I am no longer an assassin of the mute. I am Zephyr of the Fellowship!' Zephyr unlocks the Master Chant: Umbral Oblivion!",
+            nextNodeId = "ch11_severing_memory"
+        ),
+        DialogueNode(
+            id = "ch11_severing_memory",
+            speaker = DialogueSpeaker.ZEPHYR,
+            side = SpeakerSide.LEFT,
+            text = "In the dying dark of the sanctum, Zephyr kneels and opens a small locket he has never shown anyone. Inside is a portrait of a woman whose eyes are the same grey as his. 'The guild took her voice, and then her breath, to make me their perfect weapon,' he says. 'I never got to hear her call my name. I have carried the silence of it long enough.'",
+            choices = listOf(
+                DialogueChoice("ch11_memory_name", "Speak her name aloud for him into the quiet", listOf("her", "name", "speak", "locket"), "ch11_carry_name"),
+                DialogueChoice("ch11_memory_renew", "Ask him to renew his oath in his own voice, not the guild's", listOf("oath", "renew", "voice", "guild"), "ch11_renew_oath")
+            )
+        ),
+        DialogueNode(
+            id = "ch11_carry_name",
+            speaker = DialogueSpeaker.ZEPHYR,
+            side = SpeakerSide.LEFT,
+            text = "Zephyr listens as you say the name from beneath the locket's hinge — a soft name, a mother's name. He repeats it once, roughly, then again, gently. 'There,' he says, and closes the locket. 'Now it is mine to carry, not theirs to keep.'",
+            nextNodeId = "ch11_gorge_dawn"
+        ),
+        DialogueNode(
+            id = "ch11_renew_oath",
+            speaker = DialogueSpeaker.ZEPHYR,
+            side = SpeakerSide.LEFT,
+            text = "Zephyr draws both daggers and lays them across his knees. 'I swore my life to the mute.' He turns the blades edge-down into the stone and drives them home. 'Now I swear it to the voiced, and to the dawn that gave me back my name.'",
+            nextNodeId = "ch11_gorge_dawn"
+        ),
+        DialogueNode(
+            id = "ch11_gorge_dawn",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            setFlagOnEnter = "ch11_gorge_rest_complete",
+            text = "The fellowship takes its rest at the mouth of the gorge as the smoke clears and the first clean wind of morning rushes through the canyon. Wounds are bound, silence is broken with campfire talk, and by light of the risen sun the path to Ouros stands open.",
             nextNodeId = "ch11_post_victory"
+        ),
+        DialogueNode(
+            id = "ch11_vaults_entry",
+            speaker = DialogueSpeaker.ZEPHYR,
+            side = SpeakerSide.LEFT,
+            changeSceneId = "scene_obsidian_vaults",
+            text = "Beneath the gorge floor, the Black Guild's true heart: a reliquary of every voice it ever stole. Racks of sealed lead jars line the vaults, each trembling faintly with a sound that can never be forgotten. 'He buries them here,' Zephyr says, 'to prove silence outlasts speech. Let us prove him wrong.'",
+            choices = listOf(
+                DialogueChoice("ch11_vault_ledger", "Read the ledger of the stolen to free the names from the archives", listOf("read", "ledger", "names", "archives", "vault"), "ch11_vault_ledger_scene"),
+                DialogueChoice("ch11_vault_altar", "Shatter the guild's altar of severed tongues", listOf("shatter", "altar", "severed", "tongues"), "ch11_vault_altar_scene")
+            )
+        ),
+        DialogueNode(
+            id = "ch11_vault_ledger_scene",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "The ledger runs to thousands of names, each struck through with a guild seal. Zephyr begins at the oldest page and reads every name aloud, unbroken, until his voice has restored each one to the air. The sealed lead jars hum in answer, refusing to be silent.",
+            nextNodeId = "ch11_archive_battle_trigger"
+        ),
+        DialogueNode(
+            id = "ch11_vault_altar_scene",
+            speaker = DialogueSpeaker.AETHEL,
+            side = SpeakerSide.LEFT,
+            text = "You bring the altar of severed tongues crashing down with a blast of light. Beyond it, the true sanctum door stands revealed, and from the shadows behind the fallen shrine, the guild's archivists rise to defend their silence with blades.",
+            nextNodeId = "ch11_archive_battle_trigger"
+        ),
+        DialogueNode(
+            id = "ch11_archive_battle_trigger",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            triggerBattleEncounterId = "ch11_archive_enforcers",
+            text = "The Obsidian Archive Enforcers — the guild's voiceless wardens, bred to guard its silence — emerge from the walls in black robes, each carrying a blade forged to cut sound itself from the air!"
+        ),
+        DialogueNode(
+            id = "ch11_archive_victory",
+            speaker = DialogueSpeaker.ZEPHYR,
+            side = SpeakerSide.LEFT,
+            setFlagOnEnter = "ch11_archive_purged",
+            text = "The archivists fall, and with them the last armed will of the guild. Zephyr stands amid the shattered racks and says, softly: 'Silence has no blade of its own. It only borrows ours. Come — Nocturne is waiting at the end of this passage.'",
+            nextNodeId = "ch11_grandmaster_found"
+        ),
+        DialogueNode(
+            id = "ch11_grandmaster_found",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            changeSceneId = "scene_blind_gorge",
+            text = "The vault corridor empties into a vast dark arena: the cavern heart of the Blind Gorge, where Master Nocturne himself waits beneath a single hanging lamp, his obsidian mask the only lit thing in the black. The chord of ending blows cold.",
+            nextNodeId = "ch11_nocturne_assault"
         ),
         DialogueNode(
             id = "ch11_post_victory",
@@ -1629,6 +1990,52 @@ object StoryScript {
             side = SpeakerSide.CENTER_NARRATOR,
             changeSceneId = "scene_clockwork_bastion",
             text = "The Clockwork Bastion rises like an iron mountain into the clouds. Colossal brass gears groan with mechanical rhythm as pressurized steam vents roar along the parapets. At the pinnacle hangs the Third Great Bell: The Resonant Bastion!",
+            nextNodeId = "ch12_steamworks_entry"
+        ),
+        DialogueNode(
+            id = "ch12_steamworks_entry",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "The outer ironworks churn in a deafening heart of pistons and drop-forges. Catwalks cross roaring furnaces, and at every junction, armored clockwork sentinels stand locked mid-march, waiting for the intrusion alarm to let them finish their stride.",
+            choices = listOf(
+                DialogueChoice("ch12_pipe_lanes", "Thread the high pipe-lanes above the furnace floor", listOf("thread", "pipe", "lanes", "furnace", "high"), "ch12_pipe_lanes_scene"),
+                DialogueChoice("ch12_furnace_heat", "Move through the furnace heat, where the sentinels scan least", listOf("furnace", "heat", "below", "sentinels"), "ch12_furnace_heat_scene")
+            )
+        ),
+        DialogueNode(
+            id = "ch12_pipe_lanes_scene",
+            speaker = DialogueSpeaker.ZEPHYR,
+            side = SpeakerSide.LEFT,
+            text = "Zephyr hurls the grapple into the vaulted girders and the fellowship climbs hand over hand into the steam-choked dark above the works. Below, the sentinels march on, unaware, their clockwork heads turning in the empty lanes they were set to guard.",
+            nextNodeId = "ch12_patrol_trigger"
+        ),
+        DialogueNode(
+            id = "ch12_furnace_heat_scene",
+            speaker = DialogueSpeaker.AETHEL,
+            side = SpeakerSide.LEFT,
+            text = "You walk straight into the roar of the furnaces, letting the heat wrap the fellowship in its shroud. Sensors tuned for the cold of living breath go blind around you. On the far catwalk, a patrol halts, scans, and marches on whistling steam.",
+            nextNodeId = "ch12_patrol_trigger"
+        ),
+        DialogueNode(
+            id = "ch12_patrol_trigger",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            triggerBattleEncounterId = "ch12_automaton_patrol",
+            text = "The catwalk collapses under concealed counterweights! From the smoke, Ouros's automaton patrol — tripod wardens of riveted brass and molten cores — clanks into formation, their targeting lenses burning with furnace light!"
+        ),
+        DialogueNode(
+            id = "ch12_patrol_victory",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            setFlagOnEnter = "ch12_sentry_down",
+            text = "The warden-automata grind to a halt, sparks guttering out of their cracked cores. Cedric wipes cinders from his brow. 'It will take more than iron to keep this bell from ringing,' he says, and the forge-light glints off his smile.",
+            nextNodeId = "ch12_bastion_core"
+        ),
+        DialogueNode(
+            id = "ch12_bastion_core",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "The express lift hauls you up through the bastion's living gears into the belfry command deck. Stands of black machinery surround the great furnace heart, and above, caged and humming, hangs the Resonant Bastion itself.",
             nextNodeId = "ch12_hub"
         ),
         DialogueNode(
@@ -1638,8 +2045,17 @@ object StoryScript {
             text = "Zephyr points to the central clockwork core. 'The bell is clamped by magnetic hydraulic locks powered by the main steam manifold. If we shut those bypass valves, the locks will drop!'",
             choices = listOf(
                 DialogueChoice("ch12_valves_choice", "Override the steam pressure bypass valves", listOf("valves", "steam", "pressure", "override", "bypass"), "ch12_valves_dialogue", "ch12_valves_complete"),
-                DialogueChoice("ch12_cogs_choice", "Disengage the magnetic clamps locking the Great Bell", listOf("cogs", "clamps", "magnetic", "disengage", "gear"), "ch12_cogs_dialogue", "ch12_cogs_complete")
+                DialogueChoice("ch12_cogs_choice", "Disengage the magnetic clamps locking the Great Bell", listOf("cogs", "clamps", "magnetic", "disengage", "gear"), "ch12_cogs_dialogue", "ch12_cogs_complete"),
+                DialogueChoice("ch12_grimoire_choice", "Read the forge-master's grimoire of lost incantations", listOf("grimoire", "forge", "incantations", "read", "oaths"), "ch12_grimoire_dialogue", "ch12_grimoire_complete")
             )
+        ),
+        DialogueNode(
+            id = "ch12_grimoire_dialogue",
+            speaker = DialogueSpeaker.ZEPHYR,
+            side = SpeakerSide.LEFT,
+            setFlagOnEnter = "ch12_grimoire_complete",
+            text = "Zephyr deciphers the forge-master's iron-bound grimoire by the light of the furnace. Its margins carry warnings in half-erased breath-code: the bell's resonance has been wired to feed the void. 'Knowledge sharpens any blade,' he says, and tucks the book into his satchel.",
+            nextNodeId = "ch12_hub"
         ),
         DialogueNode(
             id = "ch12_valves_dialogue",
@@ -1679,6 +2095,45 @@ object StoryScript {
             side = SpeakerSide.CENTER_NARRATOR,
             setFlagOnEnter = "ch12_ouros_defeated",
             text = "With a cataclysmic blast of steam and flying cogs, Warmaster Ouros collapses into glowing molten scrap! The fellowship grips the massive iron chain and pulls together. The Third Great Bell—The Resonant Bastion—tolls with a thunderous, metallic roar that shakes the very foundations of the earth! Across the skies, a blinding ribbon of celestial light solidifies into a sky bridge leading directly to the capital of Sol-Aethel!",
+            nextNodeId = "ch12_skybridge_rise"
+        ),
+        DialogueNode(
+            id = "ch12_skybridge_rise",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "The sky bridge hangs like a fallen moonbeam, wide enough for a full company, spanning from the belfry platform to the distant marble walls of the capital. Below, the Blight-ravaged kingdom lies folded in shadow — and for the first time, the road home is made of light.",
+            nextNodeId = "ch12_bridge_crossing"
+        ),
+        DialogueNode(
+            id = "ch12_bridge_crossing",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "The crossing is long enough for thoughts to unspool with each step above the void. The city ahead glitters, and somewhere in Aethelgard, a village square waits to be filled with the sound of its own bells.",
+            choices = listOf(
+                DialogueChoice("ch12_bridge_step", "Walk with steady stride toward the capital gates", listOf("walk", "steady", "gates", "capital", "bridge"), "ch12_bridge_scene"),
+                DialogueChoice("ch12_bridge_gaze", "Gaze down at the freed lands and name what you fight for", listOf("gaze", "freed", "lands", "below", "name"), "ch12_bridge_gaze_scene")
+            )
+        ),
+        DialogueNode(
+            id = "ch12_bridge_scene",
+            speaker = DialogueSpeaker.AETHEL,
+            side = SpeakerSide.LEFT,
+            text = "You match the rhythm of the party's footfalls as one. The sky bridge holds firm; the wind carries the faint sound of clover-fields and far-off sheep bells, and beneath your cuirass your heart beats to the old march of returning soldiers.",
+            nextNodeId = "ch12_threshold_rest"
+        ),
+        DialogueNode(
+            id = "ch12_bridge_gaze_scene",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "You stop on the crown of the bridge and name them all aloud — the Marsh Fane, the Willow Sanctuary, the sunken catacombs, the Emerald Choir — each a place that went silent and each, by your hand, learning to sing again. The fellowship listens, and the bridge does not hurry you.",
+            nextNodeId = "ch12_threshold_rest"
+        ),
+        DialogueNode(
+            id = "ch12_threshold_rest",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            setFlagOnEnter = "ch12_threshold_rest_complete",
+            text = "The fellowship camps on the sky bridge's far end, on the roof of the outer curtain wall, watching the capital's lights edge closer with the dawn. Restored and armed in spirit, the company wakes ready to enter the silent city.",
             nextNodeId = "ch12_post_victory"
         ),
         DialogueNode(
@@ -1698,6 +2153,52 @@ object StoryScript {
             side = SpeakerSide.CENTER_NARRATOR,
             changeSceneId = "scene_silent_citadel",
             text = "High above the cloudline on the floating plateau of Sol-Aethel, the Silent Citadel looms in terrifying majesty. Monolithic battlements of black glass reflect the eerie silence of the capital. The Great Gates are bolted shut with obsidian sorcery.",
+            nextNodeId = "ch13_whisperway_entry"
+        ),
+        DialogueNode(
+            id = "ch13_whisperway_entry",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "Between the outer rampart and the Great Gates runs the Whisperway: the pilgrim road into Sol-Aethel, once hung with festival banners and the songs of a thousand travelers. Now shadow moves along it in skirls, and the banner poles hold garlands of black glass.",
+            choices = listOf(
+                DialogueChoice("ch13_way_still", "Walk the Whisperway still and watchful, banners overhead", listOf("walk", "still", "banners", "whisperway", "watch"), "ch13_way_still_scene"),
+                DialogueChoice("ch13_way_voice", "Call out a greeting to the empty city as you approach", listOf("call", "greeting", "voice", "empty", "city"), "ch13_way_voice_scene")
+            )
+        ),
+        DialogueNode(
+            id = "ch13_way_still_scene",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            text = "Cedric walks the road in perfect silence, and it moves his heart in ways silence seldom does. 'I have heard this road since I was a squire,' he says. 'It never sounded like this. It sounded like a festival that refused to end.'",
+            nextNodeId = "ch13_plaza_trigger"
+        ),
+        DialogueNode(
+            id = "ch13_way_voice_scene",
+            speaker = DialogueSpeaker.AETHEL,
+            side = SpeakerSide.LEFT,
+            text = "You send your voice ringing against the black glass walls, a field-call of the old realm. It returns thinner than it left, but somewhere far up among the battlements, a shutter bangs open — someone is still listening.",
+            nextNodeId = "ch13_plaza_trigger"
+        ),
+        DialogueNode(
+            id = "ch13_plaza_trigger",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            triggerBattleEncounterId = "ch13_plaza_legion",
+            text = "The Whisperway opens onto the Pilgrim's Plaza — and the plaza is not empty. Vaelor's garrison, a legion of obsidian-sheathed sentinels in ordered ranks, stand lamp-lit where the pilgrims once bought their candles. They turn as one at your approach!"
+        ),
+        DialogueNode(
+            id = "ch13_plaza_victory",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            setFlagOnEnter = "ch13_plaza_cleared",
+            text = "The garrison ranks lie broken across the flagstones, and the lamps they guarded still burn. Cedric stoops to right a toppled pilgrim's shrine at the plaza's center. 'Their candles were lit for the living,' he says. 'The city has gone long without that kind of light.'",
+            nextNodeId = "ch13_gate_foot"
+        ),
+        DialogueNode(
+            id = "ch13_gate_foot",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "You stand at the foot of the Great Gates, dwarfed by black glass and iron older than the kingdom's name. The seal of the void hums against the stone, waiting for the touch of a living voice to reveal its weakness.",
             nextNodeId = "ch13_hub"
         ),
         DialogueNode(
@@ -1707,8 +2208,17 @@ object StoryScript {
             text = "Cedric looks upon the city of his youth. 'The streets of Sol-Aethel were once filled with songs, market calls, and the laughter of pilgrims. Now it is a mausoleum in the sky. We must break the seal on these gates!'",
             choices = listOf(
                 DialogueChoice("ch13_gate_choice", "Inspect the fortified black glass portcullis", listOf("gate", "portcullis", "inspect", "glass", "black"), "ch13_gate_dialogue", "ch13_gate_complete"),
-                DialogueChoice("ch13_seal_choice", "Purge the obsidian seal binding the entrance", listOf("seal", "purge", "dispel", "binding", "obsidian"), "ch13_seal_dialogue", "ch13_seal_complete")
+                DialogueChoice("ch13_seal_choice", "Purge the obsidian seal binding the entrance", listOf("seal", "purge", "dispel", "binding", "obsidian"), "ch13_seal_dialogue", "ch13_seal_complete"),
+                DialogueChoice("ch13_banners_choice", "Take down a fallen Whisperway banner and carry it to the gates", listOf("banners", "banner", "whisperway", "carry", "gates"), "ch13_banners_dialogue", "ch13_banners_complete")
             )
+        ),
+        DialogueNode(
+            id = "ch13_banners_dialogue",
+            speaker = DialogueSpeaker.LYRA,
+            side = SpeakerSide.LEFT,
+            setFlagOnEnter = "ch13_banners_complete",
+            text = "Lyra finds one banner that survived the purge — the old lion-and-sun of Sol-Aethel, threadbare but whole. She folds it carefully into her satchel. 'When we ring the bells,' she says, 'I want this going back up on that pole before the echoes fade.'",
+            nextNodeId = "ch13_hub"
         ),
         DialogueNode(
             id = "ch13_gate_dialogue",
@@ -1748,6 +2258,45 @@ object StoryScript {
             side = SpeakerSide.CENTER_NARRATOR,
             setFlagOnEnter = "ch13_vaelor_defeated",
             text = "Commander Vaelor falls from the ramparts, and the Void Horn shatters into harmless glass shards! Beyond the citadel gates, a grand celestial plaza opens onto the lake of the Void Reservoir, where the stolen voices of the world are pooled.",
+            nextNodeId = "ch13_capital_stirs"
+        ),
+        DialogueNode(
+            id = "ch13_capital_stirs",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "With the garrison broken and the seal undone, the high city begins, at last, to stir. Here and there a shutter opens, a lantern wavers, a frozen fountain sighs back into motion. The citizens of Sol-Aethel emerge in twos and threes, blinking in the light of their own reclaimed streets.",
+            nextNodeId = "ch13_cedric_memory"
+        ),
+        DialogueNode(
+            id = "ch13_cedric_memory",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            text = "Cedric stands in the middle of the waking plaza, sword grounded, helmet under his arm. 'My mother sold cured meats in the lantern market, just there,' he says, pointing to a corner stall now veiled in glass droop. 'She died the winter the bells went dark. If the bells ring again, I would like to ring one for her.'",
+            choices = listOf(
+                DialogueChoice("ch13_memory_song", "Promise him that the first toll shall carry her name", listOf("promise", "song", "toll", "her", "name"), "ch13_market_song"),
+                DialogueChoice("ch13_memory_promise", "Swear you will return here to ring them together", listOf("swear", "return", "ring", "together", "plaza"), "ch13_market_promise")
+            )
+        ),
+        DialogueNode(
+            id = "ch13_market_song",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            text = "Sir Cedric repeats his mother's name once, like a man testing a blade for balance, then smiles — the first true smile you have seen since the mausoleum. 'Then she will hear the end of the Blight,' he says, 'and that will be worth every scar between here and the summit.'",
+            nextNodeId = "ch13_plaza_rest"
+        ),
+        DialogueNode(
+            id = "ch13_market_promise",
+            speaker = DialogueSpeaker.AETHEL,
+            side = SpeakerSide.LEFT,
+            text = "You clasp his gauntlet in the manner of knights sealing vows and make the promise plain: when the bells of Sol-Aethel sing again, Sir Cedric will stand at the great bell's rope and give it his name. He nods once, formal and grave, and the plaza watches them both with its new, waking eyes.",
+            nextNodeId = "ch13_plaza_rest"
+        ),
+        DialogueNode(
+            id = "ch13_plaza_rest",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            setFlagOnEnter = "ch13_plaza_rest_complete",
+            text = "The citizens of the high city bring bread and water to the rampart camp, whispering their first words in months as gifts. By the time the stars wheel, the fellowship is healed, fed, and standing at the threshold of the Void Reservoir, ready to descend.",
             nextNodeId = "ch13_post_victory"
         ),
         DialogueNode(
@@ -1767,6 +2316,52 @@ object StoryScript {
             side = SpeakerSide.CENTER_NARRATOR,
             changeSceneId = "scene_void_reservoir",
             text = "A vast sunken lake of pitch-black liquid silence stretches beneath a weeping starlight dome. Ripples move across the dark pool in complete, eerie noiselessness. Swirling voice motes struggle beneath the surface, trapped like captive stars.",
+            nextNodeId = "ch14_shore_entry"
+        ),
+        DialogueNode(
+            id = "ch14_shore_entry",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "The reservoir shore is a drowned pilgrim road, its flagstones half-swallowed by the black lake. Broken lanterns line the way, and the water laps without a sound — a wrongness that presses on the ears like held breath.",
+            choices = listOf(
+                DialogueChoice("ch14_shore_kneel", "Kneel at the drowned pilgrims' shrine before the crossing", listOf("kneel", "shrine", "pilgrims", "crossing", "shore"), "ch14_shore_kneel_scene"),
+                DialogueChoice("ch14_shore_ward", "Trace a ward of protection over the silent waters", listOf("ward", "protect", "waters", "silent", "trace"), "ch14_shore_ward_scene")
+            )
+        ),
+        DialogueNode(
+            id = "ch14_shore_kneel_scene",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            text = "Cedric kneels before the half-drowned shrine and says the old traveler's blessing for the lost. The lake does not mock him. Somewhere under the black glass water, a voice-still-light answers once, faint as a struck bell far below.",
+            nextNodeId = "ch14_shallows_trigger"
+        ),
+        DialogueNode(
+            id = "ch14_shore_ward_scene",
+            speaker = DialogueSpeaker.AETHEL,
+            side = SpeakerSide.LEFT,
+            text = "You draw the ward across the shallows and the water recoils in a ring of shivering light, as if the silence itself flinches from the touch of a living syllable. Beyond the ring, the lake's surface grows taut and watchful.",
+            nextNodeId = "ch14_shallows_trigger"
+        ),
+        DialogueNode(
+            id = "ch14_shallows_trigger",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            triggerBattleEncounterId = "ch14_shallows_husks",
+            text = "The shallows erupt! Drowned husks — pilgrims who waded in seeking their stolen voices only to be caught by the lake — drag themselves ashore by the hundreds, their throats still open in silent screams, and close on the fellowship!"
+        ),
+        DialogueNode(
+            id = "ch14_shallows_victory",
+            speaker = DialogueSpeaker.LYRA,
+            side = SpeakerSide.LEFT,
+            setFlagOnEnter = "ch14_shallows_cleared",
+            text = "The husks crumble into silt, and for a single beat the lake goes clear as glass. Lyra watches the drowned settle gently to the bottom and speaks the old grove-prayer over them. 'They were not taken by the water,' she says. 'They were taken by forgetting.'",
+            nextNodeId = "ch14_shore_cleared"
+        ),
+        DialogueNode(
+            id = "ch14_shore_cleared",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "The shore of the Reservoir is quiet again, but now it is the quiet of the living, not of the void. The drowned lights of the voice motes shift below the surface, and the true crossing opens ahead.",
             nextNodeId = "ch14_hub"
         ),
         DialogueNode(
@@ -1776,8 +2371,17 @@ object StoryScript {
             text = "Lyra clutches her ears. 'The water... it is drinking our echoes before they can even leave our lips. This is where Malakor pools the stolen voices of everyone petrified across Aethelgard.'",
             choices = listOf(
                 DialogueChoice("ch14_archons_choice", "Commune with the petrified High Archons kneeling by the lake", listOf("archons", "commune", "high", "statues", "kneeling"), "ch14_archons_dialogue", "ch14_archons_complete"),
-                DialogueChoice("ch14_eddies_choice", "Dispel the swirling silt eddies of liquid silence", listOf("eddies", "dispel", "silt", "liquid", "silence"), "ch14_eddies_dialogue", "ch14_eddies_complete")
+                DialogueChoice("ch14_eddies_choice", "Dispel the swirling silt eddies of liquid silence", listOf("eddies", "dispel", "silt", "liquid", "silence"), "ch14_eddies_dialogue", "ch14_eddies_complete"),
+                DialogueChoice("ch14_rites_choice", "Perform the ancient rite of the drowned whose names are not lost", listOf("rites", "drowned", "ancient", "names", "lost"), "ch14_rites_dialogue", "ch14_rites_complete")
             )
+        ),
+        DialogueNode(
+            id = "ch14_rites_dialogue",
+            speaker = DialogueSpeaker.LYRA,
+            side = SpeakerSide.LEFT,
+            setFlagOnEnter = "ch14_rites_complete",
+            text = "You stand at the shore's crown and name the drowned — every pilgrim name the Archons' records give — and at each name a single mote of light shakes loose from the lake's black bed and rises, until a dim constellation of the lost floats above the water, waiting to be freed.",
+            nextNodeId = "ch14_hub"
         ),
         DialogueNode(
             id = "ch14_archons_dialogue",
@@ -1801,8 +2405,62 @@ object StoryScript {
             side = SpeakerSide.CENTER_NARRATOR,
             text = "The liquid silence rises into a towering tidal wave as the colossal Abyssal Leviathan breaches the surface! Tendrils of pure void lash out, suffocating all sound in their wake!",
             choices = listOf(
-                DialogueChoice("ch14_boss_ready", "Strike the Abyssal Leviathan and free the stolen voices!", listOf("strike", "leviathan", "free", "voices", "battle"), "ch14_leviathan_assault")
+                DialogueChoice("ch14_boss_ready", "Descend the umbilical trench into the Leviathan's den", listOf("descend", "trench", "leviathan", "den", "battle"), "ch14_trench_descent")
             )
+        ),
+        DialogueNode(
+            id = "ch14_trench_descent",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            changeSceneId = "scene_umbral_trench",
+            text = "The Leviathan does not wait on the shore — it retreats down the umbilical trench that feeds the reservoir, trailing thick black silk. Following it means entering the drowned dark where the voices of the reservoir are drawn and buried.",
+        ),
+        DialogueNode(
+            id = "ch14_trench_entry",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "The trench walls are lined with the calcified shells of swallowed songs — pearl-and-glass growths that hold the dim shapes of motes thrashing inside. The way ahead splits, both branches falling into the same swallowing dark.",
+            choices = listOf(
+                DialogueChoice("ch14_trench_dive", "Dive straight down after the Leviathan's wake", listOf("dive", "straight", "wake", "down", "trench"), "ch14_trench_dive_scene"),
+                DialogueChoice("ch14_trench_hook", "Hang back and follow the trench wall to its hidden edge", listOf("hang", "wall", "edge", "hidden", "follow"), "ch14_trench_hook_scene")
+            )
+        ),
+        DialogueNode(
+            id = "ch14_trench_dive_scene",
+            speaker = DialogueSpeaker.AETHEL,
+            side = SpeakerSide.LEFT,
+            text = "You follow the silk-threaded wake with a torch of pure voice-light, letting its hum hold the dark at bay. Around you, the cocoons of stolen songs sway like a drowned orchard, and the trench floor slants toward a vast buried chamber.",
+            nextNodeId = "ch14_trench_trigger"
+        ),
+        DialogueNode(
+            id = "ch14_trench_hook_scene",
+            speaker = DialogueSpeaker.LYRA,
+            side = SpeakerSide.LEFT,
+            text = "Lyra finds the sideroad the Leviathan's keepers used — a shelf of worked stone running beneath the main bed. Its carvings show the drowned rite of the Reservoir being performed by figures who did not want to be seen. The shelf ends in the wall of the buried chamber.",
+            nextNodeId = "ch14_trench_trigger"
+        ),
+        DialogueNode(
+            id = "ch14_trench_trigger",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            triggerBattleEncounterId = "ch14_trench_leeches",
+            text = "The buried chamber's floor comes alive! Trench leeches — great blind coils, each with the stolen voice of a hundred throats knotted inside its hide — wreathe up from the silt to feed the Leviathan's feast, singing with mouths that are not theirs!"
+        ),
+        DialogueNode(
+            id = "ch14_trench_victory",
+            speaker = DialogueSpeaker.LYRA,
+            side = SpeakerSide.LEFT,
+            setFlagOnEnter = "ch14_trench_cleared",
+            text = "The leeches burst into cataracts of freed motes, and the voice-stars they release spiral up through the trench like a river of lantern-light. Lyra staggers under the swell of it — a thousand names and lullabies rushing past her ears, all of them, at last, free.",
+            nextNodeId = "ch14_broach"
+        ),
+        DialogueNode(
+            id = "ch14_broach",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            changeSceneId = "scene_void_reservoir",
+            text = "The ribbon of freed motes carves a tunnel of light back up to the reservoir floor, and you rise with it into the open air of the lakeshore — just as the black water convulses and the Abyssal Leviathan bursts from the reservoir's heart, howling with all the voices it has swallowed!",
+            nextNodeId = "ch14_leviathan_assault"
         ),
         DialogueNode(
             id = "ch14_leviathan_assault",
@@ -1817,6 +2475,45 @@ object StoryScript {
             side = SpeakerSide.CENTER_NARRATOR,
             setFlagOnEnter = "ch14_leviathan_defeated",
             text = "With a deafening shriek of dissolving shadow, the Abyssal Leviathan bursts into millions of incandescent voice motes! The motes swirl around the fellowship like a spiral galaxy, singing melodies of love, hope, and courage. The liquid silence evaporates, revealing the crystalline Ribbon Stair ascending to the Spire Summit!",
+            nextNodeId = "ch14_motes_awakened"
+        ),
+        DialogueNode(
+            id = "ch14_motes_awakened",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "The freed voices do not scatter. They coil around the fellowship in a slow, warm galaxy, and one mote — brighter than the rest — drifts to rest above the everyone's upturned palms. It is not a stranger's voice. It is the one you have both been carrying unfound at the bottom of your own grief.",
+            nextNodeId = "ch14_mote_of_sister"
+        ),
+        DialogueNode(
+            id = "ch14_mote_of_sister",
+            speaker = DialogueSpeaker.VOICE_MOTE,
+            side = SpeakerSide.LEFT,
+            text = "The mote pulses in a rhythm that is almost breathing. In its shimmering light, a figure many years younger tents her fingers and leans close, the way she did when the two of you would weigh the world together. Her voice, when it comes, is rust-bright and gentle. 'I never needed you to save me,' it says. 'I only needed you to remember I was worth saving.'",
+            choices = listOf(
+                DialogueChoice("ch14_mote_listen", "Listen to her voice as long as the mote will hold", listOf("listen", "voice", "mote", "hold", "hear"), "ch14_mote_scene"),
+                DialogueChoice("ch14_mote_answer", "Answer her, and give her a memory of your own", listOf("answer", "memory", "give", "speak", "her"), "ch14_mote_answer_scene")
+            )
+        ),
+        DialogueNode(
+            id = "ch14_mote_scene",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "You stay still while the mote sings the fragment of her life the lake had stolen: a rainy market day, a shared apple, a joke whose punchline neither of you ever fully remembered. When it fades, you are crying without noticing, and the galaxy of voices overhead kindles a little brighter for it.",
+            nextNodeId = "ch14_stair_rest"
+        ),
+        DialogueNode(
+            id = "ch14_mote_answer_scene",
+            speaker = DialogueSpeaker.AETHEL,
+            side = SpeakerSide.LEFT,
+            text = "You tell the mote the memory it could not have stolen — the morning she left, and the last thing she said, and how you have carried it verbatim since. The mote shudders, brightens to a small sun, and then, so softly it is almost a thought, says: 'Then I was not wasted.'",
+            nextNodeId = "ch14_stair_rest"
+        ),
+        DialogueNode(
+            id = "ch14_stair_rest",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            setFlagOnEnter = "ch14_stair_rest_complete",
+            text = "The fellowship makes rest beneath the drifting constellation of freed voices, wrapped in songs the reservoir will never drink again. Sleep comes easily, woundless and deep, and in the morning the Ribbon Stair stands bright, waiting to be climbed.",
             nextNodeId = "ch14_post_victory"
         ),
         DialogueNode(
@@ -1836,6 +2533,103 @@ object StoryScript {
             side = SpeakerSide.CENTER_NARRATOR,
             changeSceneId = "scene_celestial_spire",
             text = "You ascend a stairway made of solidified harmonic light suspended between the clouds and stars. The four Great Bell Towers of Aethelgard form a colossal cross of gold, jade, and iron below you. Ahead stands the Celestial Belfry.",
+            nextNodeId = "ch15_stair_entry"
+        ),
+        DialogueNode(
+            id = "ch15_stair_entry",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "The Ribbon Stair narrows as it climbs, and the air thins to crystal. Higher still, the stair rises through a ring of worn stone archways that have stood since before the first syllable — and beneath each arch, a gate of unfinished business waits for a companion's name.",
+            choices = listOf(
+                DialogueChoice("ch15_stair_sing", "Climb singing, letting each step carry the fellowship's songs", listOf("sing", "climb", "songs", "steps", "stair"), "ch15_stair_sing_scene"),
+                DialogueChoice("ch15_stair_logic", "Climb in steady, measured silence, mapping every arch", listOf("steady", "silence", "arch", "measure", "climb"), "ch15_stair_logic_scene")
+            )
+        ),
+        DialogueNode(
+            id = "ch15_stair_sing_scene",
+            speaker = DialogueSpeaker.LYRA,
+            side = SpeakerSide.LEFT,
+            text = "Lyra begins the song of the four bells — Solaria, the Choir, the Bastion, and the one still ungathered — and one by one the fellowship takes up a part. The stair brightens beneath your feet, and the first archway's shadow draws back like a curtain.",
+            nextNodeId = "ch15_trial_gold_gate"
+        ),
+        DialogueNode(
+            id = "ch15_stair_logic_scene",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            text = "Cedric counts the arches aloud, noting the worn patterns in each threshold — the marks of countless pilgrims who climbed to judgment and never returned. 'These gates weigh a soul,' he says. 'Let us give them a fellowship to weigh.'",
+            nextNodeId = "ch15_trial_gold_gate"
+        ),
+        DialogueNode(
+            id = "ch15_trial_gold_gate",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "The first archway bars the stair with a shimmer of molten light. Within it, the companion who has been weighed most by fortune and coffer stands revealed — Sir Cedric, whose vow was once sold to silence for a chance to atone.",
+            nextNodeId = "ch15_trial_gold_trigger"
+        ),
+        DialogueNode(
+            id = "ch15_trial_gold_trigger",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            triggerBattleEncounterId = "ch15_trial_gold",
+            text = "The Gate of Gold summons Cedric's trial: the gilded reflections of every oath bought and bent — armored creditors of light who would have him, even now, trade his name for peace. Sir Cedric raises his shield. 'My vow was never for sale. Even peace may not buy it.'"
+        ),
+        DialogueNode(
+            id = "ch15_trial_gold_victory",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            setFlagOnEnter = "ch15_trial_gold_complete",
+            text = "The golden reflections shatter against his unyielding shield. Cedric stands unspent, and the archway's molten shimmer cools into a door of plain, honest iron. 'It tried to buy me,' he says, 'with everything I never wanted enough.'",
+            nextNodeId = "ch15_trial_grove_gate"
+        ),
+        DialogueNode(
+            id = "ch15_trial_grove_gate",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "The second archway curtains the stair in tender green shadow. Within it, the companion whose heart was torn between duty and homeland steps forward — Lyra, who fled the choir, and has not forgiven herself for it.",
+            nextNodeId = "ch15_trial_grove_trigger"
+        ),
+        DialogueNode(
+            id = "ch15_trial_grove_trigger",
+            speaker = DialogueSpeaker.LYRA,
+            side = SpeakerSide.LEFT,
+            triggerBattleEncounterId = "ch15_trial_grove",
+            text = "The Gate of the Grove answers with the roots that always grow back: snarled memories of the day she ran, made into thorn-vined guardians that know her every fear. Lyra's staff comes up, her jaw set. 'I ran then. I am walking through it now.'"
+        ),
+        DialogueNode(
+            id = "ch15_trial_grove_victory",
+            speaker = DialogueSpeaker.LYRA,
+            side = SpeakerSide.LEFT,
+            setFlagOnEnter = "ch15_trial_grove_complete",
+            text = "The thorn guardians take root and flower as the gate's shadow fades. Where the thorns step back, a floor of soft moss and returning dawnlight remains. Lyra presses her hand to it and whispers, 'I am the promise now. Not the flight.'",
+            nextNodeId = "ch15_trial_shadow_gate"
+        ),
+        DialogueNode(
+            id = "ch15_trial_shadow_gate",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "The third archway bleeds darkness into the ascending light. Within it, the companion who has lived longest in shadow waits to be judged — Zephyr, the guild's blade who has carried the silence of his mother like a wound.",
+            nextNodeId = "ch15_trial_shadow_trigger"
+        ),
+        DialogueNode(
+            id = "ch15_trial_shadow_trigger",
+            speaker = DialogueSpeaker.ZEPHYR,
+            side = SpeakerSide.LEFT,
+            triggerBattleEncounterId = "ch15_trial_shadow",
+            text = "The Gate of Shadow releases all that Nocturne ever was — every lesson of stealth and breath-stealing, made into assassins of the dark. Zephyr draws his daggers and walks in. 'I learned all their tricks,' he says. 'I was never one of them.'"
+        ),
+        DialogueNode(
+            id = "ch15_trial_shadow_victory",
+            speaker = DialogueSpeaker.ZEPHYR,
+            side = SpeakerSide.LEFT,
+            setFlagOnEnter = "ch15_trial_shadow_complete",
+            text = "The shadow assassins dissolve at the first stroke of a blade that no longer hunts. Zephyr stands in the returning starlight, and for the first time his own shadow at his feet looks like a guard, not a chain.",
+            nextNodeId = "ch15_threshold"
+        ),
+        DialogueNode(
+            id = "ch15_threshold",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "The three archways stand open behind the fellowship as the stair reaches its crown — a wide starlit landing before the great double doors of the Celestial Belfry. Ahead, the doors hum with expectation, waiting on one last, human pause.",
             nextNodeId = "ch15_hub"
         ),
         DialogueNode(
@@ -1846,8 +2640,17 @@ object StoryScript {
             choices = listOf(
                 DialogueChoice("ch15_cedric_choice", "Speak with Sir Cedric upon the threshold of dawn", listOf("cedric", "dawn", "vow", "speak", "templar"), "ch15_cedric_dialogue", "ch15_cedric_complete"),
                 DialogueChoice("ch15_lyra_choice", "Speak with Lyra beneath the starlight canopy", listOf("lyra", "starlight", "grove", "warden", "speak"), "ch15_lyra_dialogue", "ch15_lyra_complete"),
-                DialogueChoice("ch15_zephyr_choice", "Speak with Zephyr overlooking the waking world", listOf("zephyr", "shadow", "world", "overlook", "speak"), "ch15_zephyr_dialogue", "ch15_zephyr_complete")
+                DialogueChoice("ch15_zephyr_choice", "Speak with Zephyr overlooking the waking world", listOf("zephyr", "shadow", "world", "overlook", "speak"), "ch15_zephyr_dialogue", "ch15_zephyr_complete"),
+                DialogueChoice("ch15_bell_choice", "Steady the hush with the chant that awaits the toll", listOf("bell", "toll", "chant", "hush", "steady"), "ch15_bell_dialogue", "ch15_bell_complete")
             )
+        ),
+        DialogueNode(
+            id = "ch15_bell_dialogue",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            setFlagOnEnter = "ch15_bell_complete",
+            text = "You lead the fellowship in the tolling chant — the verse each Bell of Aethelgard is meant to answer, the one the four companions will strike together in the belfry beyond. Their voices braid and hold a single long note, and the doors themselves shiver with the sound of what attends them.",
+            nextNodeId = "ch15_hub"
         ),
         DialogueNode(
             id = "ch15_cedric_dialogue",
@@ -1895,6 +2698,45 @@ object StoryScript {
             side = SpeakerSide.CENTER_NARRATOR,
             setFlagOnEnter = "ch15_custodians_defeated",
             text = "The Archon Custodians bow low, their halberds lowering as the golden doors slowly swing open into the celestial belfry. Beyond, against a swirling backdrop of cosmic auroras, stands Grand Inquisitor Malakor—The Mute Sovereign!",
+            nextNodeId = "ch15_doors_open"
+        ),
+        DialogueNode(
+            id = "ch15_doors_open",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "The golden doors swing wide on their own, silent as everything Malakor has made. Beyond them, at the far end of the belfry floor, the Bell of Eternity hangs in a field of starlight — and the pathway to it is open, waiting, absolute.",
+            nextNodeId = "ch15_fellowship_oath"
+        ),
+        DialogueNode(
+            id = "ch15_fellowship_oath",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "The four companions stand at the threshold of the belfry, looking across the final floor to the waiting Bell. One long breath passes through them all at once. This is the last step before the last word.",
+            choices = listOf(
+                DialogueChoice("ch15_oath_together", "Bind the fellowship's promise before crossing the floor", listOf("oath", "promise", "bind", "together", "fellowship"), "ch15_oath_scene"),
+                DialogueChoice("ch15_oath_bell", "Promise each other one thing each will do when the bells ring", listOf("promise", "each", "bell", "ring", "one"), "ch15_oath_bell_scene")
+            )
+        ),
+        DialogueNode(
+            id = "ch15_oath_scene",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            text = "Cedric lays his gauntlet flat, palm up, and the others set their hands upon it, one by one. 'However this ends,' he says, 'it ends with us having spoken. That is more than Malakor has ever given anyone.' The four hands hold, and the belfry floor may finally be crossed.",
+            nextNodeId = "ch15_prefinale_rest"
+        ),
+        DialogueNode(
+            id = "ch15_oath_bell_scene",
+            speaker = DialogueSpeaker.ZEPHYR,
+            side = SpeakerSide.LEFT,
+            text = "Each of you names one thing the ringing of the bells will mean — a mother's name for Zephyr, a choir for Lyra, a promise by an old market stall for Cedric, and for you, a world that can say 'I remember' again. The staircase of stars beneath them brightens at the sound of it.",
+            nextNodeId = "ch15_prefinale_rest"
+        ),
+        DialogueNode(
+            id = "ch15_prefinale_rest",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            setFlagOnEnter = "ch15_prefinale_rest_complete",
+            text = "The fellowship rests in the antechamber of the belfry, tenders to each other's armor and robes under the first stars of an infinite hour. When they rise, they are whole, and the Bell of Eternity has grown impatient with silence.",
             nextNodeId = "ch15_post_victory"
         ),
         DialogueNode(
@@ -1914,6 +2756,53 @@ object StoryScript {
             side = SpeakerSide.CENTER_NARRATOR,
             changeSceneId = "scene_final_summit",
             text = "The pinnacle of the Spire of Echoes touches the outer rim of the cosmos. High above hangs the Fourth Great Bell—The Bell of Eternity—cast from star-metal and meteoric glass. Grand Inquisitor Malakor stands beneath it, his filigree muzzle mask gleaming beneath cold crimson eyes.",
+            nextNodeId = "ch16_vestibule_entry"
+        ),
+        DialogueNode(
+            id = "ch16_vestibule_entry",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            changeSceneId = "scene_celestial_vestibule",
+            text = "Between the summit stairs and Malakor's dais lies the Vestibule of Echoes: four pillars of living glass, each holding a fragment of the world's song, each ringed by the frozen supplicants who came to bow to silence and never left. The glass pillars hum as the fellowship passes — and one by one, the supplicants begin to rise.",
+            choices = listOf(
+                DialogueChoice("ch16_vest_chant", "Raise the Toll Chant to match the hum of the pillars", listOf("chant", "pillars", "hum", "raise", "toll"), "ch16_vest_chant_scene"),
+                DialogueChoice("ch16_vest_face", "Face the risen supplicants and hold your ground", listOf("face", "supplicants", "ground", "stand", "rise"), "ch16_vest_face_scene")
+            )
+        ),
+        DialogueNode(
+            id = "ch16_vest_chant_scene",
+            speaker = DialogueSpeaker.AETHEL,
+            side = SpeakerSide.LEFT,
+            text = "You strike the Toll Chant and the pillars drink it in, their hum climbing toward the Bell of Eternity. The supplicants' heads turn toward the sound like flowers toward dawn, and their frozen hands unclench from their raptor-prayers.",
+            nextNodeId = "ch16_vest_trigger"
+        ),
+        DialogueNode(
+            id = "ch16_vest_face_scene",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            text = "Cedric plants himself before the rising supplicants, shield high, and the company closes ranks at his back. The risen ones look at the wall of living defiance before them — and for the first time since their petrification, their mouths frame a question rather than a plea.",
+            nextNodeId = "ch16_vest_trigger"
+        ),
+        DialogueNode(
+            id = "ch16_vest_trigger",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            triggerBattleEncounterId = "ch16_nullifier_gate",
+            text = "The four glass pillars shatter inward and the Echo Nullifiers — Malakor's last gatekeepers, each forged to erase a thousand voices — step from the shards, weapons shaped like the negative spaces where songs used to be!"
+        ),
+        DialogueNode(
+            id = "ch16_vest_victory",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            setFlagOnEnter = "ch16_vestibule_cleared",
+            text = "The Nullifiers fall, and with them the last armed echo of the old silence. The four pillars slowly repair themselves — now glowing softer, hymn-bright instead of void-bright — as the supplicants kneel back down, this time in quiet wonder at the pillars' restored light.",
+            nextNodeId = "ch16_mirror_gate"
+        ),
+        DialogueNode(
+            id = "ch16_mirror_gate",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "Beyond the pillars, the vestibule narrows into a gallery of polished obsidian — a hall of mirrors that has caught and kept every doubt spoken within it for a thousand years. At the far end stands Malakor, unmoved, watching your approach in every reflection.",
             nextNodeId = "ch16_confrontation"
         ),
         DialogueNode(
@@ -1929,8 +2818,48 @@ object StoryScript {
             side = SpeakerSide.LEFT,
             text = "Aethel steps forward, voice ringing like pure bronze: 'Words can wound, Malakor, but words are also how we say I love you. Words are how we promise to protect each other. Without voice, peace is just an empty grave! We will not let your sorrow mute the universe!'",
             choices = listOf(
-                DialogueChoice("ch16_boss_ready", "Confront Grand Inquisitor Malakor, The Mute Sovereign!", listOf("confront", "malakor", "sovereign", "final", "battle"), "ch16_malakor_assault")
+                DialogueChoice("ch16_boss_ready", "Defy the doubt-thoughts in the Mirror Gallery and stride toward Malakor", listOf("defy", "mirror", "malakor", "gallery", "battle"), "ch16_mirror_entry")
             )
+        ),
+        DialogueNode(
+            id = "ch16_mirror_entry",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "The gallery of mirrors swallows the light. In each polished face, a reflection of the fellowship appears — then begins to move of its own accord, whispering every fear that was ever set down here in the shape of your own voices. Malakor watches from the far end, patient, unmoved.",
+            choices = listOf(
+                DialogueChoice("ch16_mirror_deny", "Deny the doubts and walk through the gallery unbroken", listOf("deny", "doubts", "walk", "through", "unbroken"), "ch16_mirror_deny_scene"),
+                DialogueChoice("ch16_mirror_speak", "Speak every doubt aloud so the mirrors lose their hold", listOf("speak", "aloud", "doubts", "mirrors", "hold"), "ch16_mirror_speak_scene")
+            )
+        ),
+        DialogueNode(
+            id = "ch16_mirror_deny_scene",
+            speaker = DialogueSpeaker.AETHEL,
+            side = SpeakerSide.LEFT,
+            text = "You refuse the reflections one by one — every whispered could-have, every doubt Malakor has steeped in this hall for generations — until the mirrors, having no purchase, begin to crack with the strain of holding lies against a will that will not bend.",
+            nextNodeId = "ch16_mirror_trigger"
+        ),
+        DialogueNode(
+            id = "ch16_mirror_speak_scene",
+            speaker = DialogueSpeaker.LYRA,
+            side = SpeakerSide.LEFT,
+            text = "You walk the gallery saying each doubt aloud as your own voice — not a reflection's, but yours — and the naming of them drains the venom from the hall. 'A fear that is named,' Lyra says softly, 'is a fear that has already lost.'",
+            nextNodeId = "ch16_mirror_trigger"
+        ),
+        DialogueNode(
+            id = "ch16_mirror_trigger",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            triggerBattleEncounterId = "ch16_mirror_gauntlet",
+            text = "The mirrors shatter all at once — and from the shards, the Mirror Gauntlet rises: the doubt-shadows of the entire fellowship, given blade and shape, their reflections turning against their originals in Malakor's last trick before the dais!"
+        ),
+        DialogueNode(
+            id = "ch16_mirror_victory",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            setFlagOnEnter = "ch16_mirror_cleared",
+            changeSceneId = "scene_final_summit",
+            text = "The doubt-shadows dissolve into falling light, and the gallery empties into the open air of the summit. Ahead, across the star-lit dais, Malakor stands beneath the Bell of Eternity — mask level, hands still, patient as the void he has become. There is nothing left between you now.",
+            nextNodeId = "ch16_malakor_assault"
         ),
         DialogueNode(
             id = "ch16_malakor_assault",
@@ -1945,6 +2874,20 @@ object StoryScript {
             side = SpeakerSide.RIGHT,
             setFlagOnEnter = "malakor_defeated",
             text = "Malakor falls to his knees upon the celestial dais. The filigree mask cracks and clatters to the stone floor. For the first time in five hundred years, color returns to his pale skin and a tear tracks down his cheek. He touches his throat and whispers with a restored, frail human voice: 'I remember... the song my mother sang.' He closes his eyes with a serene smile and dissolves into peaceful motes of golden light.",
+            nextNodeId = "ch16_incantation_verse"
+        ),
+        DialogueNode(
+            id = "ch16_incantation_verse",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            text = "The last mote of Malakor's light rises past your face and is gone into the auroras. In the hush that follows, you realize the summit is not silent at all — it is humming, the four-line Primordial Incantation already forming itself unbidden in each of your four voices, waiting for one joined breath.",
+            nextNodeId = "ch16_bell_vigil"
+        ),
+        DialogueNode(
+            id = "ch16_bell_vigil",
+            speaker = DialogueSpeaker.AETHEL,
+            side = SpeakerSide.LEFT,
+            text = "The four companions gather under the Bell of Eternity, hands on the cord of braided starlight, and hold the incantation ready in the living hush. The Mute Sovereign's reign is over; only the first toll remains. Whatever comes after the ringing, none of you will face it alone.",
             nextNodeId = "ch16_toll_bell"
         ),
         DialogueNode(

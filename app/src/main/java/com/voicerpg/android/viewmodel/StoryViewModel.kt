@@ -242,7 +242,7 @@ class StoryViewModel(
         var effectiveNode = resolveEffectiveHubNode(newNode, updatedFlags)
 
         var updatedPartyStats = _state.value.partyStats
-        if (newNode.setFlagOnEnter == "substory_rest_complete") {
+        if (newNode.setFlagOnEnter?.endsWith("_rest_complete") == true) {
             updatedPartyStats = updatedPartyStats.map { member ->
                 member.copy(currentHp = member.maxHp, currentMp = member.maxMp)
             }
@@ -410,37 +410,37 @@ class StoryViewModel(
             }
         }
         if (effective.id == "ch9_intro" || effective.id == "ch9_hub") {
-            if (flags["ch9_knights_complete"] == true && flags["ch9_altar_complete"] == true) {
+            if (flags["ch9_knights_complete"] == true && flags["ch9_altar_complete"] == true && flags["ch9_reliquary_complete"] == true) {
                 StoryScript.ALL_NODES["ch9_all_completed"]?.let { effective = it }
             }
         }
         if (effective.id == "ch10_intro" || effective.id == "ch10_hub") {
-            if (flags["ch10_dryads_complete"] == true && flags["ch10_seed_complete"] == true) {
+            if (flags["ch10_dryads_complete"] == true && flags["ch10_seed_complete"] == true && flags["ch10_hymn_complete"] == true) {
                 StoryScript.ALL_NODES["ch10_all_completed"]?.let { effective = it }
             }
         }
         if (effective.id == "ch11_intro" || effective.id == "ch11_hub") {
-            if (flags["ch11_traps_complete"] == true && flags["ch11_vials_complete"] == true) {
+            if (flags["ch11_traps_complete"] == true && flags["ch11_vials_complete"] == true && flags["ch11_doctrine_complete"] == true) {
                 StoryScript.ALL_NODES["ch11_all_completed"]?.let { effective = it }
             }
         }
         if (effective.id == "ch12_intro" || effective.id == "ch12_hub") {
-            if (flags["ch12_valves_complete"] == true && flags["ch12_cogs_complete"] == true) {
+            if (flags["ch12_valves_complete"] == true && flags["ch12_cogs_complete"] == true && flags["ch12_grimoire_complete"] == true) {
                 StoryScript.ALL_NODES["ch12_all_completed"]?.let { effective = it }
             }
         }
         if (effective.id == "ch13_intro" || effective.id == "ch13_hub") {
-            if (flags["ch13_gate_complete"] == true && flags["ch13_seal_complete"] == true) {
+            if (flags["ch13_gate_complete"] == true && flags["ch13_seal_complete"] == true && flags["ch13_banners_complete"] == true) {
                 StoryScript.ALL_NODES["ch13_all_completed"]?.let { effective = it }
             }
         }
         if (effective.id == "ch14_intro" || effective.id == "ch14_hub") {
-            if (flags["ch14_archons_complete"] == true && flags["ch14_eddies_complete"] == true) {
+            if (flags["ch14_archons_complete"] == true && flags["ch14_eddies_complete"] == true && flags["ch14_rites_complete"] == true) {
                 StoryScript.ALL_NODES["ch14_all_completed"]?.let { effective = it }
             }
         }
         if (effective.id == "ch15_intro" || effective.id == "ch15_hub") {
-            if (flags["ch15_cedric_complete"] == true && flags["ch15_lyra_complete"] == true && flags["ch15_zephyr_complete"] == true) {
+            if (flags["ch15_cedric_complete"] == true && flags["ch15_lyra_complete"] == true && flags["ch15_zephyr_complete"] == true && flags["ch15_bell_complete"] == true) {
                 StoryScript.ALL_NODES["ch15_all_completed"]?.let { effective = it }
             }
         }
@@ -472,6 +472,19 @@ class StoryViewModel(
             "ch14_abyssal_leviathan" -> StoryEncounters.CH14_ABYSSAL_LEVIATHAN
             "ch15_archon_custodians" -> StoryEncounters.CH15_ARCHON_CUSTODIANS
             "ch16_malakor_finale" -> StoryEncounters.CH16_MALAKOR_FINALE
+            "ch9_penitent_gate" -> StoryEncounters.CH9_PENITENT_GATE
+            "ch10_thicket_guardians" -> StoryEncounters.CH10_THICKET_GUARDIANS
+            "ch11_gorge_stalkers" -> StoryEncounters.CH11_GORGE_STALKERS
+            "ch11_archive_enforcers" -> StoryEncounters.CH11_ARCHIVE_ENFORCERS
+            "ch12_automaton_patrol" -> StoryEncounters.CH12_AUTOMATON_PATROL
+            "ch13_plaza_legion" -> StoryEncounters.CH13_PLAZA_LEGION
+            "ch14_shallows_husks" -> StoryEncounters.CH14_SHALLOWS_HUSKS
+            "ch14_trench_leeches" -> StoryEncounters.CH14_TRENCH_LEECHES
+            "ch15_trial_gold" -> StoryEncounters.CH15_TRIAL_GOLD
+            "ch15_trial_grove" -> StoryEncounters.CH15_TRIAL_GROVE
+            "ch15_trial_shadow" -> StoryEncounters.CH15_TRIAL_SHADOW
+            "ch16_nullifier_gate" -> StoryEncounters.CH16_NULLIFIER_GATE
+            "ch16_mirror_gauntlet" -> StoryEncounters.CH16_MIRROR_GAUNTLET
             else -> StoryEncounters.ALL_ENCOUNTERS.firstOrNull { it.id == encounterId } ?: StoryEncounters.PROLOGUE_SOLO
         }
         speechManager.cancel()
@@ -506,6 +519,19 @@ class StoryViewModel(
             "ch14_abyssal_leviathan" -> "ch14_leviathan_victory"
             "ch15_archon_custodians" -> "ch15_custodians_victory"
             "ch16_malakor_finale" -> "ch16_malakor_victory"
+            "ch9_penitent_gate" -> "ch9_penitent_victory"
+            "ch10_thicket_guardians" -> "ch10_thicket_victory"
+            "ch11_gorge_stalkers" -> "ch11_first_strike_victory"
+            "ch11_archive_enforcers" -> "ch11_archive_victory"
+            "ch12_automaton_patrol" -> "ch12_patrol_victory"
+            "ch13_plaza_legion" -> "ch13_plaza_victory"
+            "ch14_shallows_husks" -> "ch14_shallows_victory"
+            "ch14_trench_leeches" -> "ch14_trench_victory"
+            "ch15_trial_gold" -> "ch15_trial_gold_victory"
+            "ch15_trial_grove" -> "ch15_trial_grove_victory"
+            "ch15_trial_shadow" -> "ch15_trial_shadow_victory"
+            "ch16_nullifier_gate" -> "ch16_vest_victory"
+            "ch16_mirror_gauntlet" -> "ch16_mirror_victory"
             else -> null
         }
 

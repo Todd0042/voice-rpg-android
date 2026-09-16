@@ -119,6 +119,24 @@ data class DialogueSpeaker(
             themeColor = Color(0xFFFFB74D),
             ttsPitch = 0.65f
         )
+
+        val DRYAD_MATRON = DialogueSpeaker(
+            id = "dryad_matron",
+            name = "The Elder Dryad",
+            title = "Voice of the Emerald Choir",
+            portraitAsset = null,
+            themeColor = Color(0xFF66BB6A),
+            ttsPitch = 1.05f
+        )
+
+        val VOICE_MOTE = DialogueSpeaker(
+            id = "voice_mote",
+            name = "A Freed Voice Mote",
+            title = "Echo of the Reservoir",
+            portraitAsset = null,
+            themeColor = Color(0xFF80DEEA),
+            ttsPitch = 1.30f
+        )
     }
 }
 

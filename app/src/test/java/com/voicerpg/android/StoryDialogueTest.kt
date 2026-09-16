@@ -453,7 +453,22 @@ class StoryDialogueTest {
         assertEquals("scene_mausoleum", state.currentScene.id)
         assertEquals("ch9_intro", state.currentNode.id)
 
-        // Advance to hub
+        // Advance through approach gate
+        storyViewModel.advanceDialogue()
+        assertEquals("ch9_peristyle_entry", storyViewModel.state.value.currentNode.id)
+        val peristyleChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "ch9_peristyle_cautious" }
+        storyViewModel.selectChoice(peristyleChoice)
+        assertEquals("ch9_peristyle_cautious_scene", storyViewModel.state.value.currentNode.id)
+        storyViewModel.advanceDialogue()
+        assertEquals("ch9_penitent_trigger", storyViewModel.state.value.currentNode.id)
+        storyViewModel.advanceDialogue()
+        assertEquals("ch9_penitent_gate", storyViewModel.state.value.activeEncounter?.id)
+        storyViewModel.onCombatVictory()
+        state = storyViewModel.state.value
+        assertTrue(state.narrativeFlags["ch9_penitent_complete"] == true)
+        assertEquals("ch9_penitent_victory", state.currentNode.id)
+        storyViewModel.advanceDialogue()
+        assertEquals("ch9_descent_hall", storyViewModel.state.value.currentNode.id)
         storyViewModel.advanceDialogue()
         assertEquals("ch9_hub", storyViewModel.state.value.currentNode.id)
 
@@ -465,6 +480,11 @@ class StoryDialogueTest {
         val altarChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "ch9_altar_choice" }
         storyViewModel.selectChoice(altarChoice)
         assertEquals("ch9_altar_dialogue", storyViewModel.state.value.currentNode.id)
+        storyViewModel.advanceDialogue()
+
+        val reliquaryChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "ch9_reliquary_choice" }
+        storyViewModel.selectChoice(reliquaryChoice)
+        assertEquals("ch9_reliquary_dialogue", storyViewModel.state.value.currentNode.id)
         storyViewModel.advanceDialogue()
 
         assertEquals("ch9_all_completed", storyViewModel.state.value.currentNode.id)
@@ -481,6 +501,20 @@ class StoryDialogueTest {
         assertTrue(cedric.spellIds.contains("aegis_dawn"))
         assertEquals("ch9_galahault_victory", state.currentNode.id)
 
+        // Post-boss vigil interlude
+        storyViewModel.advanceDialogue()
+        assertEquals("ch9_dawn_benediction", storyViewModel.state.value.currentNode.id)
+        storyViewModel.advanceDialogue()
+        assertEquals("ch9_cedric_kneel", storyViewModel.state.value.currentNode.id)
+        val kneelChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "ch9_kneel_sister" }
+        storyViewModel.selectChoice(kneelChoice)
+        assertEquals("ch9_cedric_sister", storyViewModel.state.value.currentNode.id)
+        storyViewModel.advanceDialogue()
+        assertEquals("ch9_cedric_absolution", storyViewModel.state.value.currentNode.id)
+        storyViewModel.advanceDialogue()
+        state = storyViewModel.state.value
+        assertTrue(state.narrativeFlags["ch9_vigil_rest_complete"] == true)
+        assertEquals("ch9_grave_vigil", state.currentNode.id)
         storyViewModel.advanceDialogue()
         assertEquals("ch9_post_victory", storyViewModel.state.value.currentNode.id)
 
@@ -490,6 +524,21 @@ class StoryDialogueTest {
         assertEquals("scene_emerald_choir", storyViewModel.state.value.currentScene.id)
         assertEquals("ch10_intro", storyViewModel.state.value.currentNode.id)
 
+        storyViewModel.advanceDialogue()
+        assertEquals("ch10_thicket_entry", storyViewModel.state.value.currentNode.id)
+        val thicketChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "ch10_thicket_light" }
+        storyViewModel.selectChoice(thicketChoice)
+        assertEquals("ch10_thicket_light_scene", storyViewModel.state.value.currentNode.id)
+        storyViewModel.advanceDialogue()
+        assertEquals("ch10_ambush_trigger", storyViewModel.state.value.currentNode.id)
+        storyViewModel.advanceDialogue()
+        assertEquals("ch10_thicket_guardians", storyViewModel.state.value.activeEncounter?.id)
+        storyViewModel.onCombatVictory()
+        state = storyViewModel.state.value
+        assertTrue(state.narrativeFlags["ch10_thicket_cleared"] == true)
+        assertEquals("ch10_thicket_victory", state.currentNode.id)
+        storyViewModel.advanceDialogue()
+        assertEquals("ch10_choir_heart", storyViewModel.state.value.currentNode.id)
         storyViewModel.advanceDialogue()
         assertEquals("ch10_hub", storyViewModel.state.value.currentNode.id)
 
@@ -501,6 +550,11 @@ class StoryDialogueTest {
         val seedChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "ch10_seed_choice" }
         storyViewModel.selectChoice(seedChoice)
         assertEquals("ch10_seed_dialogue", storyViewModel.state.value.currentNode.id)
+        storyViewModel.advanceDialogue()
+
+        val hymnChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "ch10_hymn_choice" }
+        storyViewModel.selectChoice(hymnChoice)
+        assertEquals("ch10_hymn_dialogue", storyViewModel.state.value.currentNode.id)
         storyViewModel.advanceDialogue()
 
         assertEquals("ch10_all_completed", storyViewModel.state.value.currentNode.id)
@@ -517,6 +571,18 @@ class StoryDialogueTest {
         assertTrue(lyra.spellIds.contains("verdant_cataclysm"))
         assertEquals("ch10_broodmother_victory", state.currentNode.id)
 
+        // Post-boss choir blessing
+        storyViewModel.advanceDialogue()
+        assertEquals("ch10_spring_of_voices", storyViewModel.state.value.currentNode.id)
+        storyViewModel.advanceDialogue()
+        assertEquals("ch10_dryad_matron", storyViewModel.state.value.currentNode.id)
+        val offerChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "ch10_offer_seed" }
+        storyViewModel.selectChoice(offerChoice)
+        assertEquals("ch10_seed_bloom", storyViewModel.state.value.currentNode.id)
+        storyViewModel.advanceDialogue()
+        assertEquals("ch10_choir_rest", storyViewModel.state.value.currentNode.id)
+        state = storyViewModel.state.value
+        assertTrue(state.narrativeFlags["ch10_choir_rest_complete"] == true)
         storyViewModel.advanceDialogue()
         assertEquals("ch10_post_victory", storyViewModel.state.value.currentNode.id)
 
@@ -526,6 +592,21 @@ class StoryDialogueTest {
         assertEquals("scene_blind_gorge", storyViewModel.state.value.currentScene.id)
         assertEquals("ch11_intro", storyViewModel.state.value.currentNode.id)
 
+        storyViewModel.advanceDialogue()
+        assertEquals("ch11_gorge_entry", storyViewModel.state.value.currentNode.id)
+        val gorgeChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "ch11_lane_traps" }
+        storyViewModel.selectChoice(gorgeChoice)
+        assertEquals("ch11_lane_traps_scene", storyViewModel.state.value.currentNode.id)
+        storyViewModel.advanceDialogue()
+        assertEquals("ch11_first_strike_trigger", storyViewModel.state.value.currentNode.id)
+        storyViewModel.advanceDialogue()
+        assertEquals("ch11_gorge_stalkers", storyViewModel.state.value.activeEncounter?.id)
+        storyViewModel.onCombatVictory()
+        state = storyViewModel.state.value
+        assertTrue(state.narrativeFlags["ch11_gorge_cleared"] == true)
+        assertEquals("ch11_first_strike_victory", state.currentNode.id)
+        storyViewModel.advanceDialogue()
+        assertEquals("ch11_gorge_cleared", storyViewModel.state.value.currentNode.id)
         storyViewModel.advanceDialogue()
         assertEquals("ch11_hub", storyViewModel.state.value.currentNode.id)
 
@@ -539,9 +620,31 @@ class StoryDialogueTest {
         assertEquals("ch11_vials_dialogue", storyViewModel.state.value.currentNode.id)
         storyViewModel.advanceDialogue()
 
+        val doctrineChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "ch11_doctrine_choice" }
+        storyViewModel.selectChoice(doctrineChoice)
+        assertEquals("ch11_doctrine_dialogue", storyViewModel.state.value.currentNode.id)
+        storyViewModel.advanceDialogue()
+
         assertEquals("ch11_all_completed", storyViewModel.state.value.currentNode.id)
         val nocturneBossChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "ch11_boss_ready" }
         storyViewModel.selectChoice(nocturneBossChoice)
+        assertEquals("ch11_vaults_entry", storyViewModel.state.value.currentNode.id)
+        assertEquals("scene_obsidian_vaults", storyViewModel.state.value.currentScene.id)
+        val vaultChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "ch11_vault_ledger" }
+        storyViewModel.selectChoice(vaultChoice)
+        assertEquals("ch11_vault_ledger_scene", storyViewModel.state.value.currentNode.id)
+        storyViewModel.advanceDialogue()
+        assertEquals("ch11_archive_battle_trigger", storyViewModel.state.value.currentNode.id)
+        storyViewModel.advanceDialogue()
+        assertEquals("ch11_archive_enforcers", storyViewModel.state.value.activeEncounter?.id)
+        storyViewModel.onCombatVictory()
+        state = storyViewModel.state.value
+        assertTrue(state.narrativeFlags["ch11_archive_purged"] == true)
+        assertEquals("ch11_archive_victory", state.currentNode.id)
+        storyViewModel.advanceDialogue()
+        assertEquals("ch11_grandmaster_found", storyViewModel.state.value.currentNode.id)
+        assertEquals("scene_blind_gorge", storyViewModel.state.value.currentScene.id)
+        storyViewModel.advanceDialogue()
         assertEquals("ch11_nocturne_assault", storyViewModel.state.value.currentNode.id)
         storyViewModel.advanceDialogue()
 
@@ -553,6 +656,16 @@ class StoryDialogueTest {
         assertTrue(zephyr.spellIds.contains("umbral_oblivion"))
         assertEquals("ch11_nocturne_victory", state.currentNode.id)
 
+        // Post-boss severing memory interlude
+        storyViewModel.advanceDialogue()
+        assertEquals("ch11_severing_memory", storyViewModel.state.value.currentNode.id)
+        val memoryChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "ch11_memory_name" }
+        storyViewModel.selectChoice(memoryChoice)
+        assertEquals("ch11_carry_name", storyViewModel.state.value.currentNode.id)
+        storyViewModel.advanceDialogue()
+        assertEquals("ch11_gorge_dawn", storyViewModel.state.value.currentNode.id)
+        state = storyViewModel.state.value
+        assertTrue(state.narrativeFlags["ch11_gorge_rest_complete"] == true)
         storyViewModel.advanceDialogue()
         assertEquals("ch11_post_victory", storyViewModel.state.value.currentNode.id)
     }
@@ -567,6 +680,24 @@ class StoryDialogueTest {
         assertEquals("scene_final_summit", state.currentScene.id)
         assertEquals("ch16_intro", state.currentNode.id)
 
+        // Advance through the Vestibule of Echoes
+        storyViewModel.advanceDialogue()
+        assertEquals("ch16_vestibule_entry", storyViewModel.state.value.currentNode.id)
+        val vestChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "ch16_vest_chant" }
+        storyViewModel.selectChoice(vestChoice)
+        assertEquals("ch16_vest_chant_scene", storyViewModel.state.value.currentNode.id)
+        storyViewModel.advanceDialogue()
+        assertEquals("ch16_vest_trigger", storyViewModel.state.value.currentNode.id)
+        storyViewModel.advanceDialogue()
+        assertEquals(GameScreen.COMBAT_ARENA, storyViewModel.state.value.gameScreen)
+        assertEquals("ch16_nullifier_gate", storyViewModel.state.value.activeEncounter?.id)
+        storyViewModel.onCombatVictory()
+        state = storyViewModel.state.value
+        assertTrue(state.narrativeFlags["ch16_vestibule_cleared"] == true)
+        assertEquals("ch16_vest_victory", state.currentNode.id)
+        storyViewModel.advanceDialogue()
+        assertEquals("ch16_mirror_gate", storyViewModel.state.value.currentNode.id)
+
         // Advance through Malakor confrontation
         storyViewModel.advanceDialogue()
         assertEquals("ch16_confrontation", storyViewModel.state.value.currentNode.id)
@@ -575,6 +706,19 @@ class StoryDialogueTest {
 
         val bossChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "ch16_boss_ready" }
         storyViewModel.selectChoice(bossChoice)
+        assertEquals("ch16_mirror_entry", storyViewModel.state.value.currentNode.id)
+        val mirrorChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "ch16_mirror_speak" }
+        storyViewModel.selectChoice(mirrorChoice)
+        assertEquals("ch16_mirror_speak_scene", storyViewModel.state.value.currentNode.id)
+        storyViewModel.advanceDialogue()
+        assertEquals("ch16_mirror_trigger", storyViewModel.state.value.currentNode.id)
+        storyViewModel.advanceDialogue()
+        assertEquals("ch16_mirror_gauntlet", storyViewModel.state.value.activeEncounter?.id)
+        storyViewModel.onCombatVictory()
+        state = storyViewModel.state.value
+        assertTrue(state.narrativeFlags["ch16_mirror_cleared"] == true)
+        assertEquals("ch16_mirror_victory", state.currentNode.id)
+        storyViewModel.advanceDialogue()
         assertEquals("ch16_malakor_assault", storyViewModel.state.value.currentNode.id)
 
         // Trigger Grand Finale Encounter
@@ -590,6 +734,10 @@ class StoryDialogueTest {
         assertEquals(GameScreen.STORY_EXPLORATION, state.gameScreen)
         assertEquals("ch16_malakor_victory", state.currentNode.id)
 
+        storyViewModel.advanceDialogue()
+        assertEquals("ch16_incantation_verse", storyViewModel.state.value.currentNode.id)
+        storyViewModel.advanceDialogue()
+        assertEquals("ch16_bell_vigil", storyViewModel.state.value.currentNode.id)
         storyViewModel.advanceDialogue()
         assertEquals("ch16_toll_bell", storyViewModel.state.value.currentNode.id)
 

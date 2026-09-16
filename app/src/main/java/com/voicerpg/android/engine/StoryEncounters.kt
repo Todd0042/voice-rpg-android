@@ -361,6 +361,197 @@ object StoryEncounters {
         initialParty = createQuadParty()
     )
 
+    // 19. Chapter 9: Threshold Guardian of the Sun's Penitence
+    val CH9_PENITENT_GATE = EncounterDefinition(
+        id = "ch9_penitent_gate",
+        name = "Chapter 9: Gate of the Sun's Penitence",
+        description = "Vowbreakers entombed alive at the mausoleum gate rise to bar the way to Galahault's crypt.",
+        environment = BattleEnvironment.DUNGEON,
+        enemies = listOf(
+            Enemy("vowbreaker_1", "Penitent Vowbreaker A", "Vanguard", currentHp = 320, maxHp = 320, baseAttack = 22, isTargeted = false, spriteTint = Color(0xFF90A4AE), speed = 46, atbGauge = 0.20f),
+            Enemy("vowbreaker_2", "Penitent Vowbreaker B", "Vanguard", currentHp = 320, maxHp = 320, baseAttack = 22, isTargeted = false, spriteTint = Color(0xFF78909C), speed = 44, atbGauge = 0.25f),
+            Enemy("gate_archon", "Grave Archon", "Occultist", currentHp = 300, maxHp = 300, baseAttack = 20, isTargeted = false, spriteTint = Color(0xFFFFB300), speed = 58, atbGauge = 0.30f)
+        ),
+        initialParty = createQuadParty()
+    )
+
+    // 20. Chapter 10: Guardians of the Poisoned Thicket
+    val CH10_THICKET_GUARDIANS = EncounterDefinition(
+        id = "ch10_thicket_guardians",
+        name = "Chapter 10: Guardians of the Poisoned Thicket",
+        description = "Glass-vined colossi infected by the same obsidian venom that froze the Emerald Choir.",
+        environment = BattleEnvironment.SWAMP,
+        enemies = listOf(
+            Enemy("thicket_1", "Glassvine Colossus A", "Vanguard", currentHp = 340, maxHp = 340, baseAttack = 24, isTargeted = false, spriteTint = Color(0xFF66BB6A), speed = 44, atbGauge = 0.20f),
+            Enemy("thicket_2", "Glassvine Colossus B", "Vanguard", currentHp = 340, maxHp = 340, baseAttack = 24, isTargeted = false, spriteTint = Color(0xFF43A047), speed = 46, atbGauge = 0.25f),
+            Enemy("thorn_singer", "Thorn Choir Singer", "Occultist", currentHp = 280, maxHp = 280, baseAttack = 18, isTargeted = false, spriteTint = Color(0xFF2E7D32), speed = 56, atbGauge = 0.30f)
+        ),
+        initialParty = createQuadParty()
+    )
+
+    // 21. Chapter 11: Gorge Stalker Skirmish
+    val CH11_GORGE_STALKERS = EncounterDefinition(
+        id = "ch11_gorge_stalkers",
+        name = "Chapter 11: The Gorge Stalker Skirmish",
+        description = "Nocturne's masked assassins spring from the culverts of the Blind Gorge.",
+        environment = BattleEnvironment.CAVE,
+        enemies = listOf(
+            Enemy("stalker_1", "Black Guild Stalker A", "Sniper", currentHp = 260, maxHp = 260, baseAttack = 24, isTargeted = true, spriteTint = Color(0xFF7E57C2), speed = 76, atbGauge = 0.40f),
+            Enemy("stalker_2", "Black Guild Stalker B", "Sniper", currentHp = 260, maxHp = 260, baseAttack = 24, isTargeted = false, spriteTint = Color(0xFF9575CD), speed = 72, atbGauge = 0.35f),
+            Enemy("garrote", "Guild Garrote", "Vanguard", currentHp = 320, maxHp = 320, baseAttack = 26, isTargeted = false, spriteTint = Color(0xFF512DA8), speed = 58, atbGauge = 0.25f)
+        ),
+        initialParty = createQuadParty()
+    )
+
+    // 22. Chapter 11: Obsidian Archive Enforcers
+    val CH11_ARCHIVE_ENFORCERS = EncounterDefinition(
+        id = "ch11_archive_enforcers",
+        name = "Chapter 11: The Obsidian Archive",
+        description = "The guild's voiceless wardens defend the vault of stolen voices beneath the gorge.",
+        environment = BattleEnvironment.DUNGEON,
+        enemies = listOf(
+            Enemy("enforcer_1", "Archive Enforcer I", "Vanguard", currentHp = 360, maxHp = 360, baseAttack = 24, isTargeted = false, spriteTint = Color(0xFF455A64), speed = 46, atbGauge = 0.20f),
+            Enemy("enforcer_2", "Archive Enforcer II", "Vanguard", currentHp = 360, maxHp = 360, baseAttack = 24, isTargeted = false, spriteTint = Color(0xFF37474F), speed = 44, atbGauge = 0.25f),
+            Enemy("enforcer_3", "Archive Enforcer III", "Vanguard", currentHp = 360, maxHp = 360, baseAttack = 24, isTargeted = false, spriteTint = Color(0xFF263238), speed = 48, atbGauge = 0.15f),
+            Enemy("vault_watcher", "Vault Watcher", "Occultist", currentHp = 300, maxHp = 300, baseAttack = 20, isTargeted = true, spriteTint = Color(0xFF4A148C), speed = 62, atbGauge = 0.35f)
+        ),
+        initialParty = createQuadParty()
+    )
+
+    // 23. Chapter 12: Automaton Patrol of the Ironworks
+    val CH12_AUTOMATON_PATROL = EncounterDefinition(
+        id = "ch12_automaton_patrol",
+        name = "Chapter 12: The Automatic Watch",
+        description = "Ouros's iron warden-automata converge across the catwalks of the Clockwork Bastion.",
+        environment = BattleEnvironment.CASTLE,
+        enemies = listOf(
+            Enemy("warden_1", "Iron Warden Alpha", "Vanguard", currentHp = 360, maxHp = 360, baseAttack = 24, isTargeted = false, spriteTint = Color(0xFF78909C), speed = 44, atbGauge = 0.20f),
+            Enemy("warden_2", "Iron Warden Beta", "Vanguard", currentHp = 360, maxHp = 360, baseAttack = 24, isTargeted = false, spriteTint = Color(0xFF607D8B), speed = 46, atbGauge = 0.25f),
+            Enemy("tripod", "Tripod Scorcher", "Sniper", currentHp = 280, maxHp = 280, baseAttack = 26, isTargeted = true, spriteTint = Color(0xFFFF9800), speed = 64, atbGauge = 0.35f)
+        ),
+        initialParty = createQuadParty()
+    )
+
+    // 24. Chapter 13: Legion of the Pilgrim's Plaza
+    val CH13_PLAZA_LEGION = EncounterDefinition(
+        id = "ch13_plaza_legion",
+        name = "Chapter 13: The Pilgrim's Plaza Legion",
+        description = "Vaelor's obsidian garrison stands ordered and waiting in the lamp-lit plaza of Sol-Aethel.",
+        environment = BattleEnvironment.CASTLE,
+        enemies = listOf(
+            Enemy("legionnaire_1", "Plaza Legionnaire A", "Vanguard", currentHp = 360, maxHp = 360, baseAttack = 24, isTargeted = false, spriteTint = Color(0xFF546E7A), speed = 46, atbGauge = 0.20f),
+            Enemy("legionnaire_2", "Plaza Legionnaire B", "Vanguard", currentHp = 360, maxHp = 360, baseAttack = 24, isTargeted = false, spriteTint = Color(0xFF455A64), speed = 48, atbGauge = 0.25f),
+            Enemy("legionnaire_3", "Plaza Legionnaire C", "Vanguard", currentHp = 360, maxHp = 360, baseAttack = 24, isTargeted = false, spriteTint = Color(0xFF37474F), speed = 44, atbGauge = 0.15f),
+            Enemy("obelisks", "Walking Obelisk", "Occultist", currentHp = 320, maxHp = 320, baseAttack = 22, isTargeted = false, spriteTint = Color(0xFF6A1B9A), speed = 56, atbGauge = 0.30f)
+        ),
+        initialParty = createQuadParty()
+    )
+
+    // 25. Chapter 14: Husks of the Silent Shallows
+    val CH14_SHALLOWS_HUSKS = EncounterDefinition(
+        id = "ch14_shallows_husks",
+        name = "Chapter 14: Husks of the Silent Shallows",
+        description = "Drowned pilgrims, their voices swallowed by the reservoir, drag themselves ashore to guard the lake.",
+        environment = BattleEnvironment.SWAMP,
+        enemies = listOf(
+            Enemy("husk_1", "Drowned Husk I", "Vanguard", currentHp = 330, maxHp = 330, baseAttack = 22, isTargeted = false, spriteTint = Color(0xFF00695C), speed = 46, atbGauge = 0.20f),
+            Enemy("husk_2", "Drowned Husk II", "Vanguard", currentHp = 330, maxHp = 330, baseAttack = 22, isTargeted = false, spriteTint = Color(0xFF00897B), speed = 48, atbGauge = 0.25f),
+            Enemy("husk_3", "Shrine Grasper", "Sniper", currentHp = 260, maxHp = 260, baseAttack = 20, isTargeted = true, spriteTint = Color(0xFF26A69A), speed = 62, atbGauge = 0.35f)
+        ),
+        initialParty = createQuadParty()
+    )
+
+    // 26. Chapter 14: Leeches of the Umbral Trench
+    val CH14_TRENCH_LEECHES = EncounterDefinition(
+        id = "ch14_trench_leeches",
+        name = "Chapter 14: The Umbral Trench",
+        description = "Blind trench leeches, each knotted with stolen voices, feed the Abyssal Leviathan's silence.",
+        environment = BattleEnvironment.CAVE,
+        enemies = listOf(
+            Enemy("leech_1", "Umbral Leech I", "Vanguard", currentHp = 340, maxHp = 340, baseAttack = 24, isTargeted = false, spriteTint = Color(0xFF4B0082), speed = 40, atbGauge = 0.15f),
+            Enemy("leech_2", "Umbral Leech II", "Vanguard", currentHp = 340, maxHp = 340, baseAttack = 24, isTargeted = false, spriteTint = Color(0xFF5C6BC0), speed = 42, atbGauge = 0.20f),
+            Enemy("leech_3", "Chorus Leech", "Sniper", currentHp = 280, maxHp = 280, baseAttack = 26, isTargeted = true, spriteTint = Color(0xFF7E57C2), speed = 60, atbGauge = 0.30f),
+            Enemy("leech_4", "Mote Drinker", "Occultist", currentHp = 300, maxHp = 300, baseAttack = 22, isTargeted = false, spriteTint = Color(0xFF9C27B0), speed = 54, atbGauge = 0.25f)
+        ),
+        initialParty = createQuadParty()
+    )
+
+    // 27. Chapter 15: Trial of the Gate of Gold
+    val CH15_TRIAL_GOLD = EncounterDefinition(
+        id = "ch15_trial_gold",
+        name = "Chapter 15: Trial of the Gate of Gold",
+        description = "Gilded reflections of every oath bought and bent tried to buy Sir Cedric's vow back.",
+        environment = BattleEnvironment.CASTLE,
+        enemies = listOf(
+            Enemy("merchant_wraith", "Gilded Creditor", "Occultist", currentHp = 320, maxHp = 320, baseAttack = 22, isTargeted = false, spriteTint = Color(0xFFFFB300), speed = 58, atbGauge = 0.30f),
+            Enemy("clad_1", "Glinted Vow Clade A", "Vanguard", currentHp = 340, maxHp = 340, baseAttack = 24, isTargeted = false, spriteTint = Color(0xFFFFC107), speed = 48, atbGauge = 0.25f),
+            Enemy("clad_2", "Glinted Vow Clade B", "Vanguard", currentHp = 340, maxHp = 340, baseAttack = 24, isTargeted = false, spriteTint = Color(0xFFFFD54F), speed = 46, atbGauge = 0.20f),
+            Enemy("clad_3", "Glinted Vow Clade C", "Sniper", currentHp = 300, maxHp = 300, baseAttack = 22, isTargeted = true, spriteTint = Color(0xFFFFE082), speed = 62, atbGauge = 0.35f)
+        ),
+        initialParty = createQuadParty()
+    )
+
+    // 28. Chapter 15: Trial of the Gate of the Grove
+    val CH15_TRIAL_GROVE = EncounterDefinition(
+        id = "ch15_trial_grove",
+        name = "Chapter 15: Trial of the Gate of the Grove",
+        description = "Thorn-vined guardians woven from Lyra's day of flight bar the stair of the grove.",
+        environment = BattleEnvironment.FOREST,
+        enemies = listOf(
+            Enemy("thorn_1", "Thornvined Guardian A", "Vanguard", currentHp = 360, maxHp = 360, baseAttack = 24, isTargeted = false, spriteTint = Color(0xFF66BB6A), speed = 46, atbGauge = 0.20f),
+            Enemy("thorn_2", "Thornvined Guardian B", "Vanguard", currentHp = 360, maxHp = 360, baseAttack = 24, isTargeted = false, spriteTint = Color(0xFF43A047), speed = 44, atbGauge = 0.15f),
+            Enemy("thorn_3", "Root Lash", "Sniper", currentHp = 300, maxHp = 300, baseAttack = 22, isTargeted = true, spriteTint = Color(0xFF2E7D32), speed = 60, atbGauge = 0.25f),
+            Enemy("thorn_4", "Canopy Warden", "Occultist", currentHp = 320, maxHp = 320, baseAttack = 20, isTargeted = false, spriteTint = Color(0xFF1B5E20), speed = 54, atbGauge = 0.30f)
+        ),
+        initialParty = createQuadParty()
+    )
+
+    // 29. Chapter 15: Trial of the Gate of Shadow
+    val CH15_TRIAL_SHADOW = EncounterDefinition(
+        id = "ch15_trial_shadow",
+        name = "Chapter 15: Trial of the Gate of Shadow",
+        description = "Every lesson of Nocturne made assassin has risen to claim Zephyr's place in the dark.",
+        environment = BattleEnvironment.CAVE,
+        enemies = listOf(
+            Enemy("shade_1", "Nocturne Lesson I", "Sniper", currentHp = 300, maxHp = 300, baseAttack = 24, isTargeted = true, spriteTint = Color(0xFF4A148C), speed = 74, atbGauge = 0.40f),
+            Enemy("shade_2", "Nocturne Lesson II", "Sniper", currentHp = 300, maxHp = 300, baseAttack = 24, isTargeted = false, spriteTint = Color(0xFF6A1B9A), speed = 70, atbGauge = 0.35f),
+            Enemy("shade_3", "Umbral Ghost", "Vanguard", currentHp = 340, maxHp = 340, baseAttack = 26, isTargeted = false, spriteTint = Color(0xFF311B92), speed = 52, atbGauge = 0.25f),
+            Enemy("shade_4", "Echo of the Guild", "Occultist", currentHp = 300, maxHp = 300, baseAttack = 22, isTargeted = false, spriteTint = Color(0xFF4527A0), speed = 58, atbGauge = 0.30f)
+        ),
+        initialParty = createQuadParty()
+    )
+
+    // 30. Chapter 16: The Echo Nullifier Gate
+    val CH16_NULLIFIER_GATE = EncounterDefinition(
+        id = "ch16_nullifier_gate",
+        name = "Chapter 16: The Echo Nullifier Gate",
+        description = "Malakor's last gatekeepers step from the four shattered pillars of the Vestibule of Echoes.",
+        environment = BattleEnvironment.DUNGEON,
+        enemies = listOf(
+            Enemy("null_gate_1", "Nullifier Warden I", "Vanguard", currentHp = 380, maxHp = 380, baseAttack = 26, isTargeted = false, spriteTint = Color(0xFF455A64), speed = 48, atbGauge = 0.20f),
+            Enemy("null_gate_2", "Nullifier Warden II", "Vanguard", currentHp = 380, maxHp = 380, baseAttack = 26, isTargeted = false, spriteTint = Color(0xFF37474F), speed = 46, atbGauge = 0.25f),
+            Enemy("null_gate_3", "Nullifier Sibilant", "Sniper", currentHp = 300, maxHp = 300, baseAttack = 24, isTargeted = true, spriteTint = Color(0xFF78909C), speed = 64, atbGauge = 0.35f),
+            Enemy("null_gate_4", "Vestibule Archivist", "Occultist", currentHp = 340, maxHp = 340, baseAttack = 22, isTargeted = false, spriteTint = Color(0xFF90A4AE), speed = 56, atbGauge = 0.30f)
+        ),
+        initialParty = createQuadParty()
+    )
+
+    // 31. Chapter 16: The Mirror Gauntlet
+    val CH16_MIRROR_GAUNTLET = EncounterDefinition(
+        id = "ch16_mirror_gauntlet",
+        name = "Chapter 16: The Mirror Gauntlet",
+        description = "The doubt-shadows of the entire fellowship rise against their originals in the Mirror Gallery.",
+        environment = BattleEnvironment.CASTLE,
+        enemies = listOf(
+            Enemy("shadow_cedric", "Shadow of the Knight", "Vanguard", currentHp = 380, maxHp = 380, baseAttack = 26, isTargeted = true, spriteTint = Color(0xFFFFD54F), speed = 52, atbGauge = 0.30f),
+            Enemy("shadow_lyra", "Shadow of the Warden", "Sniper", currentHp = 330, maxHp = 330, baseAttack = 24, isTargeted = false, spriteTint = Color(0xFFA5D6A7), speed = 62, atbGauge = 0.40f),
+            Enemy("shadow_zephyr", "Shadow of the Blade", "Sniper", currentHp = 330, maxHp = 330, baseAttack = 24, isTargeted = false, spriteTint = Color(0xFFCE93D8), speed = 74, atbGauge = 0.45f),
+            Enemy("shadow_aethel", "Shadow of the Invocator", "Occultist", currentHp = 360, maxHp = 360, baseAttack = 26, isTargeted = false, spriteTint = Color(0xFF90CAF9), speed = 58, atbGauge = 0.35f),
+            Enemy("shadow_wall", "Gallery of Doubts", "Vanguard", currentHp = 420, maxHp = 420, baseAttack = 22, isTargeted = false, spriteTint = Color(0xFF263238), speed = 40, atbGauge = 0.15f)
+        ),
+        initialParty = createQuadParty()
+    )
+
     // Helper to generate reinforcement minions dynamically
     fun createMinion(idSuffix: String, name: String = "Blighted Minion", subtitle: String = "Minion", hp: Int = 180): Enemy {
         return Enemy(
@@ -396,6 +587,19 @@ object StoryEncounters {
         CH13_COMMANDER_VAELOR,
         CH14_ABYSSAL_LEVIATHAN,
         CH15_ARCHON_CUSTODIANS,
-        CH16_MALAKOR_FINALE
+        CH16_MALAKOR_FINALE,
+        CH9_PENITENT_GATE,
+        CH10_THICKET_GUARDIANS,
+        CH11_GORGE_STALKERS,
+        CH11_ARCHIVE_ENFORCERS,
+        CH12_AUTOMATON_PATROL,
+        CH13_PLAZA_LEGION,
+        CH14_SHALLOWS_HUSKS,
+        CH14_TRENCH_LEECHES,
+        CH15_TRIAL_GOLD,
+        CH15_TRIAL_GROVE,
+        CH15_TRIAL_SHADOW,
+        CH16_NULLIFIER_GATE,
+        CH16_MIRROR_GAUNTLET
     )
 }
