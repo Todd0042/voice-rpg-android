@@ -622,7 +622,7 @@ class CombatNarrator(
         } else ""
 
         val action = if (isHeal) {
-            "${prefix}$heroName mends $targetName for $amount health."
+            "${prefix}$heroName casts $spellName to mend $targetName for $amount health."
         } else {
             "${prefix}$heroName strikes $targetName with $spellName for $amount damage."
         }
