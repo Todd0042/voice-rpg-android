@@ -5,6 +5,7 @@ import com.voicerpg.android.ui.theme.FrostCyan
 import com.voicerpg.android.ui.theme.HolyYellow
 import com.voicerpg.android.ui.theme.LogosGold
 import com.voicerpg.android.ui.theme.ShadowPurple
+import kotlin.random.Random
 
 enum class SpeakerSide {
     LEFT,
@@ -43,7 +44,7 @@ data class DialogueSpeaker(
             id = "narrator",
             name = "Narrator",
             title = "Chronicle",
-            portraitAsset = null,
+            portraitAsset = "portraits/narrator.jpg",
             themeColor = LogosGold,
             ttsPitch = 1.0f
         )
@@ -52,7 +53,7 @@ data class DialogueSpeaker(
             id = "shadow_wisp",
             name = "Corrupted Wisp",
             title = "Blighted Husk",
-            portraitAsset = null,
+            portraitAsset = "portraits/shadow_wisp.jpg",
             themeColor = ShadowPurple,
             ttsPitch = 0.70f
         )
@@ -88,7 +89,7 @@ data class DialogueSpeaker(
             id = "vaelor",
             name = "Commander Vaelor",
             title = "The Voice-Thief",
-            portraitAsset = null,
+            portraitAsset = "portraits/vaelor.jpg",
             themeColor = Color(0xFFB0BEC5),
             ttsPitch = 0.75f
         )
@@ -97,7 +98,7 @@ data class DialogueSpeaker(
             id = "galahault",
             name = "Sir Galahault",
             title = "The Obsidian Grandmaster",
-            portraitAsset = null,
+            portraitAsset = "portraits/galahault.jpg",
             themeColor = HolyYellow,
             ttsPitch = 0.78f
         )
@@ -106,7 +107,7 @@ data class DialogueSpeaker(
             id = "nocturne",
             name = "Master Nocturne",
             title = "Spymaster of the Mute",
-            portraitAsset = null,
+            portraitAsset = "portraits/nocturne.jpg",
             themeColor = ShadowPurple,
             ttsPitch = 0.70f
         )
@@ -115,7 +116,7 @@ data class DialogueSpeaker(
             id = "ouros",
             name = "Clockwork Warmaster Ouros",
             title = "Iron Bastion Sovereign",
-            portraitAsset = null,
+            portraitAsset = "portraits/ouros.jpg",
             themeColor = Color(0xFFFFB74D),
             ttsPitch = 0.65f
         )
@@ -124,7 +125,7 @@ data class DialogueSpeaker(
             id = "dryad_matron",
             name = "The Elder Dryad",
             title = "Voice of the Emerald Choir",
-            portraitAsset = null,
+            portraitAsset = "portraits/dryad_matron.jpg",
             themeColor = Color(0xFF66BB6A),
             ttsPitch = 1.05f
         )
@@ -133,10 +134,20 @@ data class DialogueSpeaker(
             id = "voice_mote",
             name = "A Freed Voice Mote",
             title = "Echo of the Reservoir",
-            portraitAsset = null,
+            portraitAsset = "portraits/voice_mote.jpg",
             themeColor = Color(0xFF80DEEA),
             ttsPitch = 1.30f
         )
+    }
+
+    /**
+     * The Chronicle occasionally breaks the fourth wall with a rare alternate portrait.
+     * Roughly 1 in every 500 narrator displays picks the easter-egg art; otherwise the
+     * standard chronicle portrait is used. Non-narrator speakers always use their fixed art.
+     */
+    fun effectivePortraitAsset(): String? {
+        if (this != NARRATOR || portraitAsset == null) return portraitAsset
+        return if (Random.nextInt(500) == 0) "portraits/narrator1.jpg" else portraitAsset
     }
 }
 

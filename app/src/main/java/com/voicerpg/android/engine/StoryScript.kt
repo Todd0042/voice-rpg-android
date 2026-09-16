@@ -42,7 +42,7 @@ object StoryScript {
         id = "scene_camp",
         name = "Camp of the Fellowship",
         chapterTitle = "Chapter 2: Embers in the Gloom",
-        backgroundAsset = "story/forest_crossroads.jpg",
+        backgroundAsset = "story/fellowship_camp.jpg",
         initialNodeId = "camp_intro",
         ambientDescription = "Warm embers dance in the night air beside the ancient sun shrine."
     )
@@ -51,7 +51,7 @@ object StoryScript {
         id = "scene_cave",
         name = "The Whispering Caverns",
         chapterTitle = "Chapter 2: The Sunken Grotto",
-        backgroundAsset = "environments/cave.jpg",
+        backgroundAsset = "story/caverns.jpg",
         initialNodeId = "cavern_entry",
         ambientDescription = "Bioluminescent azure crystals hum faintly along damp limestone walls."
     )
@@ -60,7 +60,7 @@ object StoryScript {
         id = "scene_swamp",
         name = "The Rotting Marsh",
         chapterTitle = "Chapter 2: The Sunken Bog",
-        backgroundAsset = "environments/swamp.jpg",
+        backgroundAsset = "story/rotting_marsh.jpg",
         initialNodeId = "marsh_entry",
         ambientDescription = "Thick emerald mist drifts over black mire and gnarled roots."
     )
@@ -69,7 +69,7 @@ object StoryScript {
         id = "scene_aqueduct",
         name = "The Aqueducts of Solaria",
         chapterTitle = "Chapter 3: The Ascent of Solaria",
-        backgroundAsset = "environments/cave.jpg",
+        backgroundAsset = "story/aqueducts.jpg",
         initialNodeId = "chapter3_intro",
         ambientDescription = "Colossal limestone arches rise above the mist as ancient waterfalls hang petrified in obsidian glass."
     )
@@ -78,7 +78,7 @@ object StoryScript {
         id = "scene_dungeon",
         name = "Crypt of the Foundation",
         chapterTitle = "Chapter 4: The Silent Catacombs",
-        backgroundAsset = "environments/dungeon.jpg",
+        backgroundAsset = "story/foundation_crypt.jpg",
         initialNodeId = "chapter4_intro",
         ambientDescription = "Ancient mosaic pillars of the Primordial Chanters lie buried beneath the Bell Tower foundations."
     )
@@ -87,7 +87,7 @@ object StoryScript {
         id = "scene_tower",
         name = "The Solaria Bell Chamber",
         chapterTitle = "Chapter 4: The Great Bell of Solaria",
-        backgroundAsset = "environments/castle.jpg",
+        backgroundAsset = "story/bell_chamber.jpg",
         initialNodeId = "ch4_tower_ascent",
         ambientDescription = "High above the cloudline, the massive bronze Bell of Solaria hangs beneath open gothic parapets."
     )
@@ -105,7 +105,7 @@ object StoryScript {
         id = "scene_willow_sanctuary",
         name = "The Weeping Willow Sanctuary",
         chapterTitle = "Chapter 6: The Warden's Oath",
-        backgroundAsset = "environments/swamp.jpg",
+        backgroundAsset = "story/willow_sanctuary.jpg",
         initialNodeId = "ch6_intro",
         ambientDescription = "Bioluminescent emerald motes float among the hanging moss of the ancient sacred willow."
     )
@@ -114,7 +114,7 @@ object StoryScript {
         id = "scene_sunken_catacombs",
         name = "The Sunken Catacombs",
         chapterTitle = "Chapter 7: Tuning the Veridian Chime",
-        backgroundAsset = "environments/swamp.jpg",
+        backgroundAsset = "story/sunken_catacombs.jpg",
         initialNodeId = "ch7_intro",
         ambientDescription = "Jade-infused bronze rings over crystal clear waters as ancient stone pathways emerge from the bog."
     )
@@ -123,7 +123,7 @@ object StoryScript {
         id = "scene_shadowed_crags",
         name = "The Shadowed Crags",
         chapterTitle = "Chapter 8: The Shadowed Crags & Zephyr's Defection",
-        backgroundAsset = "environments/cave.jpg",
+        backgroundAsset = "story/shadowed_crags.jpg",
         initialNodeId = "ch8_intro",
         ambientDescription = "Razor obsidian crags tower over a cold canyon shrouded in purple mountain mist."
     )
@@ -132,7 +132,7 @@ object StoryScript {
         id = "scene_mausoleum",
         name = "The Mausoleum of the Sun",
         chapterTitle = "Chapter 9: The Broken Vow of Dawn",
-        backgroundAsset = "environments/dungeon.jpg",
+        backgroundAsset = "story/mausoleum_sun.jpg",
         initialNodeId = "ch9_intro",
         ambientDescription = "Shattered marble statues of the Golden Chime knights lie beneath weeping golden sunburst banners."
     )
@@ -141,7 +141,7 @@ object StoryScript {
         id = "scene_emerald_choir",
         name = "The Emerald Choir Grove",
         chapterTitle = "Chapter 10: The Song of the Mute Grove",
-        backgroundAsset = "environments/swamp.jpg",
+        backgroundAsset = "story/emerald_choir.jpg",
         initialNodeId = "ch10_intro",
         ambientDescription = "Petrified dryads stand frozen around a dark spring choked in obsidian silt."
     )
@@ -150,7 +150,7 @@ object StoryScript {
         id = "scene_blind_gorge",
         name = "The Blind Gorge",
         chapterTitle = "Chapter 11: The Silent Blade's Reckoning",
-        backgroundAsset = "environments/cave.jpg",
+        backgroundAsset = "story/blind_gorge.jpg",
         initialNodeId = "ch11_intro",
         ambientDescription = "Thick silence and shadow mist cling to the jagged canyon hideout of the Black Guild."
     )
@@ -159,7 +159,7 @@ object StoryScript {
         id = "scene_clockwork_bastion",
         name = "The Clockwork Bastion of Ouros",
         chapterTitle = "Chapter 12: Awakening the Third Bell",
-        backgroundAsset = "environments/castle.jpg",
+        backgroundAsset = "story/clockwork_bastion.jpg",
         initialNodeId = "ch12_intro",
         ambientDescription = "Colossal brass cogs and steam pipes hum within the towering iron belfry of Ouros."
     )
@@ -168,7 +168,7 @@ object StoryScript {
         id = "scene_silent_citadel",
         name = "The Silent Citadel Gates",
         chapterTitle = "Chapter 13: Breach of the Silent Citadel",
-        backgroundAsset = "environments/castle.jpg",
+        backgroundAsset = "story/silent_citadel_gates.jpg",
         initialNodeId = "ch13_intro",
         ambientDescription = "Banners of the Mute Sovereign hang from monolithic black glass battlements before Sol-Aethel."
     )
@@ -177,7 +177,7 @@ object StoryScript {
         id = "scene_void_reservoir",
         name = "The Void Reservoir",
         chapterTitle = "Chapter 14: The Void Reservoir",
-        backgroundAsset = "environments/swamp.jpg",
+        backgroundAsset = "story/void_reservoir.jpg",
         initialNodeId = "ch14_intro",
         ambientDescription = "A cosmic lake of pure liquid silence that drinks all echoes high above the clouds."
     )
@@ -186,7 +186,7 @@ object StoryScript {
         id = "scene_celestial_spire",
         name = "The Celestial Ribbon Stair",
         chapterTitle = "Chapter 15: Ascent of the Celestial Spire",
-        backgroundAsset = "environments/castle.jpg",
+        backgroundAsset = "story/celestial_stair.jpg",
         initialNodeId = "ch15_intro",
         ambientDescription = "A ribbon staircase of crystallized harmonic light rises toward the aurora of the stars."
     )
@@ -195,7 +195,7 @@ object StoryScript {
         id = "scene_final_summit",
         name = "The Spire Summit — Bell of Eternity",
         chapterTitle = "Chapter 16: The Primordial Syllable",
-        backgroundAsset = "environments/castle.jpg",
+        backgroundAsset = "story/final_summit.jpg",
         initialNodeId = "ch16_intro",
         ambientDescription = "The colossal Fourth Great Bell hangs beneath cosmic auroras where Grand Inquisitor Malakor waits."
     )
@@ -204,7 +204,7 @@ object StoryScript {
         id = "scene_obsidian_vaults",
         name = "The Obsidian Vaults of the Black Guild",
         chapterTitle = "Chapter 11: The Silent Blade's Reckoning",
-        backgroundAsset = "environments/dungeon.jpg",
+        backgroundAsset = "story/obsidian_vaults.jpg",
         initialNodeId = "ch11_vaults_entry",
         ambientDescription = "Racks of severed tongues sealed in lead, and the ledgers that record them, line the guild's subterranean reliquary."
     )
@@ -213,7 +213,7 @@ object StoryScript {
         id = "scene_umbral_trench",
         name = "The Umbral Trench",
         chapterTitle = "Chapter 14: The Void Reservoir",
-        backgroundAsset = "environments/cave.jpg",
+        backgroundAsset = "story/umbral_trench.jpg",
         initialNodeId = "ch14_trench_entry",
         ambientDescription = "Starlight is muted here; the stolen voices of the drowned pool thicken into a living, breathing dark."
     )
@@ -222,7 +222,7 @@ object StoryScript {
         id = "scene_celestial_vestibule",
         name = "The Vestibule of Echoes",
         chapterTitle = "Chapter 16: The Primordial Syllable",
-        backgroundAsset = "environments/dungeon.jpg",
+        backgroundAsset = "story/vestibule_echoes.jpg",
         initialNodeId = "ch16_vestibule_entry",
         ambientDescription = "Frozen supplicants kneel in rings around four pillars of glass, each a severed fragment of the world's song."
     )
@@ -231,7 +231,7 @@ object StoryScript {
         id = "scene_epilogue",
         name = "Whispering Pines Awakened",
         chapterTitle = "Epilogue: The Great Awakening",
-        backgroundAsset = "story/village_square.jpg",
+        backgroundAsset = "story/village_bright.jpg",
         initialNodeId = "epilogue_awakening",
         ambientDescription = "Golden sunlight bathes the awakened village square as songbirds fill the living pines."
     )

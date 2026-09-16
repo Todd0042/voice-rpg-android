@@ -131,8 +131,11 @@ fun StoryScreen(
         }
     }
 
-    val rightBitmap = remember(rightSpeaker?.portraitAsset) {
-        rightSpeaker?.portraitAsset?.let { StoryAssetLoader.loadBitmap(context, it) }
+    val rightSpeakerAsset = remember(rightSpeaker?.id) {
+        rightSpeaker?.effectivePortraitAsset()
+    }
+    val rightBitmap = remember(rightSpeakerAsset) {
+        rightSpeakerAsset?.let { StoryAssetLoader.loadBitmap(context, it) }
     }
 
     val isRightSpeaking = rightSpeaker != null && (currentNode.speaker == rightSpeaker || currentNode.side == SpeakerSide.RIGHT)
@@ -323,6 +326,7 @@ fun StoryScreen(
                         if (rightSpeaker != null) {
                             if (rightSpeaker == DialogueSpeaker.SHADOW_WISP) {
                                 ShadowWispBust(
+                                    bitmap = rightBitmap,
                                     isSpeaking = isRightSpeaking,
                                     sizeDp = 86.dp,
                                     modifier = Modifier.offset(y = (if (isRightSpeaking) floatY else 0f).dp)
@@ -422,6 +426,7 @@ fun StoryScreen(
                 if (rightSpeaker != null) {
                     if (rightSpeaker == DialogueSpeaker.SHADOW_WISP) {
                         ShadowWispBust(
+                            bitmap = rightBitmap,
                             isSpeaking = isRightSpeaking,
                             sizeDp = 100.dp,
                             modifier = Modifier
@@ -646,6 +651,7 @@ private fun CharacterPortraitBust(
  */
 @Composable
 private fun ShadowWispBust(
+    bitmap: ImageBitmap?,
     isSpeaking: Boolean,
     sizeDp: Dp = 90.dp,
     modifier: Modifier = Modifier
@@ -668,10 +674,19 @@ private fun ShadowWispBust(
                 .border(if (isSpeaking) 2.dp else 1.dp, Color(0xFFB39DDB), CircleShape),
             contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = "👁️",
-                fontSize = 32.sp
-            )
+            if (bitmap != null) {
+                Image(
+                    bitmap = bitmap,
+                    contentDescription = "Corrupted Wisp",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else {
+                Text(
+                    text = "👁️",
+                    fontSize = if (sizeDp > 90.dp) 38.sp else 32.sp
+                )
+            }
         }
 
         Spacer(modifier = Modifier.height(3.dp))
@@ -706,8 +721,9 @@ private fun RetroSpeechBubble(
 ) {
     val speakerColor = node.speaker.themeColor
     val context = LocalContext.current
-    val speakerBitmap = remember(node.speaker.portraitAsset) {
-        node.speaker.portraitAsset?.let { StoryAssetLoader.loadBitmap(context, it) }
+    val speakerAsset = remember(node.id) { node.speaker.effectivePortraitAsset() }
+    val speakerBitmap = remember(speakerAsset) {
+        speakerAsset?.let { StoryAssetLoader.loadBitmap(context, it) }
     }
 
     // Subtle breathing pulse for advance arrow
