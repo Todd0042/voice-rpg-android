@@ -92,10 +92,21 @@ class StoryViewModel(
         pendingAutoAdvanceJob = null
     }
 
+    private fun eligibleChoices(node: DialogueNode): List<DialogueChoice> =
+        node.choices.filter { choice ->
+            choice.completionFlag == null || _state.value.narrativeFlags[choice.completionFlag] != true
+        }
+
+    private fun effectiveDialogueChoices(node: DialogueNode): List<DialogueChoice> {
+        val eligible = eligibleChoices(node)
+        return if (node.choices.isNotEmpty() && eligible.size <= 1) emptyList() else node.choices
+    }
+
     fun canAdvanceDialogue(): Boolean {
         val node = _state.value.currentNode
-        if (node.choices.isNotEmpty()) return false
+        if (effectiveDialogueChoices(node).isNotEmpty()) return false
         if (node.triggerBattleEncounterId != null) return false
+        if (node.choices.isNotEmpty()) return true
         if (node.nextNodeId != null) return StoryScript.ALL_NODES.containsKey(node.nextNodeId)
         if (node.id.startsWith("ch3_") || node.id.startsWith("ch4_") || node.id.startsWith("ch5_") ||
             node.id.startsWith("ch6_") || node.id.startsWith("ch7_") || node.id.startsWith("ch8_") ||
@@ -264,7 +275,20 @@ class StoryViewModel(
         combatNarrator.stop()
         speechManager.cancel()
         val node = _state.value.currentNode
+        if (effectiveDialogueChoices(node).isNotEmpty()) {
+            return
+        }
+
         if (node.choices.isNotEmpty()) {
+            val sole = eligibleChoices(node).firstOrNull()
+            if (sole != null) {
+                val nextNode = StoryScript.ALL_NODES[sole.nextNodeId]
+                if (nextNode != null) {
+                    val updatedDecisions = _state.value.decisionsMade + sole.id
+                    _state.value = _state.value.copy(decisionsMade = updatedDecisions)
+                    applyNodeTransition(nextNode)
+                }
+            }
             return
         }
 
@@ -780,10 +804,11 @@ class StoryViewModel(
         }
 
         // 3. Flexible choice selection with loud & nerdy roleplay matching
-        if (node.choices.isNotEmpty()) {
+        val effective = effectiveDialogueChoices(node)
+        if (effective.isNotEmpty()) {
             val matchedChoice = StoryChoiceMatcher.matchChoice(
                 utterance = utterance,
-                choices = node.choices,
+                choices = effective,
                 completedFlags = _state.value.narrativeFlags
             )
             if (matchedChoice != null) {
@@ -797,7 +822,7 @@ class StoryViewModel(
         }
 
         // 4. Non-branching progression command (natural & nerdy progression phrases)
-        if (node.choices.isEmpty() && StoryChoiceMatcher.isProgressionUtterance(utterance)) {
+        if (effective.isEmpty() && StoryChoiceMatcher.isProgressionUtterance(utterance)) {
             advanceDialogue()
             return
         }
@@ -857,13 +882,17 @@ class StoryViewModel(
         cancelPendingAutoAdvance()
         if (_state.value.gameScreen != GameScreen.STORY_EXPLORATION) return
         val node = _state.value.currentNode
-        val uncompletedChoices = node.choices.filter { choice ->
-            choice.completionFlag == null || _state.value.narrativeFlags[choice.completionFlag] != true
+        val effective = effectiveDialogueChoices(node)
+        val narrationText = if (effective.isEmpty() && node.choices.isNotEmpty()) {
+            val sole = eligibleChoices(node).firstOrNull()
+            if (sole != null) node.text + "\n\nOne path remains. " + sole.text else node.text
+        } else {
+            node.text
         }
         combatNarrator.narrateDialogue(
             speaker = node.speaker,
-            text = node.text,
-            choices = uncompletedChoices
+            text = narrationText,
+            choices = effective
         ) {
             val isPocketMode = combatNarrator.isEyesFreeMode.value
             val canAuto = canAdvanceDialogue()

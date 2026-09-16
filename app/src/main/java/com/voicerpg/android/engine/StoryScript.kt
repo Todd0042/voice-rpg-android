@@ -957,10 +957,8 @@ object StoryScript {
             id = "ch5_all_completed",
             speaker = DialogueSpeaker.CEDRIC,
             side = SpeakerSide.RIGHT,
-            text = "The perimeter is secured, their ambush traps disarmed, and the ward frequencies mapped! Lyra is suspended above the fane pool in a cage of writhing black briars. It is time. Draw your breath, Invocator—we charge to her rescue!",
-            choices = listOf(
-                DialogueChoice("ch5_assault_ready", "Sound the battle cry and breach the Briar Cage!", listOf("sound", "battle", "cry", "breach", "charge", "assault"), "ch5_rescue_assault")
-            )
+            text = "The perimeter is secured, their ambush traps disarmed, and the ward frequencies mapped! Lyra is suspended above the fane pool in a cage of writhing black briars. It is time. Draw your breath, Invocator—we charge to her rescue! Sound the battle cry and breach the Briar Cage!",
+            nextNodeId = "ch5_rescue_assault",
         ),
         DialogueNode(
             id = "ch5_rescue_assault",
@@ -1015,10 +1013,8 @@ object StoryScript {
             id = "ch5_complete",
             speaker = DialogueSpeaker.NARRATOR,
             side = SpeakerSide.CENTER_NARRATOR,
-            text = "CHAPTER 5 COMPLETED: THE DROWNED FANE RESCUE. You have penetrated the Rotting Marsh, defeated the Void Binder garrison, and saved Lyra the Grove Warden from the Briar Cage! Chapter 6: The Warden's Oath awaits.",
-            choices = listOf(
-                DialogueChoice("ch6_start", "Greet the dawn and receive the Warden's Oath (Begin Chapter 6)", listOf("dawn", "oath", "warden", "chapter6", "begin", "start"), "ch6_intro")
-            )
+            text = "CHAPTER 5 COMPLETED: THE DROWNED FANE RESCUE. You have penetrated the Rotting Marsh, defeated the Void Binder garrison, and saved Lyra the Grove Warden from the Briar Cage! Chapter 6: The Warden's Oath awaits. Greet the dawn and receive the Warden's Oath (Begin Chapter 6)",
+            nextNodeId = "ch6_intro",
         ),
 
         // =====================================================================
@@ -1085,10 +1081,8 @@ object StoryScript {
             id = "ch6_all_completed",
             speaker = DialogueSpeaker.CEDRIC,
             side = SpeakerSide.RIGHT,
-            text = "The protective spores coat our armor, and the sacred destiny of the Veridian Chime is etched in our hearts! The three of us fight as one fellowship. Invocator, give the command and let us cleanse the Weeping Willow!",
-            choices = listOf(
-                DialogueChoice("ch6_boss_ready", "March into the willow roots and destroy the Bog Behemoth!", listOf("march", "destroy", "behemoth", "roots", "battle"), "ch6_willow_assault")
-            )
+            text = "The protective spores coat our armor, and the sacred destiny of the Veridian Chime is etched in our hearts! The three of us fight as one fellowship. Invocator, give the command and let us cleanse the Weeping Willow! March into the willow roots and destroy the Bog Behemoth!",
+            nextNodeId = "ch6_willow_assault",
         ),
         DialogueNode(
             id = "ch6_willow_assault",
@@ -1203,10 +1197,8 @@ object StoryScript {
             id = "ch7_all_completed",
             speaker = DialogueSpeaker.LYRA,
             side = SpeakerSide.LEFT,
-            text = "The preparatory runes glow with incandescent jade light! The Veridian Chime is primed to awaken. But beneath the pool, the ancient silt core thrashes—a gargantuan Mire Wyrm rises to crush the chime before it can ring!",
-            choices = listOf(
-                DialogueChoice("ch7_boss_ready", "Unleash the Logos and destroy the Mire Wyrm!", listOf("unleash", "destroy", "wyrm", "battle", "strike"), "ch7_wyrm_assault")
-            )
+            text = "The preparatory runes glow with incandescent jade light! The Veridian Chime is primed to awaken. But beneath the pool, the ancient silt core thrashes—a gargantuan Mire Wyrm rises to crush the chime before it can ring! Unleash the Logos and destroy the Mire Wyrm!",
+            nextNodeId = "ch7_wyrm_assault",
         ),
         DialogueNode(
             id = "ch7_wyrm_assault",
@@ -1227,10 +1219,8 @@ object StoryScript {
             id = "ch7_post_toll",
             speaker = DialogueSpeaker.CEDRIC,
             side = SpeakerSide.RIGHT,
-            text = "The Veridian Chime rings true! Two bells restored, two remain! As dusk falls across the drained marsh, the northern crags loom cold and jagged before us. Let us make camp at the foothills and prepare for the assassin's pass.",
-            choices = listOf(
-                DialogueChoice("ch7_to_camp", "Make camp at the foot of the Shadowed Crags", listOf("camp", "make", "rest", "foothills", "crags"), "ch7_camp_intro")
-            )
+            text = "The Veridian Chime rings true! Two bells restored, two remain! As dusk falls across the drained marsh, the northern crags loom cold and jagged before us. Let us make camp at the foothills and prepare for the assassin's pass. Make camp at the foot of the Shadowed Crags.",
+            nextNodeId = "ch7_camp_intro",
         ),
 
         // === CHAPTER 7 CAMPFIRE INTERLUDE: THE FOOTHILLS OF THE CRAGS ===
@@ -1281,10 +1271,8 @@ object StoryScript {
             id = "ch7_camp_all_completed",
             speaker = DialogueSpeaker.CEDRIC,
             side = SpeakerSide.RIGHT,
-            text = "Dawn breaks in cold violet and gold across the crags. The fellowship gathers their packs, invigorated by rest and prepared for whatever awaits in the canyon.",
-            choices = listOf(
-                DialogueChoice("ch7_camp_to_ch8", "March into the Shadowed Crags (Begin Chapter 8)", listOf("march", "crags", "shadowed", "begin", "chapter 8", "advance"), "ch8_intro")
-            )
+            text = "Dawn breaks in cold violet and gold across the crags. The fellowship gathers their packs, invigorated by rest and prepared for whatever awaits in the canyon. March into the Shadowed Crags (Begin Chapter 8)",
+            nextNodeId = "ch8_intro",
         ),
 
         // === CHAPTER 8: THE SHADOWED CRAGS & ZEPHYR'S PARLEY ===
@@ -1380,10 +1368,8 @@ object StoryScript {
             id = "ch8_ambush_strike",
             speaker = DialogueSpeaker.NARRATOR,
             side = SpeakerSide.CENTER_NARRATOR,
-            text = "A harsh horn blasts from the cliff above! Boulders tumble down as Grand Executioner Kaelen drops onto the path with twin heavy execution axes, flanked by lethal shadowblade elites! 'Zephyr! Traitorous cur! You were sent to bring the Sovereign their tongues in lead, and you babble with our prey! You will die beside them!'",
-            choices = listOf(
-                DialogueChoice("ch8_fight_ambush", "Defend the pass alongside Zephyr against Executioner Kaelen!", listOf("defend", "fight", "ambush", "kaelen", "battle", "zephyr"), "ch8_assassin_assault")
-            )
+            text = "A harsh horn blasts from the cliff above! Boulders tumble down as Grand Executioner Kaelen drops onto the path with twin heavy execution axes, flanked by lethal shadowblade elites! 'Zephyr! Traitorous cur! You were sent to bring the Sovereign their tongues in lead, and you babble with our prey! You will die beside them!' Defend the pass alongside Zephyr against Executioner Kaelen!",
+            nextNodeId = "ch8_assassin_assault",
         ),
         DialogueNode(
             id = "ch8_assassin_assault",
@@ -1439,10 +1425,8 @@ object StoryScript {
             id = "ch8_all_completed",
             speaker = DialogueSpeaker.CEDRIC,
             side = SpeakerSide.RIGHT,
-            text = "The quad fellowship stands united! Yet Sir Cedric looks down with heavy eyes. 'Invocator... before we assault the bastion, my spirit carries a debt. In the catacombs beneath this ridge lies the Mausoleum of the Sun. My former mentor, Sir Galahault, haunts that desecrated hall. If my blade is to remain unbroken, I must face my past.'",
-            choices = listOf(
-                DialogueChoice("ch8_to_cedric_trial", "Enter the Mausoleum of the Sun for Sir Cedric's Trial", listOf("enter", "mausoleum", "cedric", "trial", "dawn"), "ch9_intro")
-            )
+            text = "The quad fellowship stands united! Yet Sir Cedric looks down with heavy eyes. 'Invocator... before we assault the bastion, my spirit carries a debt. In the catacombs beneath this ridge lies the Mausoleum of the Sun. My former mentor, Sir Galahault, haunts that desecrated hall. If my blade is to remain unbroken, I must face my past.' Enter the Mausoleum of the Sun for Sir Cedric's Trial",
+            nextNodeId = "ch9_intro",
         ),
 
         // === CHAPTER 9: THE BROKEN VOW OF DAWN (Sir Cedric's Required Trial) ===
@@ -1539,10 +1523,8 @@ object StoryScript {
             id = "ch9_all_completed",
             speaker = DialogueSpeaker.GALAHAULT,
             side = SpeakerSide.RIGHT,
-            text = "The central obsidian sarcophagus bursts open! A petrified spectral knight encased in black obsidian armor steps forth, eyes blazing with pale golden fury: 'Traitor! You chose thirty crying orphans over five centuries of sacred chivalric lineage!' Cedric draws his greatsword: 'My oath was to the people, master!'",
-            choices = listOf(
-                DialogueChoice("ch9_boss_ready", "Stand beside Cedric and shatter Grandmaster Galahault's curse!", listOf("stand", "shatter", "galahault", "curse", "battle"), "ch9_galahault_assault")
-            )
+            text = "The central obsidian sarcophagus bursts open! A petrified spectral knight encased in black obsidian armor steps forth, eyes blazing with pale golden fury: 'Traitor! You chose thirty crying orphans over five centuries of sacred chivalric lineage!' Cedric draws his greatsword: 'My oath was to the people, master!' Stand beside Cedric and shatter Grandmaster Galahault's curse!",
+            nextNodeId = "ch9_galahault_assault",
         ),
         DialogueNode(
             id = "ch9_galahault_assault",
@@ -1610,10 +1592,8 @@ object StoryScript {
             id = "ch9_post_victory",
             speaker = DialogueSpeaker.LYRA,
             side = SpeakerSide.LEFT,
-            text = "Sir Cedric stands unburdened, his holy aura blazing brighter than the sun. Lyra clutches her Heart-Tree amulet with trembling hands. 'Invocator... my sisters call to me. The Emerald Choir spring is dying under obsidian silt. We must go there next!'",
-            choices = listOf(
-                DialogueChoice("ch9_to_lyra_trial", "Journey to the Emerald Choir Grove for Lyra's Trial", listOf("journey", "emerald", "choir", "lyra", "trial", "grove"), "ch10_intro")
-            )
+            text = "Sir Cedric stands unburdened, his holy aura blazing brighter than the sun. Lyra clutches her Heart-Tree amulet with trembling hands. 'Invocator... my sisters call to me. The Emerald Choir spring is dying under obsidian silt. We must go there next!' Journey to the Emerald Choir Grove for Lyra's Trial",
+            nextNodeId = "ch10_intro",
         ),
 
         // === CHAPTER 10: THE SONG OF THE MUTE GROVE (Lyra's Required Trial) ===
@@ -1710,10 +1690,8 @@ object StoryScript {
             id = "ch10_all_completed",
             speaker = DialogueSpeaker.NARRATOR,
             side = SpeakerSide.CENTER_NARRATOR,
-            text = "The spring roils violently! The Blighted Broodmother—a colossal arachnid behemoth dripping with obsidian venom—climbs from the pit, hissing with discordant screeching!",
-            choices = listOf(
-                DialogueChoice("ch10_boss_ready", "Cleanse the sacred spring and crush the Blighted Broodmother!", listOf("cleanse", "crush", "broodmother", "battle", "spring"), "ch10_broodmother_assault")
-            )
+            text = "The spring roils violently! The Blighted Broodmother—a colossal arachnid behemoth dripping with obsidian venom—climbs from the pit, hissing with discordant screeching! Cleanse the sacred spring and crush the Blighted Broodmother!",
+            nextNodeId = "ch10_broodmother_assault",
         ),
         DialogueNode(
             id = "ch10_broodmother_assault",
@@ -1773,10 +1751,8 @@ object StoryScript {
             id = "ch10_post_victory",
             speaker = DialogueSpeaker.ZEPHYR,
             side = SpeakerSide.LEFT,
-            text = "Lyra is radiant, surrounded by dancing woodland spirits. Zephyr tightens his gloves. 'Two debts cleared. Now comes mine. Master Nocturne has tracked us to the Blind Gorge. If I do not extinguish him today, his blades will seek us at our backs during the assault on Ouros.'",
-            choices = listOf(
-                DialogueChoice("ch10_to_zephyr_trial", "Enter the Blind Gorge for Zephyr's Trial", listOf("enter", "blind", "gorge", "zephyr", "trial"), "ch11_intro")
-            )
+            text = "Lyra is radiant, surrounded by dancing woodland spirits. Zephyr tightens his gloves. 'Two debts cleared. Now comes mine. Master Nocturne has tracked us to the Blind Gorge. If I do not extinguish him today, his blades will seek us at our backs during the assault on Ouros.' Enter the Blind Gorge for Zephyr's Trial",
+            nextNodeId = "ch11_intro",
         ),
 
         // === CHAPTER 11: THE SILENT BLADE'S RECKONING (Zephyr's Required Trial) ===
@@ -1873,10 +1849,8 @@ object StoryScript {
             id = "ch11_all_completed",
             speaker = DialogueSpeaker.NOCTURNE,
             side = SpeakerSide.RIGHT,
-            text = "A whirlpool of black mist congeals on the canyon floor. Master Nocturne steps forward, masked in obsidian bone. 'You were my prize pupil, Zephyr. Yet you trade the perfection of silence for the babbling of fools.' Zephyr uncrosses his daggers: 'Silence is death. Words are how we choose each other!'",
-            choices = listOf(
-                DialogueChoice("ch11_boss_ready", "Pursue Nocturne into the Obsidian Vaults beneath the gorge", listOf("pursue", "nocturne", "obsidian", "vaults", "strike"), "ch11_vaults_entry")
-            )
+            text = "A whirlpool of black mist congeals on the canyon floor. Master Nocturne steps forward, masked in obsidian bone. 'You were my prize pupil, Zephyr. Yet you trade the perfection of silence for the babbling of fools.' Zephyr uncrosses his daggers: 'Silence is death. Words are how we choose each other!' Pursue Nocturne into the Obsidian Vaults beneath the gorge.",
+            nextNodeId = "ch11_vaults_entry",
         ),
         DialogueNode(
             id = "ch11_nocturne_assault",
@@ -1977,10 +1951,8 @@ object StoryScript {
             id = "ch11_post_victory",
             speaker = DialogueSpeaker.CEDRIC,
             side = SpeakerSide.RIGHT,
-            text = "Sir Cedric claps Zephyr firmly on the shoulder. 'All four companions have proven their souls in trial! Our blades are keen, our spirits unyielding. The Clockwork Bastion of Ouros stands before us. Let us awaken the Third Great Bell!'",
-            choices = listOf(
-                DialogueChoice("ch11_to_ouros", "Assault the Clockwork Bastion of Ouros!", listOf("assault", "ouros", "clockwork", "bastion", "advance"), "ch12_intro")
-            )
+            text = "Sir Cedric claps Zephyr firmly on the shoulder. 'All four companions have proven their souls in trial! Our blades are keen, our spirits unyielding. The Clockwork Bastion of Ouros stands before us. Let us awaken the Third Great Bell!' Assault the Clockwork Bastion of Ouros!",
+            nextNodeId = "ch12_intro",
         ),
 
         // === CHAPTER 12: AWAKENING THE THIRD BELL (The Iron Belfry of Ouros) ===
@@ -2077,10 +2049,8 @@ object StoryScript {
             id = "ch12_all_completed",
             speaker = DialogueSpeaker.OUROS,
             side = SpeakerSide.RIGHT,
-            text = "The foundry floor trembles as Clockwork Warmaster Ouros deploys from the furnace elevator—a ten-foot armored automaton wielding molten steam cannons and backed by iron phalanx guards! 'Intruders detected! Protocol: Silence the living!'",
-            choices = listOf(
-                DialogueChoice("ch12_boss_ready", "Destroy Warmaster Ouros and ring the Iron Belfry!", listOf("destroy", "warmaster", "ouros", "belfry", "battle"), "ch12_warmaster_assault")
-            )
+            text = "The foundry floor trembles as Clockwork Warmaster Ouros deploys from the furnace elevator—a ten-foot armored automaton wielding molten steam cannons and backed by iron phalanx guards! 'Intruders detected! Protocol: Silence the living!' Destroy Warmaster Ouros and ring the Iron Belfry!",
+            nextNodeId = "ch12_warmaster_assault",
         ),
         DialogueNode(
             id = "ch12_warmaster_assault",
@@ -2140,10 +2110,8 @@ object StoryScript {
             id = "ch12_post_victory",
             speaker = DialogueSpeaker.LYRA,
             side = SpeakerSide.LEFT,
-            text = "Three Great Bells restored! The sky bridge has opened! The capital gates of Sol-Aethel lie just ahead. Forward, to the heart of the Blight!",
-            choices = listOf(
-                DialogueChoice("ch12_to_citadel", "Cross the sky bridge to the Silent Citadel Gates", listOf("cross", "bridge", "citadel", "gates", "advance"), "ch13_intro")
-            )
+            text = "Three Great Bells restored! The sky bridge has opened! The capital gates of Sol-Aethel lie just ahead. Forward, to the heart of the Blight! Cross the sky bridge to the Silent Citadel Gates",
+            nextNodeId = "ch13_intro",
         ),
 
         // === CHAPTER 13: BREACH OF THE SILENT CITADEL ===
@@ -2240,10 +2208,8 @@ object StoryScript {
             id = "ch13_all_completed",
             speaker = DialogueSpeaker.VAELOR,
             side = SpeakerSide.RIGHT,
-            text = "The black gates open to reveal Commander Vaelor, Hand of Malakor, flanked by obsidian sentinels! At his belt hangs the terrifying Void Horn. 'You have climbed high, little songbirds. But here, the sky belongs to the void!' Vaelor raises the horn to his lips!",
-            choices = listOf(
-                DialogueChoice("ch13_boss_ready", "Slay Commander Vaelor and breach the Citadel!", listOf("slay", "vaelor", "citadel", "battle", "horn"), "ch13_vaelor_assault")
-            )
+            text = "The black gates open to reveal Commander Vaelor, Hand of Malakor, flanked by obsidian sentinels! At his belt hangs the terrifying Void Horn. 'You have climbed high, little songbirds. But here, the sky belongs to the void!' Vaelor raises the horn to his lips! Slay Commander Vaelor and breach the Citadel!",
+            nextNodeId = "ch13_vaelor_assault",
         ),
         DialogueNode(
             id = "ch13_vaelor_assault",
@@ -2303,10 +2269,8 @@ object StoryScript {
             id = "ch13_post_victory",
             speaker = DialogueSpeaker.ZEPHYR,
             side = SpeakerSide.LEFT,
-            text = "Vaelor is dead. The path to the Void Reservoir is clear. Let us reclaim what was stolen!",
-            choices = listOf(
-                DialogueChoice("ch13_to_reservoir", "Enter the Chamber of the Void Reservoir", listOf("enter", "reservoir", "void", "chamber", "advance"), "ch14_intro")
-            )
+            text = "Vaelor is dead. The path to the Void Reservoir is clear. Let us reclaim what was stolen! Enter the Chamber of the Void Reservoir",
+            nextNodeId = "ch14_intro",
         ),
 
         // === CHAPTER 14: THE VOID RESERVOIR ===
@@ -2403,10 +2367,8 @@ object StoryScript {
             id = "ch14_all_completed",
             speaker = DialogueSpeaker.NARRATOR,
             side = SpeakerSide.CENTER_NARRATOR,
-            text = "The liquid silence rises into a towering tidal wave as the colossal Abyssal Leviathan breaches the surface! Tendrils of pure void lash out, suffocating all sound in their wake!",
-            choices = listOf(
-                DialogueChoice("ch14_boss_ready", "Descend the umbilical trench into the Leviathan's den", listOf("descend", "trench", "leviathan", "den", "battle"), "ch14_trench_descent")
-            )
+            text = "The liquid silence rises into a towering tidal wave as the colossal Abyssal Leviathan breaches the surface! Tendrils of pure void lash out, suffocating all sound in their wake! Descend the umbilical trench into the Leviathan's den.",
+            nextNodeId = "ch14_trench_descent",
         ),
         DialogueNode(
             id = "ch14_trench_descent",
@@ -2520,10 +2482,8 @@ object StoryScript {
             id = "ch14_post_victory",
             speaker = DialogueSpeaker.CEDRIC,
             side = SpeakerSide.RIGHT,
-            text = "The voices are free! They swirl ahead of us, lighting the ribbon stair into the heavens. The summit is within our grasp!",
-            choices = listOf(
-                DialogueChoice("ch14_to_spire", "Ascend the Celestial Ribbon Stair to the Summit", listOf("ascend", "ribbon", "stair", "summit", "spire", "advance"), "ch15_intro")
-            )
+            text = "The voices are free! They swirl ahead of us, lighting the ribbon stair into the heavens. The summit is within our grasp! Ascend the Celestial Ribbon Stair to the Summit",
+            nextNodeId = "ch15_intro",
         ),
 
         // === CHAPTER 15: ASCENT OF THE CELESTIAL SPIRE ===
@@ -2680,10 +2640,8 @@ object StoryScript {
             id = "ch15_all_completed",
             speaker = DialogueSpeaker.NARRATOR,
             side = SpeakerSide.CENTER_NARRATOR,
-            text = "Golden Archon Custodians and Celestial Spires materialize to guard the final sanctum. They raise their halberds: 'Only those of true harmonic resonance may enter the Belfry of Eternity!'",
-            choices = listOf(
-                DialogueChoice("ch15_boss_ready", "Prove your fellowship's resonance to the Archons!", listOf("prove", "resonance", "archons", "battle", "enter"), "ch15_custodians_assault")
-            )
+            text = "Golden Archon Custodians and Celestial Spires materialize to guard the final sanctum. They raise their halberds: 'Only those of true harmonic resonance may enter the Belfry of Eternity!' Prove your fellowship's resonance to the Archons!",
+            nextNodeId = "ch15_custodians_assault",
         ),
         DialogueNode(
             id = "ch15_custodians_assault",
@@ -2743,10 +2701,8 @@ object StoryScript {
             id = "ch15_post_victory",
             speaker = DialogueSpeaker.AETHEL,
             side = SpeakerSide.LEFT,
-            text = "The final belfry is open. The fourth Great Bell—The Bell of Eternity—awaits. It is time to end the silence forever.",
-            choices = listOf(
-                DialogueChoice("ch15_to_finale", "Enter the Celestial Belfry to confront Grand Inquisitor Malakor", listOf("enter", "belfry", "malakor", "sovereign", "finale", "advance"), "ch16_intro")
-            )
+            text = "The final belfry is open. The fourth Great Bell—The Bell of Eternity—awaits. It is time to end the silence forever. Enter the Celestial Belfry to confront Grand Inquisitor Malakor",
+            nextNodeId = "ch16_intro",
         ),
 
         // === CHAPTER 16: THE PRIMORDIAL SYLLABLE (Grand Finale) ===
@@ -2816,10 +2772,8 @@ object StoryScript {
             id = "ch16_fellowship_reply",
             speaker = DialogueSpeaker.AETHEL,
             side = SpeakerSide.LEFT,
-            text = "Aethel steps forward, voice ringing like pure bronze: 'Words can wound, Malakor, but words are also how we say I love you. Words are how we promise to protect each other. Without voice, peace is just an empty grave! We will not let your sorrow mute the universe!'",
-            choices = listOf(
-                DialogueChoice("ch16_boss_ready", "Defy the doubt-thoughts in the Mirror Gallery and stride toward Malakor", listOf("defy", "mirror", "malakor", "gallery", "battle"), "ch16_mirror_entry")
-            )
+            text = "Aethel steps forward, voice ringing like pure bronze: 'Words can wound, Malakor, but words are also how we say I love you. Words are how we promise to protect each other. Without voice, peace is just an empty grave! We will not let your sorrow mute the universe!' Defy the doubt-thoughts in the Mirror Gallery and stride toward Malakor.",
+            nextNodeId = "ch16_mirror_entry",
         ),
         DialogueNode(
             id = "ch16_mirror_entry",
@@ -2894,10 +2848,8 @@ object StoryScript {
             id = "ch16_toll_bell",
             speaker = DialogueSpeaker.NARRATOR,
             side = SpeakerSide.CENTER_NARRATOR,
-            text = "The fellowship approaches the Bell of Eternity. Together, all four companions grasp the cord of braided starlight. The player invokes the First Word with full lung power: 'LET THERE BE ECHO!'",
-            choices = listOf(
-                DialogueChoice("ch16_ring_bell", "Toll the Bell of Eternity and awaken Aethelgard!", listOf("toll", "ring", "bell", "eternity", "awaken"), "epilogue_awakening")
-            )
+            text = "The fellowship approaches the Bell of Eternity. Together, all four companions grasp the cord of braided starlight. The player invokes the First Word with full lung power: 'LET THERE BE ECHO!' Toll the Bell of Eternity and awaken Aethelgard!",
+            nextNodeId = "epilogue_awakening",
         ),
 
         // === EPILOGUE: THE GREAT AWAKENING ===
