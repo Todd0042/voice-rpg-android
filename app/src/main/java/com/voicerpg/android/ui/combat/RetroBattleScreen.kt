@@ -34,6 +34,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.voicerpg.android.BuildConfig
 import com.voicerpg.android.engine.StoryEncounters
 import com.voicerpg.android.model.CombatPhase
 import com.voicerpg.android.model.FloatingCombatText
@@ -63,6 +64,7 @@ fun RetroBattleScreen(
     val isChimeMuted by viewModel.speechManager.isChimeMuted.collectAsState()
     val isAutoListen by viewModel.speechManager.isAutoListen.collectAsState()
     val rmsLevel by viewModel.speechManager.rmsLevel.collectAsState()
+    val showDeveloperTools = BuildConfig.DEBUG_WARP_MENU && state.isDeveloperToolsEnabled
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -100,8 +102,8 @@ fun RetroBattleScreen(
                         modifier = Modifier.weight(1f)
                     )
 
-                    // Return to Story Mode button (if provided)
-                    if (onReturnToStory != null) {
+                    // Return to Story Mode button (debug/test only)
+                    if (onReturnToStory != null && showDeveloperTools) {
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(8.dp))
@@ -141,22 +143,24 @@ fun RetroBattleScreen(
                     }
                 }
 
-                // Environment & Story Encounter Switcher Bar
-                EnvironmentSwitcherBar(
-                    currentEnvironment = state.currentEnvironment,
-                    onSelectEnvironment = { viewModel.setEnvironment(it) },
-                    onSelectEncounter = { viewModel.startEncounter(it) },
-                    onSummonMinion = {
-                        val minionNum = (state.enemies.size + 1)
-                        val minion = StoryEncounters.createMinion(
-                            idSuffix = "$minionNum",
-                            name = "Blighted Minion $minionNum",
-                            hp = 180
-                        )
-                        viewModel.summonReinforcements(listOf(minion))
-                    },
-                    modifier = Modifier.padding(vertical = 2.dp)
-                )
+                // Environment & Story Encounter Switcher Bar (debug/test only)
+                if (showDeveloperTools) {
+                    EnvironmentSwitcherBar(
+                        currentEnvironment = state.currentEnvironment,
+                        onSelectEnvironment = { viewModel.setEnvironment(it) },
+                        onSelectEncounter = { viewModel.startEncounter(it) },
+                        onSummonMinion = {
+                            val minionNum = (state.enemies.size + 1)
+                            val minion = StoryEncounters.createMinion(
+                                idSuffix = "$minionNum",
+                                name = "Blighted Minion $minionNum",
+                                hp = 180
+                            )
+                            viewModel.summonReinforcements(listOf(minion))
+                        },
+                        modifier = Modifier.padding(vertical = 2.dp)
+                    )
+                }
 
                 // Middle: 32-bit Tactical Battle Arena (Left: Party, Right: Monsters)
                 Box(
@@ -252,6 +256,7 @@ fun RetroBattleScreen(
                     isAutoListen = isAutoListen,
                     onToggleAutoListen = { viewModel.speechManager.toggleAutoListen() },
                     rmsLevel = rmsLevel,
+                    showDeveloperTools = showDeveloperTools,
                     modifier = Modifier.fillMaxWidth()
                 )
             }

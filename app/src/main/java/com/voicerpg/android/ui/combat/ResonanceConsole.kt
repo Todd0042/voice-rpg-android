@@ -85,6 +85,7 @@ fun ResonanceConsole(
     isAutoListen: Boolean = false,
     onToggleAutoListen: () -> Unit = {},
     rmsLevel: Float = 0f,
+    showDeveloperTools: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     var typedText by remember { mutableStateOf("") }
@@ -268,6 +269,8 @@ fun ResonanceConsole(
 
         Spacer(modifier = Modifier.height(6.dp))
 
+        // --- CHEATER HUD & QUICK-CAST CHIPS (debug/test only) ---
+        if (showDeveloperTools) {
         // --- CHEATER HUD: RESONANCE INTENSITY SELECTOR ---
         Column(
             modifier = Modifier
@@ -415,6 +418,7 @@ fun ResonanceConsole(
                     ) { text, acoustic -> onSubmitChant(text, acoustic) }
                 }
             }
+        }
         }
 
         Spacer(modifier = Modifier.height(8.dp))

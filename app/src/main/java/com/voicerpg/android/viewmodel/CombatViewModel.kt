@@ -49,7 +49,8 @@ data class CombatState(
     val screenShakeOffsetY: Float = 0f,
     val currentEnvironment: BattleEnvironment = BattleEnvironment.DUNGEON,
     val isEyesFreeMode: Boolean = false,
-    val isOptionsOpen: Boolean = false
+    val isOptionsOpen: Boolean = false,
+    val isDeveloperToolsEnabled: Boolean = false
 ) {
     val activePartyMember: PartyMember?
         get() = party.firstOrNull { it.id == activePartyMemberId }
@@ -704,6 +705,15 @@ class CombatViewModel(
     fun setEyesFreeMode(enabled: Boolean) {
         combatNarrator.setEyesFreeMode(enabled)
         _state.value = _state.value.copy(isEyesFreeMode = enabled)
+    }
+
+    /**
+     * Debug-only: reveals/hides the battle test controls (cheat HUD, sandbox
+     * switchers, escape button). Defaults to hidden in every build; only the
+     * debug options dialog can flip it.
+     */
+    fun toggleDeveloperTools() {
+        _state.value = _state.value.copy(isDeveloperToolsEnabled = !_state.value.isDeveloperToolsEnabled)
     }
 
     fun openOptions() {

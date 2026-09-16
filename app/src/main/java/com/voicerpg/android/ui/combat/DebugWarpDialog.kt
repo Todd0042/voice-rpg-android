@@ -39,6 +39,8 @@ import com.voicerpg.android.viewmodel.StoryViewModel
 fun DebugWarpDialog(
     isOpen: Boolean,
     targets: List<StoryViewModel.DebugChapterTarget>,
+    developerToolsEnabled: Boolean = false,
+    onToggleDeveloperTools: (() -> Unit)? = null,
     onWarpTo: (String) -> Unit,
     onClose: () -> Unit
 ) {
@@ -60,7 +62,7 @@ fun DebugWarpDialog(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "🔮 DEBUG CHAPTER WARP",
+                    text = "🔧 DEBUG MENU",
                     color = LogosGold,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Black,
@@ -68,13 +70,58 @@ fun DebugWarpDialog(
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = "Testing only. Instantly jumps to a chapter intro.",
+                    text = "Testing tools only. Chapter warp & battle test controls.",
                     color = Color.LightGray,
                     fontSize = 10.sp,
                     fontFamily = FontFamily.Monospace
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
+
+                if (onToggleDeveloperTools != null) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(if (developerToolsEnabled) Color(0xFF332014) else RetroPanel.copy(alpha = 0.8f))
+                            .border(1.dp, if (developerToolsEnabled) Color(0xFFFF9800) else RetroBorder, RoundedCornerShape(8.dp))
+                            .clickable { onToggleDeveloperTools() }
+                            .padding(10.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "🎛️ BATTLE TEST CONTROLS",
+                                color = if (developerToolsEnabled) Color(0xFFFFB74D) else Color.White,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = FontFamily.Monospace
+                            )
+                            Text(
+                                text = if (developerToolsEnabled) "SHOWN ✔" else "HIDDEN",
+                                color = if (developerToolsEnabled) Color(0xFFFFB74D) else Color(0xFF90A4AE),
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(10.dp))
+                }
+
+                Text(
+                    text = "WARP TO CHAPTER",
+                    color = LogosGlow,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Monospace,
+                    modifier = Modifier.align(Alignment.Start)
+                )
+
+                Spacer(modifier = Modifier.height(6.dp))
 
                 targets.forEach { target ->
                     Box(

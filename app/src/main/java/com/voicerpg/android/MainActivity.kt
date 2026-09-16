@@ -208,10 +208,12 @@ class MainActivity : ComponentActivity() {
                         onClose = { combatViewModel.closeOptions() }
                     )
 
-                    // Debug-only chapter warp dialog (never shown in release builds)
+                    // Debug-only chapter warp & developer tools dialog (never shown in release builds)
                     DebugWarpDialog(
                         isOpen = showDebugWarp,
                         targets = StoryViewModel.DEBUG_CHAPTER_TARGETS,
+                        developerToolsEnabled = BuildConfig.DEBUG_WARP_MENU && combatState.isDeveloperToolsEnabled,
+                        onToggleDeveloperTools = { combatViewModel.toggleDeveloperTools() },
                         onWarpTo = { nodeId ->
                             showDebugWarp = false
                             combatViewModel.closeOptions()
