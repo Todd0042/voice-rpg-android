@@ -4,7 +4,11 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -13,6 +17,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
 import com.voicerpg.android.model.ResonanceTier
 import com.voicerpg.android.model.SpellSchool
 import kotlin.math.cos
@@ -80,17 +85,23 @@ fun SpellVfxCanvas(
     engine: SpellVfxEngine,
     modifier: Modifier = Modifier
 ) {
+    var frameTick by remember { mutableLongStateOf(0L) }
+
     LaunchedEffect(engine) {
         while (true) {
-            withFrameNanos {
+            withFrameNanos { nanos ->
                 engine.update()
+                frameTick = nanos
             }
         }
     }
 
     Canvas(modifier = modifier.fillMaxSize()) {
-        for (p in engine.projectiles) {
-            renderProjectile(p)
+        val _tick = frameTick // Observes frame tick so Canvas reliably redraws every frame while projectiles exist
+        if (engine.projectiles.isNotEmpty()) {
+            for (p in engine.projectiles) {
+                renderProjectile(p)
+            }
         }
     }
 }
@@ -137,6 +148,10 @@ private fun DrawScope.renderProjectile(p: ActiveSpellProjectile) {
     val arcHeight = if (p.school == SpellSchool.PYROMANCY) -120f * sin(t * Math.PI.toFloat()) else 0f
     val curY = p.startY + (p.targetY - p.startY) * t + arcHeight
 
+    val dx = p.targetX - p.startX
+    val dy = p.targetY - p.startY
+    val angleDeg = Math.toDegrees(kotlin.math.atan2(dy.toDouble(), dx.toDouble())).toFloat()
+
     when (p.school) {
         SpellSchool.PYROMANCY -> {
             val baseRadius = 14f * sizeScale
@@ -174,7 +189,7 @@ private fun DrawScope.renderProjectile(p: ActiveSpellProjectile) {
             for (i in 1..trailCount) {
                 val trailT = (t - i * 0.035f).coerceAtLeast(0f)
                 val trailX = p.startX + (p.targetX - p.startX) * trailT
-                val trailY = p.startY + (p.targetY - p.startY) * trailT - 100f * sin(trailT * Math.PI.toFloat())
+                val trailY = p.startY + (p.targetY - p.startY) * trailT - 120f * sin(trailT * Math.PI.toFloat())
                 val alpha = (1f - i.toFloat() / trailCount).coerceIn(0.1f, 1f)
                 val rad = (baseRadius * 0.7f) - (i * 1.5f).coerceAtLeast(2f)
                 drawCircle(Color(0xFFFF6E40).copy(alpha = alpha), radius = rad, center = Offset(trailX, trailY))
@@ -182,21 +197,23 @@ private fun DrawScope.renderProjectile(p: ActiveSpellProjectile) {
         }
 
         SpellSchool.CRYOMANCY -> {
-            val length = 24f * sizeScale
+            val length = 26f * sizeScale
             val height = 10f * sizeScale
 
-            // Glacial Lance
-            drawRect(color = Color(0xFF00E5FF), topLeft = Offset(curX - length / 2f, curY - height / 2f), size = Size(length, height))
-            drawRect(color = Color.White, topLeft = Offset(curX - length / 4f, curY - height / 4f), size = Size(length / 2f, height / 2f))
+            rotate(degrees = angleDeg, pivot = Offset(curX, curY)) {
+                // Glacial Lance
+                drawRect(color = Color(0xFF00E5FF), topLeft = Offset(curX - length / 2f, curY - height / 2f), size = Size(length, height))
+                drawRect(color = Color.White, topLeft = Offset(curX - length / 4f, curY - height / 4f), size = Size(length / 2f, height / 2f))
 
-            if (isSuper) {
-                // Frost nova rings expanding along path
-                drawOval(
-                    color = Color(0x6680DEEA),
-                    topLeft = Offset(curX - length, curY - height * 1.5f),
-                    size = Size(length * 2f, height * 3f),
-                    style = Stroke(width = 2f)
-                )
+                if (isSuper) {
+                    // Frost nova rings expanding along path
+                    drawOval(
+                        color = Color(0x6680DEEA),
+                        topLeft = Offset(curX - length, curY - height * 1.5f),
+                        size = Size(length * 2f, height * 3f),
+                        style = Stroke(width = 2f)
+                    )
+                }
             }
         }
 
@@ -220,9 +237,46 @@ private fun DrawScope.renderProjectile(p: ActiveSpellProjectile) {
             }
         }
 
+        SpellSchool.NATURE -> {
+            val radius = 12f * sizeScale
+            // Verdant brier orb
+            drawCircle(color = Color(0xFF66BB6A), radius = radius, center = Offset(curX, curY))
+            drawCircle(color = Color(0xFFA5D6A7), radius = radius * 0.6f, center = Offset(curX, curY))
+            drawCircle(Color.White, radius = radius * 0.3f, center = Offset(curX, curY))
+            // Orbiting emerald leaves
+            val orbitCount = if (isSuper) 4 else 2
+            for (k in 0 until orbitCount) {
+                val leafAngle = (t * 10f + k * (2 * Math.PI / orbitCount)).toDouble()
+                val lx = curX + (cos(leafAngle) * radius * 1.5f).toFloat()
+                val ly = curY + (sin(leafAngle) * radius * 1.5f).toFloat()
+                drawCircle(Color(0xFF2E7D32), radius = 4f * sizeScale, center = Offset(lx, ly))
+            }
+        }
+
+        SpellSchool.HOLY -> {
+            val radius = 14f * sizeScale
+            drawCircle(color = Color(0x66FFD700), radius = radius * 1.6f, center = Offset(curX, curY))
+            drawCircle(color = Color(0xFFFFD54F), radius = radius, center = Offset(curX, curY))
+            drawCircle(Color.White, radius = radius * 0.5f, center = Offset(curX, curY))
+            val rayLen = 20f * sizeScale
+            drawLine(
+                color = Color(0xFFFFEE58),
+                start = Offset(curX - rayLen, curY),
+                end = Offset(curX + rayLen, curY),
+                strokeWidth = 3f * sizeScale
+            )
+            drawLine(
+                color = Color(0xFFFFEE58),
+                start = Offset(curX, curY - rayLen),
+                end = Offset(curX, curY + rayLen),
+                strokeWidth = 3f * sizeScale
+            )
+        }
+
         SpellSchool.SHADOW -> {
             val radius = 14f * sizeScale
             drawCircle(color = Color(0xFF7C4DFF).copy(alpha = 0.85f), radius = radius, center = Offset(curX, curY))
+            drawCircle(color = Color(0xFF311B92), radius = radius * 0.6f, center = Offset(curX, curY))
             // Cross slash lines
             val slashLen = 25f * sizeScale
             drawLine(
@@ -239,8 +293,22 @@ private fun DrawScope.renderProjectile(p: ActiveSpellProjectile) {
             )
         }
 
-        else -> {
-            drawCircle(color = Color.White, radius = 10f * sizeScale, center = Offset(curX, curY))
+        SpellSchool.PHYSICAL -> {
+            val length = 22f * sizeScale
+            val height = 6f * sizeScale
+            rotate(degrees = angleDeg, pivot = Offset(curX, curY)) {
+                // Sharp Steel Slash / Martial Arrow Strike
+                drawRect(color = Color(0xFFECEFF1), topLeft = Offset(curX - length / 2f, curY - height / 2f), size = Size(length, height))
+                drawRect(color = Color(0xFFFF5252), topLeft = Offset(curX - length / 6f, curY - height / 4f), size = Size(length / 3f, height / 2f))
+            }
+            // Steel trail
+            val trailCount = 3
+            for (i in 1..trailCount) {
+                val trailT = (t - i * 0.04f).coerceAtLeast(0f)
+                val trailX = p.startX + (p.targetX - p.startX) * trailT
+                val trailY = p.startY + (p.targetY - p.startY) * trailT
+                drawCircle(Color(0xFFB0BEC5).copy(alpha = 0.6f - i * 0.15f), radius = 6f * sizeScale, center = Offset(trailX, trailY))
+            }
         }
     }
 }

@@ -518,23 +518,52 @@ class CombatViewModel(
 
             val weakenedMult = StatusSystem.attackDebuffMult(refreshedSelf.statuses)
             val moveSchool = runCatching { SpellSchool.valueOf(move.school) }.getOrDefault(SpellSchool.PHYSICAL)
-            spellVfxEngine.launch(
-                startX = 780f,
-                startY = 480f,
-                targetX = 260f,
-                targetY = 480f,
-                school = moveSchool,
-                isHeal = false,
-                onImpact = {
-                    particleEmitter.emit(
+            val (enemyCasterX, enemyCasterY) = enemyFloatSlot(enemy.id)
+
+            if (targetList.size > 1) {
+                // Multi-projectile AoE from enemy caster to each targeted hero
+                val perHeroParticles = (15 / targetList.size).coerceAtLeast(8)
+                for (targetHero in targetList) {
+                    val (heroX, heroY) = partyFloatSlot(targetHero.id)
+                    spellVfxEngine.launch(
+                        startX = enemyCasterX,
+                        startY = enemyCasterY,
+                        targetX = heroX,
+                        targetY = heroY,
                         school = moveSchool,
-                        originX = 260f,
-                        originY = 480f,
-                        count = 15,
-                        isLogos = false
+                        isHeal = false,
+                        onImpact = {
+                            particleEmitter.emit(
+                                school = moveSchool,
+                                originX = heroX,
+                                originY = heroY,
+                                count = perHeroParticles,
+                                isLogos = false
+                            )
+                        }
                     )
                 }
-            )
+            } else {
+                val targetHero = targetList.firstOrNull()
+                val (heroX, heroY) = if (targetHero != null) partyFloatSlot(targetHero.id) else (250f to 350f)
+                spellVfxEngine.launch(
+                    startX = enemyCasterX,
+                    startY = enemyCasterY,
+                    targetX = heroX,
+                    targetY = heroY,
+                    school = moveSchool,
+                    isHeal = false,
+                    onImpact = {
+                        particleEmitter.emit(
+                            school = moveSchool,
+                            originX = heroX,
+                            originY = heroY,
+                            count = 15,
+                            isLogos = false
+                        )
+                    }
+                )
+            }
 
             delay(350)
             sfxManager.playHitImpact()
@@ -1424,35 +1453,120 @@ class CombatViewModel(
             // 3. Play VFX on Canvas - Projectile Launch & Impact (Screen is now completely clear!)
             _state.value = _state.value.copy(phase = CombatPhase.SPELL_VFX_PLAYING)
 
-            // Spatially place particles & projectile: heal over party (left), attack over monsters (right)
+            // Spatially place particles & projectile: launch from caster slot to target slots
             val isAttune = parsed.spell.manaRestorePct > 0f
             val isHeal = parsed.spell.isHeal
-            val startX = 260f
-            val startY = 480f
-            val targetOriginX = if (isHeal || isAttune) 260f else 780f
-            val targetOriginY = if (isHeal || isAttune) 440f else 480f
+            val (casterX, casterY) = partyFloatSlot(activeHero.id)
 
-            spellVfxEngine.launch(
-                startX = startX,
-                startY = startY,
-                targetX = targetOriginX,
-                targetY = targetOriginY,
-                school = parsed.spell.school,
-                isHeal = isHeal,
-                bonusPercent = resonance.bonusPercent,
-                tier = resonance.tier,
-                onImpact = {
-                    particleEmitter.emit(
+            if (isAttune) {
+                // Attune restorative radiance directly over the active hero
+                particleEmitter.emit(
+                    school = parsed.spell.school,
+                    originX = casterX,
+                    originY = casterY,
+                    count = 16,
+                    isLogos = isSuperLogos
+                )
+            } else if (isHeal) {
+                val healTargets = resolveHealTargets(activeHero, parsed.spell, parsed.target, parsed.targetHeroId)
+                val effectiveTargets = if (healTargets.isNotEmpty()) healTargets else listOf(activeHero)
+                val perHeroParticles = (resonance.particleCount / effectiveTargets.size).coerceAtLeast(8)
+                for (targetHero in effectiveTargets) {
+                    val (targetX, targetY) = partyFloatSlot(targetHero.id)
+                    spellVfxEngine.launch(
+                        startX = casterX,
+                        startY = casterY,
+                        targetX = targetX,
+                        targetY = targetY,
                         school = parsed.spell.school,
-                        originX = targetOriginX,
-                        originY = targetOriginY,
-                        count = resonance.particleCount,
-                        isLogos = isSuperLogos
+                        isHeal = true,
+                        bonusPercent = resonance.bonusPercent,
+                        tier = resonance.tier,
+                        onImpact = {
+                            particleEmitter.emit(
+                                school = parsed.spell.school,
+                                originX = targetX,
+                                originY = targetY,
+                                count = perHeroParticles,
+                                isLogos = isSuperLogos
+                            )
+                        }
                     )
                 }
-            )
+            } else {
+                val damageTargets = resolveDamageTargets(parsed.spell, parsed.target, parsed.targetEnemyId)
+                if (damageTargets.isEmpty()) {
+                    // Fallback if no enemies alive
+                    spellVfxEngine.launch(
+                        startX = casterX,
+                        startY = casterY,
+                        targetX = 800f,
+                        targetY = 350f,
+                        school = parsed.spell.school,
+                        isHeal = false,
+                        bonusPercent = resonance.bonusPercent,
+                        tier = resonance.tier,
+                        onImpact = {
+                            particleEmitter.emit(
+                                school = parsed.spell.school,
+                                originX = 800f,
+                                originY = 350f,
+                                count = resonance.particleCount,
+                                isLogos = isSuperLogos
+                            )
+                        }
+                    )
+                } else if (damageTargets.size == 1) {
+                    val targetEnemy = damageTargets.first()
+                    val (targetX, targetY) = enemyFloatSlot(targetEnemy.id)
+                    spellVfxEngine.launch(
+                        startX = casterX,
+                        startY = casterY,
+                        targetX = targetX,
+                        targetY = targetY,
+                        school = parsed.spell.school,
+                        isHeal = false,
+                        bonusPercent = resonance.bonusPercent,
+                        tier = resonance.tier,
+                        onImpact = {
+                            particleEmitter.emit(
+                                school = parsed.spell.school,
+                                originX = targetX,
+                                originY = targetY,
+                                count = resonance.particleCount,
+                                isLogos = isSuperLogos
+                            )
+                        }
+                    )
+                } else {
+                    // Multi-projectile AoE: one projectile aimed at each enemy in formation!
+                    val perTargetParticles = (resonance.particleCount / damageTargets.size).coerceAtLeast(8)
+                    for (targetEnemy in damageTargets) {
+                        val (targetX, targetY) = enemyFloatSlot(targetEnemy.id)
+                        spellVfxEngine.launch(
+                            startX = casterX,
+                            startY = casterY,
+                            targetX = targetX,
+                            targetY = targetY,
+                            school = parsed.spell.school,
+                            isHeal = false,
+                            bonusPercent = resonance.bonusPercent,
+                            tier = resonance.tier,
+                            onImpact = {
+                                particleEmitter.emit(
+                                    school = parsed.spell.school,
+                                    originX = targetX,
+                                    originY = targetY,
+                                    count = perTargetParticles,
+                                    isLogos = isSuperLogos
+                                )
+                            }
+                        )
+                    }
+                }
+            }
 
-            // Allow projectile to travel to target
+            // Allow projectile(s) to travel to target
             delay(420)
 
             // 4. Spend mana, then resolve through the combat doctrine:
@@ -1540,20 +1654,14 @@ class CombatViewModel(
         combatNarrator.speak("${member.name} breathes slow and steady; $restore mana returns.", force = false)
     }
 
-    private suspend fun applyHealAction(
+    private fun resolveHealTargets(
         caster: PartyMember,
         spell: Spell,
         target: TargetSelection,
-        targetHeroId: String?,
-        resonance: ResonanceResult
-    ) {
-        sfxManager.playLogosFanfare()
-
-        val healStatus = StatusId.fromNameOrNull(spell.status)
-
+        targetHeroId: String?
+    ): List<PartyMember> {
         val currentParty = _state.value.party
-
-        val targetsToHeal = when {
+        return when {
             spell.hitsAll || target == TargetSelection.PARTY_LOWEST -> currentParty.filter { it.isAlive }
             targetHeroId != null -> {
                 val matched = currentParty.filter { it.id == targetHeroId && it.isAlive }
@@ -1569,6 +1677,49 @@ class CombatViewModel(
                 listOfNotNull(currentParty.filter { it.isAlive }.minByOrNull { it.hpRatio })
             }
         }
+    }
+
+    private fun resolveDamageTargets(
+        spell: Spell,
+        target: TargetSelection,
+        targetEnemyId: String?
+    ): List<Enemy> {
+        val currentEnemies = _state.value.enemies
+        val isAoe = spell.hitsAll || target == TargetSelection.ALL_ENEMIES
+        return when {
+            isAoe -> currentEnemies.filter { it.isAlive }
+            targetEnemyId != null -> {
+                val matched = currentEnemies.filter { it.id == targetEnemyId && it.isAlive }
+                if (matched.isNotEmpty()) matched
+                else {
+                    val marked = currentEnemies.firstOrNull { it.isTargeted && it.isAlive }
+                    if (marked != null) listOf(marked)
+                    else listOfNotNull(currentEnemies.firstOrNull { it.isAlive })
+                }
+            }
+            target == TargetSelection.ORC -> currentEnemies.filter { it.id == "orc" && it.isAlive }
+            target == TargetSelection.ARCHER -> currentEnemies.filter { it.id == "archer" && it.isAlive }
+            target == TargetSelection.SHAMAN -> currentEnemies.filter { it.id == "shaman" && it.isAlive }
+            else -> {
+                val marked = currentEnemies.firstOrNull { it.isTargeted && it.isAlive }
+                if (marked != null) listOf(marked)
+                else listOfNotNull(currentEnemies.firstOrNull { it.isAlive })
+            }
+        }
+    }
+
+    private suspend fun applyHealAction(
+        caster: PartyMember,
+        spell: Spell,
+        target: TargetSelection,
+        targetHeroId: String?,
+        resonance: ResonanceResult
+    ) {
+        sfxManager.playLogosFanfare()
+
+        val healStatus = StatusId.fromNameOrNull(spell.status)
+        val currentParty = _state.value.party
+        val targetsToHeal = resolveHealTargets(caster, spell, target, targetHeroId)
 
         // Heals are affinity-immune: voice quality alone scales them (plus shallow level potency).
         // Party-wide heals share the potency: a big spell spread over everyone is tuned down.
@@ -1640,27 +1791,7 @@ class CombatViewModel(
     ) {
         val currentEnemies = _state.value.enemies
         val isAoe = spell.hitsAll || target == TargetSelection.ALL_ENEMIES
-
-        val targetList = when {
-            isAoe -> currentEnemies.filter { it.isAlive }
-            targetEnemyId != null -> {
-                val matched = currentEnemies.filter { it.id == targetEnemyId && it.isAlive }
-                if (matched.isNotEmpty()) matched
-                else {
-                    val marked = currentEnemies.firstOrNull { it.isTargeted && it.isAlive }
-                    if (marked != null) listOf(marked)
-                    else listOfNotNull(currentEnemies.firstOrNull { it.isAlive })
-                }
-            }
-            target == TargetSelection.ORC -> currentEnemies.filter { it.id == "orc" && it.isAlive }
-            target == TargetSelection.ARCHER -> currentEnemies.filter { it.id == "archer" && it.isAlive }
-            target == TargetSelection.SHAMAN -> currentEnemies.filter { it.id == "shaman" && it.isAlive }
-            else -> {
-                val marked = currentEnemies.firstOrNull { it.isTargeted && it.isAlive }
-                if (marked != null) listOf(marked)
-                else listOfNotNull(currentEnemies.firstOrNull { it.isAlive })
-            }
-        }
+        val targetList = resolveDamageTargets(spell, target, targetEnemyId)
 
         sfxManager.playHitImpact()
 
