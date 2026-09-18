@@ -48,6 +48,32 @@ class EconomyActionsTest {
     }
 
     @Test
+    fun `every companion has their own breath and it works on their own turn only`() {
+        for (kit in listOf(
+            StoryEncounters.cedricSpells,
+            StoryEncounters.lyraSpells,
+            StoryEncounters.zephyrSpells
+        )) {
+            val breath = kit.lastOrNull { it.manaRestorePct > 0f }
+            assertTrue("companion kit missing breath action", breath != null)
+            assertEquals("breaths must sit last so fallbacks never auto-pick them", kit.size - 1, kit.indexOf(breath))
+            assertEquals(breath!!.id, IntentParser.parse("attune", kit).spell.id)
+        }
+        assertEquals("steady_breath", IntentParser.parse("attune", StoryEncounters.cedricSpells).spell.id)
+        assertEquals("deep_root", IntentParser.parse("breathe deep", StoryEncounters.lyraSpells).spell.id)
+        assertEquals("quiet_lungs", IntentParser.parse("steady and breathe", StoryEncounters.zephyrSpells).spell.id)
+    }
+
+    @Test
+    fun `an unevocative fireball utterance falls back to fireball, never to attune`() {
+        val kit = ClassSpellLibrary.ELEMENTALIST_SPELLS
+        // ASR often splits compounds: "fire ball" matches neither name nor words - fallback must skip restores.
+        assertEquals("fireball", IntentParser.parse("fire ball the orc", kit).spell.id)
+        assertEquals("fireball", IntentParser.parse("do the thing now", kit).spell.id)
+        assertEquals("fireball", IntentParser.parse("hurry up and cast", kit).spell.id)
+    }
+
+    @Test
     fun `attune restore amount is flat - resonance can never inflate it`() {
         // applyAttuneAction uses (maxMp * pct) with no resonance input; assert the math is anchored.
         val maxMp = 140

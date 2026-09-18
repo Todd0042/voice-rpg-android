@@ -94,3 +94,11 @@ Interpretation for the retry:
 - Not-enough-mana now soft-fails with a pocket-mode hint "say attune".
 - Fixed the pre-existing tickAtb/summon lost-update race (SPEC #9) with atomic MutableStateFlow.update.
 - NEXT: CombatSim headless harness to sweep attune%/costs/rest cadence across bands & chapters.
+
+## v1.6.2 — Breath fixes
+- Every member now owns a breath: Aethel "Attune", Cedric "Steady Breath", Lyra "Deep Root",
+  Zephyr "Quiet Lungs" (all free, turn-cost, 35% max MP, resonance-independent).
+- Restoration spells excluded from ALL IntentParser auto-pick fallbacks and from hero-by-spell
+  turn steering -> "attune" acts on whoever's turn it is; garbled spell utterances fall back to
+  the first REAL spell, never the breath.
+- Breath actions sorted LAST in every kit for the same reason.

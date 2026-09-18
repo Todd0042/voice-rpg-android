@@ -196,13 +196,15 @@ object IntentParser {
             val nameWords = spell.name.lowercase().split(" ")
             nameWords.any { it.length >= 4 && lower.contains(it) }
         } ?: availableSpells.firstOrNull { spell ->
-            if (hasHealKeyword) spell.isHeal else (!spell.isHeal && spell.school != SpellSchool.HOLY)
+            spell.manaRestorePct == 0f && if (hasHealKeyword) spell.isHeal else (!spell.isHeal && spell.school != SpellSchool.HOLY)
         } ?: availableSpells.firstOrNull { spell ->
-            if (hasHealKeyword) spell.isHeal else !spell.isHeal
+            spell.manaRestorePct == 0f && if (hasHealKeyword) spell.isHeal else !spell.isHeal
         } ?: availableSpells.firstOrNull { spell ->
-            val schoolKeywords = SpellThesaurus.getKeywordsForSchool(spell.school)
-            schoolKeywords.any { lower.contains(it) }
-        } ?: availableSpells.firstOrNull() ?: defaultFallbackSpell()
+            spell.manaRestorePct == 0f && if (hasHealKeyword) spell.isHeal else {
+                val schoolKeywords = SpellThesaurus.getKeywordsForSchool(spell.school)
+                schoolKeywords.any { lower.contains(it) }
+            }
+        } ?: availableSpells.firstOrNull { it.manaRestorePct == 0f } ?: availableSpells.firstOrNull() ?: defaultFallbackSpell()
 
         // If it's a heal spell and targeting was unset/first alive enemy/all enemies, default to party lowest
         if (matchedSpell.isHeal && (target == TargetSelection.FIRST_ALIVE_ENEMY || target == TargetSelection.ALL_ENEMIES || target == TargetSelection.SPECIFIC_ENEMY)) {

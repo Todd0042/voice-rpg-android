@@ -1215,9 +1215,12 @@ class CombatViewModel(
         }
 
         val heroBySpell = aliveParty.firstOrNull { member ->
+            // Breath/restoration actions never steer: they belong to whoever's turn it is.
             member.spells.any { spell ->
-                lower.contains(spell.name.lowercase()) ||
-                spell.name.lowercase().split(" ").any { word -> word.length >= 5 && lower.contains(word) }
+                spell.manaRestorePct == 0f && (
+                    lower.contains(spell.name.lowercase()) ||
+                    spell.name.lowercase().split(" ").any { word -> word.length >= 5 && lower.contains(word) }
+                )
             }
         }
 
