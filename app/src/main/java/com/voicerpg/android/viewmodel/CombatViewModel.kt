@@ -142,22 +142,54 @@ class CombatViewModel(
     private fun schoolOf(school: SpellSchool): School = School.fromNameOrNull(school.name) ?: School.PHYSICAL
     private fun familyOf(enemy: Enemy): EnemyFamily = EnemyFamily.fromNameOrNull(enemy.family) ?: EnemyFamily.FLESH
 
-    /** Per-enemy floating-text slots so AOE numbers never stack on one point. */
-    private fun enemyFloatSlot(enemyId: String): Pair<Float, Float> {
-        val enemies = _state.value.enemies
-        val idx = enemies.indexOfFirst { it.id == enemyId }.coerceAtLeast(0)
-        return if (enemies.size <= 3) {
-            800f to (200f + idx * 150f)
-        } else {
-            val x = if (idx % 2 == 0) 700f else 870f
-            x to (180f + (idx / 2) * 160f)
+    var arenaWidth: Float = 1080f
+        private set
+    var arenaHeight: Float = 1400f
+        private set
+
+    private val _combatantPositions = java.util.concurrent.ConcurrentHashMap<String, Pair<Float, Float>>()
+
+    fun updateArenaDimensions(width: Float, height: Float) {
+        if (width > 0f && height > 0f) {
+            arenaWidth = width
+            arenaHeight = height
         }
     }
 
-    private fun partyFloatSlot(memberId: String): Pair<Float, Float> {
+    fun updateCombatantPosition(id: String, x: Float, y: Float) {
+        if (x > 0f && y > 0f) {
+            _combatantPositions[id] = x to y
+        }
+    }
+
+    /** Live sprite center or proportional centered fallback. */
+    fun enemyFloatSlot(enemyId: String): Pair<Float, Float> {
+        _combatantPositions[enemyId]?.let { return it }
+        val enemies = _state.value.enemies
+        val idx = enemies.indexOfFirst { it.id == enemyId }.coerceAtLeast(0)
+        return if (enemies.size <= 3) {
+            val total = enemies.size.coerceAtLeast(1)
+            val spacing = (arenaHeight * 0.40f) / total
+            val startY = (arenaHeight * 0.50f) - (total - 1) * spacing * 0.5f
+            (arenaWidth * 0.78f) to (startY + idx * spacing)
+        } else {
+            val x = if (idx % 2 == 0) arenaWidth * 0.68f else arenaWidth * 0.84f
+            val rows = (enemies.size + 1) / 2
+            val rowIdx = idx / 2
+            val spacing = (arenaHeight * 0.45f) / rows.coerceAtLeast(1)
+            val startY = (arenaHeight * 0.50f) - (rows - 1) * spacing * 0.5f
+            x to (startY + rowIdx * spacing)
+        }
+    }
+
+    fun partyFloatSlot(memberId: String): Pair<Float, Float> {
+        _combatantPositions[memberId]?.let { return it }
         val party = _state.value.party
         val idx = party.indexOfFirst { it.id == memberId }.coerceAtLeast(0)
-        return 250f to (200f + idx * 150f)
+        val total = party.size.coerceAtLeast(1)
+        val spacing = (arenaHeight * 0.40f) / total
+        val startY = (arenaHeight * 0.50f) - (total - 1) * spacing * 0.5f
+        return (arenaWidth * 0.22f) to (startY + idx * spacing)
     }
 
     fun setPlayerInputPhaseForTesting(heroId: String = "hero") {
@@ -2025,6 +2057,7 @@ class CombatViewModel(
         currentEncounterId = encounter.id
         isZephyrRecruitedMidBattle = false
         isPhase3Triggered = false
+        _combatantPositions.clear()
         sfxManager.mute(false)
 
         val baseParty = encounter.initialParty ?: if (_state.value.party.isNotEmpty()) {
@@ -2110,6 +2143,7 @@ class CombatViewModel(
         particleEmitter.clear()
         spellVfxEngine.projectiles.clear()
         resonanceEngine.noveltyCache.clear()
+        _combatantPositions.clear()
         turnsTakenInRound = 0
         lastActedHeroId = null
         lastActedFaction = CombatantFaction.NONE
@@ -2130,6 +2164,7 @@ class CombatViewModel(
         lastActedHeroId = null
         lastActedFaction = CombatantFaction.NONE
         _state.value = createInitialState().copy(currentEnvironment = currentEnv)
+        _combatantPositions.clear()
         particleEmitter.clear()
         spellVfxEngine.projectiles.clear()
         resonanceEngine.noveltyCache.clear()

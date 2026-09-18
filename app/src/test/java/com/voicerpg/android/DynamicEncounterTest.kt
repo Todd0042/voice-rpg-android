@@ -497,12 +497,16 @@ class DynamicEncounterTest {
     @Test
     fun testSingleTargetSpellDynamicTrajectory() {
         val hero = PartyMember("hero", "Aethel", "Elementalist", currentHp = 240, maxHp = 240, currentMp = 140, maxMp = 140, spells = StoryEncounters.aethelSpells, speed = 50, atbGauge = 100f)
-        val enemy1 = StoryEncounters.createMinion("orc", "Orc Raider", hp = 200)
-        val enemy2 = StoryEncounters.createMinion("archer", "Goblin Archer", hp = 200)
+        val enemy1 = Enemy(id = "orc", name = "Orc Raider", subtitle = "Vanguard", currentHp = 200, maxHp = 200, baseAttack = 20, speed = 50)
+        val enemy2 = Enemy(id = "archer", name = "Goblin Archer", subtitle = "Sniper", currentHp = 200, maxHp = 200, baseAttack = 20, speed = 50)
         viewModel.startEncounter(party = listOf(hero), enemies = listOf(enemy1, enemy2), environment = BattleEnvironment.DUNGEON)
         viewModel.setPlayerInputPhaseForTesting("hero")
 
-        // Cast fireball targeting archer (slot index 1)
+        // Simulate live measured sprite positions reported by Compose layout
+        viewModel.updateCombatantPosition("hero", 220f, 600f)
+        viewModel.updateCombatantPosition("archer", 960f, 750f)
+
+        // Cast fireball targeting archer
         viewModel.processIncantation("Fireball archer")
 
         var projectile: com.voicerpg.android.ui.vfx.ActiveSpellProjectile? = null
@@ -512,22 +516,28 @@ class DynamicEncounterTest {
             if (projectile != null) break
         }
 
-        // Verify dynamic trajectory from hero (slot 0) to archer (slot 1)
+        // Verify dynamic trajectory from hero sprite to archer sprite
         assertNotNull("Projectile should be launched", projectile)
-        assertEquals(250f, projectile!!.startX, 0.1f)
-        assertEquals(200f, projectile.startY, 0.1f) // hero idx 0: 200f + 0 * 150f
-        assertEquals(800f, projectile.targetX, 0.1f) // 2 enemies <= 3: x = 800f
-        assertEquals(350f, projectile.targetY, 0.1f) // archer idx 1: 200f + 1 * 150f
+        assertEquals(220f, projectile!!.startX, 0.1f)
+        assertEquals(600f, projectile.startY, 0.1f)
+        assertEquals(960f, projectile.targetX, 0.1f)
+        assertEquals(750f, projectile.targetY, 0.1f)
     }
 
     @Test
     fun testAoeSpellDynamicMultiProjectiles() {
         val hero = PartyMember("hero", "Aethel", "Elementalist", currentHp = 240, maxHp = 240, currentMp = 140, maxMp = 140, spells = StoryEncounters.aethelSpells, speed = 50, atbGauge = 100f)
-        val enemy1 = StoryEncounters.createMinion("orc", "Orc Raider", hp = 200)
-        val enemy2 = StoryEncounters.createMinion("archer", "Goblin Archer", hp = 200)
-        val enemy3 = StoryEncounters.createMinion("shaman", "Goblin Shaman", hp = 200)
+        val enemy1 = Enemy(id = "orc", name = "Orc Raider", subtitle = "Vanguard", currentHp = 200, maxHp = 200, baseAttack = 20, speed = 50)
+        val enemy2 = Enemy(id = "archer", name = "Goblin Archer", subtitle = "Sniper", currentHp = 200, maxHp = 200, baseAttack = 20, speed = 50)
+        val enemy3 = Enemy(id = "shaman", name = "Goblin Shaman", subtitle = "Caster", currentHp = 200, maxHp = 200, baseAttack = 20, speed = 50)
         viewModel.startEncounter(party = listOf(hero), enemies = listOf(enemy1, enemy2, enemy3), environment = BattleEnvironment.DUNGEON)
         viewModel.setPlayerInputPhaseForTesting("hero")
+
+        // Simulate live measured sprite positions reported by Compose layout
+        viewModel.updateCombatantPosition("hero", 220f, 600f)
+        viewModel.updateCombatantPosition("orc", 960f, 400f)
+        viewModel.updateCombatantPosition("archer", 960f, 600f)
+        viewModel.updateCombatantPosition("shaman", 960f, 800f)
 
         // Cast Wildfire AoE spell
         viewModel.processIncantation("Wildfire all foes")
@@ -539,15 +549,15 @@ class DynamicEncounterTest {
             if (projectiles.isNotEmpty()) break
         }
 
-        // AoE should launch multi-projectiles, one for each enemy
+        // AoE should launch multi-projectiles, one for each enemy sprite
         assertEquals(3, projectiles.size)
         projectiles.forEach { p ->
-            assertEquals(250f, p.startX, 0.1f)
-            assertEquals(200f, p.startY, 0.1f)
-            assertEquals(800f, p.targetX, 0.1f)
+            assertEquals(220f, p.startX, 0.1f)
+            assertEquals(600f, p.startY, 0.1f)
+            assertEquals(960f, p.targetX, 0.1f)
         }
-        assertEquals(200f, projectiles[0].targetY, 0.1f)
-        assertEquals(350f, projectiles[1].targetY, 0.1f)
-        assertEquals(500f, projectiles[2].targetY, 0.1f)
+        assertEquals(400f, projectiles[0].targetY, 0.1f)
+        assertEquals(600f, projectiles[1].targetY, 0.1f)
+        assertEquals(800f, projectiles[2].targetY, 0.1f)
     }
 }

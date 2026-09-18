@@ -5,8 +5,16 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.dp
 import com.voicerpg.android.model.CharacterStance
 import com.voicerpg.android.model.Enemy
@@ -16,6 +24,8 @@ import com.voicerpg.android.ui.sprites.PixelCharacterView
 fun EnemyFlank(
     enemies: List<Enemy>,
     onSelectEnemy: (Enemy) -> Unit,
+    onPositionEnemy: ((String, Offset) -> Unit)? = null,
+    arenaCoordinates: LayoutCoordinates? = null,
     modifier: Modifier = Modifier
 ) {
     val isLargeHorde = enemies.size > 3
@@ -28,7 +38,13 @@ fun EnemyFlank(
             horizontalAlignment = Alignment.End
         ) {
             enemies.forEach { enemy ->
-                EnemyCard(enemy = enemy, isCompact = false, onSelectEnemy = onSelectEnemy)
+                EnemyCard(
+                    enemy = enemy,
+                    isCompact = false,
+                    onSelectEnemy = onSelectEnemy,
+                    onPositionEnemy = onPositionEnemy,
+                    arenaCoordinates = arenaCoordinates
+                )
             }
         }
     } else {
@@ -48,7 +64,13 @@ fun EnemyFlank(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 frontRow.forEach { enemy ->
-                    EnemyCard(enemy = enemy, isCompact = true, onSelectEnemy = onSelectEnemy)
+                    EnemyCard(
+                        enemy = enemy,
+                        isCompact = true,
+                        onSelectEnemy = onSelectEnemy,
+                        onPositionEnemy = onPositionEnemy,
+                        arenaCoordinates = arenaCoordinates
+                    )
                 }
             }
 
@@ -58,7 +80,13 @@ fun EnemyFlank(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 backRow.forEach { enemy ->
-                    EnemyCard(enemy = enemy, isCompact = true, onSelectEnemy = onSelectEnemy)
+                    EnemyCard(
+                        enemy = enemy,
+                        isCompact = true,
+                        onSelectEnemy = onSelectEnemy,
+                        onPositionEnemy = onPositionEnemy,
+                        arenaCoordinates = arenaCoordinates
+                    )
                 }
             }
         }
@@ -69,12 +97,29 @@ fun EnemyFlank(
 private fun EnemyCard(
     enemy: Enemy,
     isCompact: Boolean,
-    onSelectEnemy: (Enemy) -> Unit
+    onSelectEnemy: (Enemy) -> Unit,
+    onPositionEnemy: ((String, Offset) -> Unit)? = null,
+    arenaCoordinates: LayoutCoordinates? = null
 ) {
     val stance = when {
         !enemy.isAlive -> CharacterStance.DEAD
         enemy.isDamagedFlash -> CharacterStance.DAMAGED
         else -> CharacterStance.READY
+    }
+
+    var cardCoords by remember { mutableStateOf<LayoutCoordinates?>(null) }
+
+    LaunchedEffect(cardCoords, arenaCoordinates) {
+        val card = cardCoords
+        val arena = arenaCoordinates
+        if (card != null && arena != null && card.isAttached && arena.isAttached) {
+            val pos = arena.localPositionOf(card, Offset.Zero)
+            val center = Offset(
+                pos.x + card.size.width / 2f,
+                pos.y + card.size.height / 2f
+            )
+            onPositionEnemy?.invoke(enemy.id, center)
+        }
     }
 
     PixelCharacterView(
@@ -91,6 +136,7 @@ private fun EnemyCard(
         stance = stance,
         isFlippedHorizontally = true,
         pixelSize = if (isCompact) 1.65.dp else 2.2.dp,
-        onClick = if (enemy.isAlive) { { onSelectEnemy(enemy) } } else null
+        onClick = if (enemy.isAlive) { { onSelectEnemy(enemy) } } else null,
+        modifier = Modifier.onGloballyPositioned { cardCoords = it }
     )
 }

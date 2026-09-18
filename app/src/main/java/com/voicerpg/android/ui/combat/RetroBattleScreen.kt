@@ -24,16 +24,23 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlin.math.roundToInt
 import com.voicerpg.android.BuildConfig
 import com.voicerpg.android.engine.StoryEncounters
 import com.voicerpg.android.model.CombatPhase
@@ -164,6 +171,8 @@ fun RetroBattleScreen(
                 }
 
                 // Middle: 32-bit Tactical Battle Arena (Left: Party, Right: Monsters)
+                var arenaCoordinates by remember { mutableStateOf<LayoutCoordinates?>(null) }
+
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -171,6 +180,12 @@ fun RetroBattleScreen(
                         .padding(horizontal = 4.dp, vertical = 2.dp)
                         .clip(RoundedCornerShape(8.dp))
                         .border(1.dp, RetroBorder, RoundedCornerShape(8.dp))
+                        .onSizeChanged { size ->
+                            viewModel.updateArenaDimensions(size.width.toFloat(), size.height.toFloat())
+                        }
+                        .onGloballyPositioned { coords ->
+                            arenaCoordinates = coords
+                        }
                 ) {
                     // 4-Frame Living Environmental Background Canvas
                     BattleEnvironmentCanvas(
@@ -192,6 +207,10 @@ fun RetroBattleScreen(
                             party = state.party,
                             activePartyMemberId = state.activePartyMemberId,
                             onSelectHero = { viewModel.selectPartyMember(it) },
+                            onPositionHero = { id, offset ->
+                                viewModel.updateCombatantPosition(id, offset.x, offset.y)
+                            },
+                            arenaCoordinates = arenaCoordinates,
                             modifier = Modifier.weight(1f)
                         )
 
@@ -199,6 +218,10 @@ fun RetroBattleScreen(
                         EnemyFlank(
                             enemies = state.enemies,
                             onSelectEnemy = { viewModel.selectEnemy(it) },
+                            onPositionEnemy = { id, offset ->
+                                viewModel.updateCombatantPosition(id, offset.x, offset.y)
+                            },
+                            arenaCoordinates = arenaCoordinates,
                             modifier = Modifier.weight(1f)
                         )
                     }
@@ -363,10 +386,12 @@ private fun FloatingNumberItem(fct: FloatingCombatText) {
 
     Box(
         modifier = Modifier
-            .offset(
-                x = (fct.startX / 2.6f).dp,
-                y = ((fct.startY / 2.6f) + offsetY.value).dp
-            )
+            .offset {
+                IntOffset(
+                    x = (fct.startX - 30f).roundToInt(),
+                    y = (fct.startY - 40f + offsetY.value).roundToInt()
+                )
+            }
     ) {
         Text(
             text = fct.text,
