@@ -169,6 +169,16 @@ class CombatViewModel(
 
     private var atbJob: Job? = null
     private var lastActedHeroId: String? = null
+    private var turnsTakenInRound: Int = 0
+
+    internal fun registerTurnCompleted() {
+        turnsTakenInRound++
+        val aliveCount = _state.value.party.count { it.isAlive } + _state.value.enemies.count { it.isAlive }
+        if (aliveCount > 0 && turnsTakenInRound >= aliveCount) {
+            turnsTakenInRound = 0
+            _state.value = _state.value.copy(roundNumber = _state.value.roundNumber + 1)
+        }
+    }
 
     init {
         startAtbLoop()
@@ -178,7 +188,7 @@ class CombatViewModel(
         // Party members with Speed ratings and starting battle wear (Cedric pre-damaged)
         val initialParty = listOf(
             PartyMember("hero", "Aethel", "Elementalist", currentHp = 240, maxHp = 240, currentMp = 140, maxMp = 140, spells = aethelSpells, avatarTint = Color(0xFF90CAF9), speed = 70, atbGauge = 0.85f),
-            PartyMember("cedric", "Sir Cedric", "Templar", currentHp = 310, maxHp = 420, currentMp = 80, maxMp = 80, spells = cedricSpells, avatarTint = Color(0xFFFFD54F), speed = 55, atbGauge = 0.50f)
+            PartyMember("cedric", "Sir Cedric", "Templar", currentHp = 310, maxHp = 420, currentMp = 80, maxMp = 80, spells = StoryEncounters.cedricStarterSpells, avatarTint = Color(0xFFFFD54F), speed = 55, atbGauge = 0.50f)
         )
 
         val initialEnemies = listOf(
@@ -610,6 +620,7 @@ class CombatViewModel(
             }
 
             // Turn transition: check if another combatant is already ready
+            registerTurnCompleted()
             checkAndTransitionNextTurn()
         }
     }
@@ -926,6 +937,7 @@ class CombatViewModel(
             } else {
                 delay(300)
             }
+            registerTurnCompleted()
             checkAndTransitionNextTurn()
         }
     }
@@ -1454,6 +1466,7 @@ class CombatViewModel(
             delay(200)
 
             // Strictly Turn-Based Progression: check if next combatant is ready or resume charging
+            registerTurnCompleted()
             checkAndTransitionNextTurn()
         }
     }
@@ -1879,11 +1892,28 @@ class CombatViewModel(
     }
 
     /** Persisted level/xp + damaged HP/MP carry into the next fight; fresh battle with clean statuses. */
-    private fun applyImportedProgression(members: List<PartyMember>): List<PartyMember> {
+    internal fun applyImportedProgression(members: List<PartyMember>): List<PartyMember> {
         return members.map { member ->
             val saved = importedStats.firstOrNull { it.id == member.id } ?: return@map member
             val revived = member.currentHp <= 0 || saved.currentHp <= 0
             val currentHp = if (revived) (saved.maxHp / 2).coerceAtLeast(1) else saved.currentHp.coerceAtMost(saved.maxHp)
+
+            // Resolve companion spells from saved stats if available
+            val updatedSpells = if (member.id != "hero" && saved.spellIds.isNotEmpty()) {
+                val companionSpells = saved.spellIds.mapNotNull { StoryEncounters.ALL_COMPANION_SPELLS[it] }
+                val breath = when (member.id) {
+                    "cedric" -> StoryEncounters.steadyBreathSpell
+                    "lyra" -> StoryEncounters.deepRootSpell
+                    "zephyr" -> StoryEncounters.quietLungsSpell
+                    else -> null
+                }
+                if (companionSpells.isNotEmpty()) {
+                    (companionSpells.filter { it.manaRestorePct == 0f } + listOfNotNull(breath)).distinctBy { it.id }
+                } else member.spells
+            } else {
+                member.spells
+            }
+
             member.copy(
                 level = saved.level,
                 xp = saved.xp,
@@ -1892,6 +1922,7 @@ class CombatViewModel(
                 currentHp = currentHp,
                 currentMp = saved.currentMp.coerceAtMost(saved.maxMp),
                 speed = saved.speed,
+                spells = updatedSpells,
                 statuses = emptyList(),
                 isGuarding = false
             )
@@ -1908,6 +1939,7 @@ class CombatViewModel(
         particleEmitter.clear()
         spellVfxEngine.projectiles.clear()
         resonanceEngine.noveltyCache.clear()
+        turnsTakenInRound = 0
 
         _state.value = CombatState(
             phase = CombatPhase.ATB_WAITING,
@@ -1921,6 +1953,7 @@ class CombatViewModel(
 
     fun restartBattle() {
         val currentEnv = _state.value.currentEnvironment
+        turnsTakenInRound = 0
         _state.value = createInitialState().copy(currentEnvironment = currentEnv)
         particleEmitter.clear()
         spellVfxEngine.projectiles.clear()

@@ -763,7 +763,7 @@ class StoryDialogueTest {
         assertNull(state.activeEncounter)
         assertFalse(state.narrativeFlags["cedric_recruited"] == true)
 
-        // Warp straight to Chapter 9: full party + Cedric's master spell seeded
+        // Warp straight to Chapter 9: full party, but Cedric's trial is active in Chapter 9 so not yet complete
         storyViewModel.debugWarpToChapter("ch9_intro")
         state = storyViewModel.state.value
         assertEquals("ch9_intro", state.currentNode.id)
@@ -771,17 +771,36 @@ class StoryDialogueTest {
         assertTrue(state.narrativeFlags["cedric_recruited"] == true)
         assertTrue(state.narrativeFlags["lyra_recruited"] == true)
         assertTrue(state.narrativeFlags["zephyr_recruited"] == true)
-        assertTrue(state.narrativeFlags["cedric_trial_complete"] == true)
+        assertFalse(state.narrativeFlags["cedric_trial_complete"] == true)
         val cedric = state.partyStats.first { it.id == "cedric" }
-        assertTrue(cedric.spellIds.contains("aegis_dawn"))
+        assertFalse(cedric.spellIds.contains("aegis_dawn"))
 
-        // Warp to Chapter 11: Lyra + Zephyr master spells also seeded
+        // Warp to Chapter 10: Cedric's trial complete (aegis_dawn seeded), Lyra trial pending
+        storyViewModel.debugWarpToChapter("ch10_intro")
+        state = storyViewModel.state.value
+        assertEquals("ch10_intro", state.currentNode.id)
+        assertTrue(state.narrativeFlags["cedric_trial_complete"] == true)
+        val cedric10 = state.partyStats.first { it.id == "cedric" }
+        assertTrue(cedric10.spellIds.contains("aegis_dawn"))
+        assertFalse(state.narrativeFlags["lyra_trial_complete"] == true)
+
+        // Warp to Chapter 11: Lyra master spell seeded, Zephyr trial pending
         storyViewModel.debugWarpToChapter("ch11_intro")
         state = storyViewModel.state.value
         assertEquals("ch11_intro", state.currentNode.id)
+        assertTrue(state.narrativeFlags["lyra_trial_complete"] == true)
+        assertFalse(state.narrativeFlags["zephyr_trial_complete"] == true)
         val lyra = state.partyStats.first { it.id == "lyra" }
-        val zephyr = state.partyStats.first { it.id == "zephyr" }
         assertTrue(lyra.spellIds.contains("verdant_cataclysm"))
+        val zephyr11 = state.partyStats.first { it.id == "zephyr" }
+        assertFalse(zephyr11.spellIds.contains("umbral_siphon"))
+
+        // Warp to Chapter 12: Zephyr master spell seeded
+        storyViewModel.debugWarpToChapter("ch12_intro")
+        state = storyViewModel.state.value
+        assertEquals("ch12_intro", state.currentNode.id)
+        assertTrue(state.narrativeFlags["zephyr_trial_complete"] == true)
+        val zephyr = state.partyStats.first { it.id == "zephyr" }
         assertTrue(zephyr.spellIds.contains("umbral_siphon"))
 
         // Warping backward trims companions not yet recruited

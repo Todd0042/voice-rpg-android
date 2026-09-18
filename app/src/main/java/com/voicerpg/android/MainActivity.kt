@@ -76,8 +76,8 @@ class MainActivity : ComponentActivity() {
         }
         storyViewModel.onCloseOptions = { combatViewModel.closeOptions() }
         combatViewModel.onContinueStory = {
-            storyViewModel.onCombatVictory()
             storyViewModel.updatePartyStatsFromCombat(combatViewModel.state.value.party)
+            storyViewModel.onCombatVictory()
         }
 
         checkAudioPermission()
@@ -157,8 +157,8 @@ class MainActivity : ComponentActivity() {
                                 viewModel = combatViewModel,
                                 onReturnToStory = { storyViewModel.switchToStory() },
                                 onContinueStory = {
-                                    storyViewModel.onCombatVictory()
                                     storyViewModel.updatePartyStatsFromCombat(combatViewModel.state.value.party)
+                                    storyViewModel.onCombatVictory()
                                 }
                             )
                         }

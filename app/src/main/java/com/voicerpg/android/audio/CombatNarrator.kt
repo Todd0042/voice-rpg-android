@@ -226,8 +226,8 @@ class CombatNarrator(
             // Google TTS & third-party voice classification tokens:
             // Female codes: sfg (Voice 1), iom (Voice 3), tpd (Voice 5), tpf (Voice 7), gba, gbb, gbd, gbg, aua, auc, or "female"
             // Male codes: iob (Voice 2), iog (Voice 4), tpc (Voice 6), iol (Voice 8), rjs, gbc, aub, aud, or "male"
-            val femaleTokens = listOf("female", "#f", "-f-", "_female", "sfg", "iom", "tpd", "tpf", "gba", "gbb", "gbd", "gbg", "aua", "auc")
-            val maleTokens = listOf("male", "#m", "-m-", "_male", "iob", "iog", "tpc", "iol", "rjs", "gbc", "aub", "aud")
+            val femaleTokens = listOf("female", "#f", "-f-", "_female", "sfg", "iom", "tpd", "tpf", "gba", "gbb", "gbg", "aua", "auc")
+            val maleTokens = listOf("male", "#m", "-m-", "_male", "iob", "iog", "tpc", "iol", "rjs", "gbc", "gbd", "aub", "aud")
 
             val femaleVoices = englishPhysicalVoices.filter { v ->
                 val lower = v.name.lowercase(Locale.ROOT)

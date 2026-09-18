@@ -237,9 +237,9 @@ class StoryViewModel(
             if (target.chapterIndex >= 2) put("cedric_recruited", true)
             if (target.chapterIndex >= 6) put("lyra_recruited", true)
             if (target.chapterIndex >= 9) put("zephyr_recruited", true)
-            if (target.chapterIndex >= 9) put("cedric_trial_complete", true)
-            if (target.chapterIndex >= 10) put("lyra_trial_complete", true)
-            if (target.chapterIndex >= 11) put("zephyr_trial_complete", true)
+            if (target.chapterIndex >= 10) put("cedric_trial_complete", true)
+            if (target.chapterIndex >= 11) put("lyra_trial_complete", true)
+            if (target.chapterIndex >= 12) put("zephyr_trial_complete", true)
         }
         // Overwrite, not union, the roster and trial flags so a downward warp
         // cannot drag companions from later chapters back into the story.
@@ -416,7 +416,7 @@ class StoryViewModel(
                 speed = 65,
                 level = 1,
                 xp = 0,
-                spellIds = listOf("soothing_rain", "briar_entangle", "verdant_cataclysm")
+                spellIds = listOf("soothing_rain", "briar_entangle")
             )
             updatedPartyStats = updatedPartyStats + lyraStats
         }
@@ -444,7 +444,7 @@ class StoryViewModel(
                 speed = 85,
                 level = 1,
                 xp = 0,
-                spellIds = listOf("shadow_strike", "venom_flurry", "umbral_siphon")
+                spellIds = listOf("shadow_strike", "venom_flurry")
             )
             updatedPartyStats = updatedPartyStats + zephyrStats
         }
@@ -674,6 +674,8 @@ class StoryViewModel(
 
     fun updatePartyStatsFromCombat(updatedParty: List<PartyMember>) {
         val mappedStats = updatedParty.map { member ->
+            val existing = _state.value.partyStats.firstOrNull { it.id == member.id }
+            val mergedSpells = (member.spells.map { it.id } + (existing?.spellIds ?: emptyList())).distinct()
             SavedCharacterStats(
                 id = member.id,
                 name = member.name,
@@ -685,7 +687,7 @@ class StoryViewModel(
                 speed = member.speed,
                 level = member.level,
                 xp = member.xp,
-                spellIds = member.spells.map { it.id }
+                spellIds = mergedSpells
             )
         }
         _state.value = _state.value.copy(partyStats = mappedStats)

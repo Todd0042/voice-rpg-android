@@ -46,37 +46,53 @@ object StoryEncounters {
         description = "Silence itself becomes a reservoir", exampleChant = "Quiet lungs"
     )
 
-    val cedricSpells = listOf(
-        Spell("holy_smite", "Holy Smite", SpellSchool.HOLY, basePower = 70, mpCost = 14, description = "Righteous celestial blow", exampleChant = "By celestial dawn, smite the heretic!"),
-        Spell("lay_on_hands", "Lay on Hands", SpellSchool.HOLY, basePower = 110, mpCost = 16, isHeal = true, hitsAll = true, description = "Restorative blessing", exampleChant = "Sacred radiance mend Cedric's wounds!"),
-        Spell("shield_wall", "Shield Wall", SpellSchool.PHYSICAL, basePower = 50, mpCost = 10, hitsAll = true, isGuard = true, status = "GUARD", description = "Vanguard protection", exampleChant = "Raise the golden aegis against the horde!"),
-        Spell("aegis_dawn", "Aegis of the Dawn", SpellSchool.HOLY, basePower = 150, mpCost = 25, isHeal = true, hitsAll = true, isGuard = true, status = "GUARD", description = "Radiant invulnerability barrier", exampleChant = "By celestial dawn, raise the morning star!"),
-        steadyBreathSpell
-    )
+    val holySmiteSpell = Spell("holy_smite", "Holy Smite", SpellSchool.HOLY, basePower = 70, mpCost = 14, description = "Righteous celestial blow", exampleChant = "By celestial dawn, smite the heretic!")
+    val layOnHandsSpell = Spell("lay_on_hands", "Lay on Hands", SpellSchool.HOLY, basePower = 110, mpCost = 16, isHeal = true, hitsAll = true, description = "Restorative blessing", exampleChant = "Sacred radiance mend Cedric's wounds!")
+    val shieldWallSpell = Spell("shield_wall", "Shield Wall", SpellSchool.PHYSICAL, basePower = 50, mpCost = 10, hitsAll = true, isGuard = true, status = "GUARD", description = "Vanguard protection", exampleChant = "Raise the golden aegis against the horde!")
+    val aegisDawnSpell = Spell("aegis_dawn", "Aegis of the Dawn", SpellSchool.HOLY, basePower = 150, mpCost = 25, isHeal = true, hitsAll = true, isGuard = true, status = "GUARD", description = "Radiant invulnerability barrier", exampleChant = "By celestial dawn, raise the morning star!")
 
-    val lyraSpells = listOf(
-        Spell("soothing_rain", "Soothing Rain", SpellSchool.NATURE, basePower = 65, mpCost = 18, isHeal = true, hitsAll = true, description = "Grove restorative mist", exampleChant = "Spirits of the grove, grant soothing rain upon our party!"),
-        Spell("briar_entangle", "Briar Entangle", SpellSchool.NATURE, basePower = 60, mpCost = 12, status = "ROOT", description = "Thorny vines snare the foe", exampleChant = "Thorny vines and briars ensnare that archer!"),
-        Spell("verdant_cataclysm", "Verdant Cataclysm", SpellSchool.NATURE, basePower = 50, mpCost = 25, hitsAll = true, status = "POISON", description = "Cataclysmic grove-cry shook the whole field", exampleChant = "Ancient roots of the deep earth awaken!"),
-        deepRootSpell
-    )
+    val cedricStarterSpells = listOf(holySmiteSpell, layOnHandsSpell, shieldWallSpell, steadyBreathSpell)
+    val cedricSpells = listOf(holySmiteSpell, layOnHandsSpell, shieldWallSpell, aegisDawnSpell, steadyBreathSpell)
 
-    val zephyrSpells = listOf(
-        Spell("shadow_strike", "Shadow Strike", SpellSchool.SHADOW, basePower = 75, mpCost = 12, description = "Lethal strike from behind", exampleChant = "From the silent umbra, strike the shaman's throat!"),
-        Spell("venom_flurry", "Venom Flurry", SpellSchool.SHADOW, basePower = 52, mpCost = 15, hitsAll = true, status = "POISON", description = "Poisoned twin daggers", exampleChant = "Abyssal venom coat my blades!"),
-        Spell("umbral_siphon", "Umbral Siphon", SpellSchool.SHADOW, basePower = 60, mpCost = 14, status = "CORRODE", lifesteal = true, aliases = listOf("siphon", "drain"), description = "Siphons shadow essence to mend wounds", exampleChant = "Abyssal shadow siphon drain the shaman!"),
-        quietLungsSpell
+    val soothingRainSpell = Spell("soothing_rain", "Soothing Rain", SpellSchool.NATURE, basePower = 65, mpCost = 18, isHeal = true, hitsAll = true, description = "Grove restorative mist", exampleChant = "Spirits of the grove, grant soothing rain upon our party!")
+    val briarEntangleSpell = Spell("briar_entangle", "Briar Entangle", SpellSchool.NATURE, basePower = 60, mpCost = 12, status = "ROOT", description = "Thorny vines snare the foe", exampleChant = "Thorny vines and briars ensnare that archer!")
+    val verdantCataclysmSpell = Spell("verdant_cataclysm", "Verdant Cataclysm", SpellSchool.NATURE, basePower = 50, mpCost = 25, hitsAll = true, status = "POISON", description = "Cataclysmic grove-cry shook the whole field", exampleChant = "Ancient roots of the deep earth awaken!")
+
+    val lyraStarterSpells = listOf(soothingRainSpell, briarEntangleSpell, deepRootSpell)
+    val lyraSpells = listOf(soothingRainSpell, briarEntangleSpell, verdantCataclysmSpell, deepRootSpell)
+
+    val shadowStrikeSpell = Spell("shadow_strike", "Shadow Strike", SpellSchool.SHADOW, basePower = 75, mpCost = 12, description = "Lethal strike from behind", exampleChant = "From the silent umbra, strike the shaman's throat!")
+    val venomFlurrySpell = Spell("venom_flurry", "Venom Flurry", SpellSchool.SHADOW, basePower = 52, mpCost = 15, hitsAll = true, status = "POISON", description = "Poisoned twin daggers", exampleChant = "Abyssal venom coat my blades!")
+    val umbralSiphonSpell = Spell("umbral_siphon", "Umbral Siphon", SpellSchool.SHADOW, basePower = 60, mpCost = 14, status = "CORRODE", lifesteal = true, aliases = listOf("siphon", "drain"), description = "Siphons shadow essence to mend wounds", exampleChant = "Abyssal shadow siphon drain the shaman!")
+
+    val zephyrStarterSpells = listOf(shadowStrikeSpell, venomFlurrySpell, quietLungsSpell)
+    val zephyrSpells = listOf(shadowStrikeSpell, venomFlurrySpell, umbralSiphonSpell, quietLungsSpell)
+
+    val ALL_COMPANION_SPELLS: Map<String, Spell> = mapOf(
+        holySmiteSpell.id to holySmiteSpell,
+        layOnHandsSpell.id to layOnHandsSpell,
+        shieldWallSpell.id to shieldWallSpell,
+        aegisDawnSpell.id to aegisDawnSpell,
+        steadyBreathSpell.id to steadyBreathSpell,
+        soothingRainSpell.id to soothingRainSpell,
+        briarEntangleSpell.id to briarEntangleSpell,
+        verdantCataclysmSpell.id to verdantCataclysmSpell,
+        deepRootSpell.id to deepRootSpell,
+        shadowStrikeSpell.id to shadowStrikeSpell,
+        venomFlurrySpell.id to venomFlurrySpell,
+        umbralSiphonSpell.id to umbralSiphonSpell,
+        quietLungsSpell.id to quietLungsSpell
     )
 
     fun createDuoParty(): List<PartyMember> = listOf(
         PartyMember("hero", "Aethel", "Elementalist", currentHp = 240, maxHp = 240, currentMp = 140, maxMp = 140, spells = aethelSpells, avatarTint = Color(0xFF90CAF9), speed = 70, atbGauge = 0.85f),
-        PartyMember("cedric", "Sir Cedric", "Templar", currentHp = 310, maxHp = 420, currentMp = 80, maxMp = 80, spells = cedricSpells, avatarTint = Color(0xFFFFD54F), speed = 55, atbGauge = 0.50f)
+        PartyMember("cedric", "Sir Cedric", "Templar", currentHp = 310, maxHp = 420, currentMp = 80, maxMp = 80, spells = cedricStarterSpells, avatarTint = Color(0xFFFFD54F), speed = 55, atbGauge = 0.50f)
     )
 
     fun createTrioParty(): List<PartyMember> = listOf(
         PartyMember("hero", "Aethel", "Elementalist", currentHp = 240, maxHp = 240, currentMp = 140, maxMp = 140, spells = aethelSpells, avatarTint = Color(0xFF90CAF9), speed = 70, atbGauge = 0.85f),
-        PartyMember("cedric", "Sir Cedric", "Templar", currentHp = 310, maxHp = 420, currentMp = 80, maxMp = 80, spells = cedricSpells, avatarTint = Color(0xFFFFD54F), speed = 55, atbGauge = 0.50f),
-        PartyMember("lyra", "Lyra", "Grove Warden", currentHp = 240, maxHp = 280, currentMp = 120, maxMp = 120, spells = lyraSpells, avatarTint = Color(0xFFA5D6A7), speed = 65, atbGauge = 0.70f)
+        PartyMember("cedric", "Sir Cedric", "Templar", currentHp = 310, maxHp = 420, currentMp = 80, maxMp = 80, spells = cedricStarterSpells, avatarTint = Color(0xFFFFD54F), speed = 55, atbGauge = 0.50f),
+        PartyMember("lyra", "Lyra", "Grove Warden", currentHp = 240, maxHp = 280, currentMp = 120, maxMp = 120, spells = lyraStarterSpells, avatarTint = Color(0xFFA5D6A7), speed = 65, atbGauge = 0.70f)
     )
 
     fun createStandardParty(): List<PartyMember> = listOf(
@@ -96,7 +112,7 @@ object StoryEncounters {
         maxHp = 250,
         currentMp = 90,
         maxMp = 90,
-        spells = zephyrSpells,
+        spells = zephyrStarterSpells,
         avatarTint = Color(0xFFCE93D8),
         speed = 85,
         atbGauge = 1.0f
@@ -130,7 +146,7 @@ object StoryEncounters {
         ),
         initialParty = listOf(
             PartyMember("hero", "Aethel", "Elementalist", currentHp = 240, maxHp = 240, currentMp = 140, maxMp = 140, spells = aethelSpells, avatarTint = Color(0xFF90CAF9), speed = 70, atbGauge = 0.85f),
-            PartyMember("cedric", "Sir Cedric", "Templar", currentHp = 310, maxHp = 420, currentMp = 80, maxMp = 80, spells = cedricSpells, avatarTint = Color(0xFFFFD54F), speed = 55, atbGauge = 0.50f)
+            PartyMember("cedric", "Sir Cedric", "Templar", currentHp = 310, maxHp = 420, currentMp = 80, maxMp = 80, spells = cedricStarterSpells, avatarTint = Color(0xFFFFD54F), speed = 55, atbGauge = 0.50f)
         )
     )
 
@@ -206,8 +222,8 @@ object StoryEncounters {
         ),
         initialParty = listOf(
             PartyMember("hero", "Aethel", "Elementalist", currentHp = 240, maxHp = 240, currentMp = 140, maxMp = 140, spells = aethelSpells, avatarTint = Color(0xFF90CAF9), speed = 70, atbGauge = 0.85f),
-            PartyMember("cedric", "Sir Cedric", "Templar", currentHp = 310, maxHp = 420, currentMp = 80, maxMp = 80, spells = cedricSpells, avatarTint = Color(0xFFFFD54F), speed = 55, atbGauge = 0.50f),
-            PartyMember("lyra", "Lyra", "Grove Warden", currentHp = 240, maxHp = 280, currentMp = 120, maxMp = 120, spells = lyraSpells, avatarTint = Color(0xFFA5D6A7), speed = 65, atbGauge = 0.70f)
+            PartyMember("cedric", "Sir Cedric", "Templar", currentHp = 310, maxHp = 420, currentMp = 80, maxMp = 80, spells = cedricStarterSpells, avatarTint = Color(0xFFFFD54F), speed = 55, atbGauge = 0.50f),
+            PartyMember("lyra", "Lyra", "Grove Warden", currentHp = 240, maxHp = 280, currentMp = 120, maxMp = 120, spells = lyraStarterSpells, avatarTint = Color(0xFFA5D6A7), speed = 65, atbGauge = 0.70f)
         )
     )
 
@@ -223,7 +239,7 @@ object StoryEncounters {
         ),
         initialParty = listOf(
             PartyMember("hero", "Aethel", "Elementalist", currentHp = 240, maxHp = 240, currentMp = 140, maxMp = 140, spells = aethelSpells, avatarTint = Color(0xFF90CAF9), speed = 70, atbGauge = 0.85f),
-            PartyMember("cedric", "Sir Cedric", "Templar", currentHp = 310, maxHp = 420, currentMp = 80, maxMp = 80, spells = cedricSpells, avatarTint = Color(0xFFFFD54F), speed = 55, atbGauge = 0.50f)
+            PartyMember("cedric", "Sir Cedric", "Templar", currentHp = 310, maxHp = 420, currentMp = 80, maxMp = 80, spells = cedricStarterSpells, avatarTint = Color(0xFFFFD54F), speed = 55, atbGauge = 0.50f)
         )
     )
 
@@ -239,7 +255,7 @@ object StoryEncounters {
         ),
         initialParty = listOf(
             PartyMember("hero", "Aethel", "Elementalist", currentHp = 240, maxHp = 240, currentMp = 140, maxMp = 140, spells = aethelSpells, avatarTint = Color(0xFF90CAF9), speed = 70, atbGauge = 0.85f),
-            PartyMember("cedric", "Sir Cedric", "Templar", currentHp = 310, maxHp = 420, currentMp = 80, maxMp = 80, spells = cedricSpells, avatarTint = Color(0xFFFFD54F), speed = 55, atbGauge = 0.50f)
+            PartyMember("cedric", "Sir Cedric", "Templar", currentHp = 310, maxHp = 420, currentMp = 80, maxMp = 80, spells = cedricStarterSpells, avatarTint = Color(0xFFFFD54F), speed = 55, atbGauge = 0.50f)
         )
     )
 

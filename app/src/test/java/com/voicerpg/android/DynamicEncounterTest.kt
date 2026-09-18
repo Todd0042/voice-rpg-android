@@ -11,6 +11,7 @@ import com.voicerpg.android.model.CharacterStance
 import com.voicerpg.android.model.CombatPhase
 import com.voicerpg.android.model.Enemy
 import com.voicerpg.android.model.PartyMember
+import com.voicerpg.android.model.SavedCharacterStats
 import com.voicerpg.android.model.Spell
 import com.voicerpg.android.model.SpellSchool
 import com.voicerpg.android.model.TargetSelection
@@ -346,5 +347,72 @@ class DynamicEncounterTest {
         assertNotNull(resonance)
         assertEquals(200, resonance?.bonusPercent)
         assertEquals(com.voicerpg.android.model.ResonanceTier.TRANSCENDENTAL, resonance?.tier)
+    }
+
+    @Test
+    fun testCompanionStarterSpellKitsDoNotIncludeMasterTrialSpells() {
+        val duo = StoryEncounters.createDuoParty()
+        val cedric = duo.first { it.id == "cedric" }
+        assertFalse("Cedric starter kit should not include Aegis of Dawn", cedric.spells.any { it.id == "aegis_dawn" })
+        assertTrue("Cedric starter kit should include Holy Smite", cedric.spells.any { it.id == "holy_smite" })
+        assertTrue("Cedric starter kit should include Steady Breath", cedric.spells.any { it.id == "steady_breath" })
+
+        val trio = StoryEncounters.createTrioParty()
+        val lyra = trio.first { it.id == "lyra" }
+        assertFalse("Lyra starter kit should not include Verdant Cataclysm", lyra.spells.any { it.id == "verdant_cataclysm" })
+        assertTrue("Lyra starter kit should include Soothing Rain", lyra.spells.any { it.id == "soothing_rain" })
+        assertTrue("Lyra starter kit should include Deep Root", lyra.spells.any { it.id == "deep_root" })
+
+        val zephyr = StoryEncounters.createZephyrMember()
+        assertFalse("Zephyr starter kit should not include Umbral Siphon", zephyr.spells.any { it.id == "umbral_siphon" })
+        assertTrue("Zephyr starter kit should include Shadow Strike", zephyr.spells.any { it.id == "shadow_strike" })
+        assertTrue("Zephyr starter kit should include Quiet Lungs", zephyr.spells.any { it.id == "quiet_lungs" })
+    }
+
+    @Test
+    fun testRoundNumberAdvancesWhenAllCombatantsAct() {
+        val party = StoryEncounters.createDuoParty()
+        val enemy = StoryEncounters.createMinion("dummy", "Dummy Target", hp = 500)
+        viewModel.startEncounter(party = party, enemies = listOf(enemy), environment = BattleEnvironment.DUNGEON)
+
+        assertEquals(1, viewModel.state.value.roundNumber)
+
+        // Hero acts
+        viewModel.registerTurnCompleted()
+        assertEquals(1, viewModel.state.value.roundNumber)
+
+        // Cedric acts
+        viewModel.registerTurnCompleted()
+        assertEquals(1, viewModel.state.value.roundNumber)
+
+        // Enemy acts -> total alive combatants is 3 (hero, cedric, enemy)
+        viewModel.registerTurnCompleted()
+        assertEquals(2, viewModel.state.value.roundNumber)
+    }
+
+    @Test
+    fun testApplyImportedProgressionMapsSpellsAndAppendsBreath() {
+        val savedParty = listOf(
+            SavedCharacterStats(
+                id = "cedric",
+                name = "Sir Cedric",
+                loreClass = "Templar",
+                currentHp = 100,
+                maxHp = 120,
+                currentMp = 40,
+                maxMp = 50,
+                speed = 40,
+                level = 10,
+                xp = 100,
+                spellIds = listOf("holy_smite", "shield_slam", "lay_on_hands", "aegis_dawn")
+            )
+        )
+        viewModel.applySavedStats(savedParty)
+        viewModel.startEncounter(StoryEncounters.FOREST_AMBUSH)
+
+        val cedric = viewModel.state.value.party.first { it.id == "cedric" }
+        assertEquals(10, cedric.level)
+        assertTrue(cedric.spells.any { it.id == "aegis_dawn" })
+        assertEquals("steady_breath", cedric.spells.last().id)
     }
 }
