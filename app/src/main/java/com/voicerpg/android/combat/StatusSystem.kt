@@ -73,8 +73,9 @@ object StatusSystem {
         var m = 1f
         for (s in statuses) m *= when (s.status) {
             StatusId.CHILL -> (1f - s.potPct * 2f).coerceIn(0.4f, 0.8f)
-            StatusId.ROOT -> 0.12f
+            StatusId.ROOT -> (1f - s.potPct).coerceIn(0.2f, 0.65f)
             StatusId.OVERLOAD -> 0.2f
+            StatusId.FREEZE -> 0.15f
             StatusId.BLESS -> 1.25f
             else -> 1f
         }
@@ -82,7 +83,7 @@ object StatusSystem {
     }
 
     fun isStunned(statuses: List<StatusInstance>): Boolean =
-        statuses.any { it.status == StatusId.OVERLOAD || (it.status == StatusId.ROOT && it.potPct >= 0.2f) }
+        statuses.any { it.status == StatusId.OVERLOAD || it.status == StatusId.FREEZE }
 
     /** Defense multiplier on a statused target (corrode lowers, bless raises). */
     fun defenseMult(statuses: List<StatusInstance>): Float {

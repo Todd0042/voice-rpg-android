@@ -57,7 +57,7 @@ class StatusSystemTest {
     }
 
     @Test
-    fun `overload and deep root stun - chill slows but never freezes the gauge to zero forever`() {
+    fun `overload and freeze stun - chill and root slow but do not stun`() {
         val overload = listOf(StatusSystem.apply(StatusId.OVERLOAD, "MASTER", EnemyFamily.FLESH, 50f)!!)
         assertTrue(StatusSystem.isStunned(overload))
         val crawl = StatusSystem.speedMult(overload)
@@ -65,6 +65,12 @@ class StatusSystemTest {
         val chill = listOf(StatusSystem.apply(StatusId.CHILL, "ADEPT", EnemyFamily.FLESH, 50f)!!)
         val slow = StatusSystem.speedMult(chill)
         assertTrue("chilled speed $slow must be slowed but not immobile", slow in 0.3f..0.85f)
+        org.junit.Assert.assertFalse(StatusSystem.isStunned(chill))
+
+        val root = listOf(StatusSystem.apply(StatusId.ROOT, "ADEPT", EnemyFamily.FLESH, 50f)!!)
+        val rootSlow = StatusSystem.speedMult(root)
+        assertTrue("rooted speed $rootSlow must slow ATB gauge", rootSlow in 0.3f..0.8f)
+        org.junit.Assert.assertFalse("root must NOT stun the actor into skipping their turn", StatusSystem.isStunned(root))
     }
 
     @Test

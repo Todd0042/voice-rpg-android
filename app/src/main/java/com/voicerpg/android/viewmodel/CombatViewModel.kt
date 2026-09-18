@@ -396,8 +396,15 @@ class CombatViewModel(
                 party = _state.value.party.map { if (it.id == heroId) it.copy(atbGauge = 0f) else it },
                 activePartyMemberId = null
             )
-            combatNarrator.speak("${member.name} is bound and cannot act!", force = true)
+            val stunStatus = member.statuses.firstOrNull { it.status == StatusId.OVERLOAD || it.status == StatusId.FREEZE }
+            val stunDesc = when (stunStatus?.status) {
+                StatusId.FREEZE -> "is frozen solid"
+                else -> "is stunned"
+            }
+            combatNarrator.speak("${member.name} $stunDesc and cannot act!", force = true)
+            lastActedFaction = CombatantFaction.HERO
             lastActedHeroId = heroId
+            registerTurnCompleted()
             checkAndTransitionNextTurn()
             return true
         }
@@ -465,7 +472,12 @@ class CombatViewModel(
                     _state.value = _state.value.copy(
                         enemies = _state.value.enemies.map { if (it.id == enemy.id) it.copy(atbGauge = 0f) else it }
                     )
-                    combatNarrator.speak("${enemy.name} is bound and cannot act!", force = true)
+                    val stunStatus = livingSelf.statuses.firstOrNull { it.status == StatusId.OVERLOAD || it.status == StatusId.FREEZE }
+                    val stunDesc = when (stunStatus?.status) {
+                        StatusId.FREEZE -> "is frozen solid"
+                        else -> "is stunned"
+                    }
+                    combatNarrator.speak("${enemy.name} $stunDesc and cannot act!", force = true)
                     lastActedFaction = CombatantFaction.ENEMY
                     registerTurnCompleted()
                     checkAndTransitionNextTurn()

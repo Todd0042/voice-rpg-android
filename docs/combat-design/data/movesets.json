@@ -65,8 +65,9 @@
       { "name":"Snare Seed",    "school":"NATURE",   "kind":"HEAVY", "powerMult":1.2, "targetRule":"SINGLE_LOWEST_HP","applyStatus":"ROOT", "cooldownTurns":4, "weight":2 }
     ]},
     "verdant_caster": { "moves": [
-      { "name":"Choking Pollen","school":"NATURE",   "kind":"AOE",   "powerMult":0.6, "targetRule":"PARTY_AOE",       "applyStatus":"POISON", "cooldownTurns":4, "weight":4 },
-      { "name":"Bramble Whip",  "school":"NATURE",   "kind":"BASIC", "powerMult":1.0, "targetRule":"SINGLE_RANDOM",   "applyStatus":"ROOT", "weight":4 }
+      { "name":"Thorn Lash",    "school":"NATURE",   "kind":"BASIC", "powerMult":1.0, "targetRule":"SINGLE_RANDOM",   "weight":5 },
+      { "name":"Bramble Whip",  "school":"NATURE",   "kind":"HEAVY", "powerMult":1.2, "targetRule":"SINGLE_RANDOM",   "applyStatus":"ROOT", "cooldownTurns":3, "weight":3 },
+      { "name":"Choking Pollen","school":"NATURE",   "kind":"AOE",   "powerMult":0.6, "targetRule":"PARTY_AOE",       "applyStatus":"POISON", "cooldownTurns":4, "weight":3 }
     ]},
     "void_wisp": { "moves": [
       { "name":"Drain Whisper", "school":"SHADOW",   "kind":"BASIC", "powerMult":1.0, "targetRule":"SINGLE_RANDOM",   "applyStatus":"CORRODE", "weight":6 },
