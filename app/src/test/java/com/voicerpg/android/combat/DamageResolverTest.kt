@@ -77,7 +77,7 @@ class DamageResolverTest {
     @Test
     fun `heals scale with voice and never go negative`() {
         repeat(50) { seed ->
-            val heal = DamageResolver.resolveHeal(100f, 1, 1.0f, Random(seed))
+            val heal = DamageResolver.resolveHeal(100f, 1, 1.0f, random = Random(seed))
             assertTrue(heal in 80..120)
         }
     }

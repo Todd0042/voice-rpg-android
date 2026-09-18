@@ -191,6 +191,8 @@ object IntentParser {
         val matchedSpell = availableSpells.firstOrNull { spell ->
             lower.contains(spell.name.lowercase())
         } ?: availableSpells.firstOrNull { spell ->
+            spell.aliases.any { alias -> lower.contains(alias.lowercase()) }
+        } ?: availableSpells.firstOrNull { spell ->
             val nameWords = spell.name.lowercase().split(" ")
             nameWords.any { it.length >= 4 && lower.contains(it) }
         } ?: availableSpells.firstOrNull { spell ->

@@ -25,7 +25,9 @@ data class Spell(
     val exampleChant: String,
     val status: String? = null,
     val lifesteal: Boolean = false,
-    val isGuard: Boolean = false
+    val isGuard: Boolean = false,
+    val manaRestorePct: Float = 0f,
+    val aliases: List<String> = emptyList()
 )
 
 enum class CharacterStance {

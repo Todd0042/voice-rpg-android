@@ -46,9 +46,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 import kotlin.random.Random
 
 data class CombatState(
@@ -208,36 +210,36 @@ class CombatViewModel(
     }
 
     private fun tickAtb() {
-        val currentParty = _state.value.party
-        val currentEnemies = _state.value.enemies
-
-        // 1. Advance gauges strictly for ALIVE combatants; dead combatants stay at 0.
-        // Statuses modulate ATB speed (chill slows, root nearly halts, overload freezes, bless quickens).
-        val updatedParty = currentParty.map { member ->
-            if (member.isAlive) {
-                val speedMult = StatusSystem.speedMult(member.statuses)
-                val advance = (member.speed / 100f) * 0.035f * speedMult
-                member.copy(atbGauge = (member.atbGauge + advance).coerceAtMost(1.0f))
-            } else {
-                member.copy(atbGauge = 0f, currentMp = 0, stance = CharacterStance.DEAD)
-            }
+        // 1. Advance gauges strictly for ALIVE combatants (atomic recompute-from-current:
+        // mid-tick summons/attacks can never be lost to a stale snapshot write).
+        // Statuses modulate ATB speed (chill slows, root nearly halts, overload crawls, bless quickens).
+        _state.update { prev ->
+            prev.copy(
+                party = prev.party.map { member ->
+                    if (member.isAlive) {
+                        val advance = (member.speed / 100f) * 0.035f * StatusSystem.speedMult(member.statuses)
+                        member.copy(atbGauge = (member.atbGauge + advance).coerceAtMost(1.0f))
+                    } else {
+                        member.copy(atbGauge = 0f, currentMp = 0, stance = CharacterStance.DEAD)
+                    }
+                },
+                enemies = prev.enemies.map { enemy ->
+                    if (enemy.isAlive) {
+                        val advance = (enemy.speed / 100f) * 0.022f * StatusSystem.speedMult(enemy.statuses)
+                        enemy.copy(atbGauge = (enemy.atbGauge + advance).coerceAtMost(1.0f))
+                    } else {
+                        enemy.copy(atbGauge = 0f)
+                    }
+                }
+            )
         }
 
-        val updatedEnemies = currentEnemies.map { enemy ->
-            if (enemy.isAlive) {
-                val speedMult = StatusSystem.speedMult(enemy.statuses)
-                val advance = (enemy.speed / 100f) * 0.022f * speedMult
-                enemy.copy(atbGauge = (enemy.atbGauge + advance).coerceAtMost(1.0f))
-            } else {
-                enemy.copy(atbGauge = 0f)
-            }
-        }
-
-        _state.value = _state.value.copy(party = updatedParty, enemies = updatedEnemies)
+        val freshParty = _state.value.party
+        val freshEnemies = _state.value.enemies
 
         // 2. Check if ANY combatant reached 100% turn readiness
-        val readyHeroes = updatedParty.filter { it.isAlive && it.isTurnReady }
-        val readyEnemies = updatedEnemies.filter { it.isAlive && it.isTurnReady }
+        val readyHeroes = freshParty.filter { it.isAlive && it.isTurnReady }
+        val readyEnemies = freshEnemies.filter { it.isAlive && it.isTurnReady }
 
         if (readyHeroes.isEmpty() && readyEnemies.isEmpty()) {
             return
@@ -269,11 +271,11 @@ class CombatViewModel(
             _state.value = _state.value.copy(
                 phase = CombatPhase.PLAYER_INPUT,
                 activePartyMemberId = readyHero.id,
-                party = updatedParty.map {
+                party = freshParty.map {
                     if (it.id == readyHero.id) it.copy(stance = CharacterStance.READY) else it
                 }
             )
-            combatNarrator.narratePlayerTurn(readyHero, updatedEnemies) {
+            combatNarrator.narratePlayerTurn(readyHero, freshEnemies) {
                 if (speechManager.isAutoListen.value) {
                     activeScope.launch {
                         delay(100)
@@ -1249,7 +1251,7 @@ class CombatViewModel(
             if (parsed.spell.mpCost > activeHero.currentMp) {
                 val (mx, my) = partyFloatSlot(activeHero.id)
                 val fct = FloatingCombatText(
-                    text = "Not enough mana!",
+                    text = if (activeHero.spells.any { it.manaRestorePct > 0f }) "Not enough mana! (say attune)" else "Not enough mana!",
                     color = Color(0xFF80D8FF),
                     startX = mx,
                     startY = my
@@ -1264,7 +1266,8 @@ class CombatViewModel(
                     _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts.filterNot { it.id == fct.id })
                 }
                 combatNarrator.speak(
-                    "Not enough mana. ${activeHero.name} needs ${parsed.spell.mpCost} but holds only ${activeHero.currentMp}.",
+                    "Not enough mana. ${activeHero.name} needs ${parsed.spell.mpCost} but holds only ${activeHero.currentMp}." +
+                            if (activeHero.spells.any { it.manaRestorePct > 0f }) " Say attune to steady your breath and recover." else "",
                     force = true
                 ) {
                     if (speechManager.isAutoListen.value) {
@@ -1337,11 +1340,12 @@ class CombatViewModel(
             _state.value = _state.value.copy(phase = CombatPhase.SPELL_VFX_PLAYING)
 
             // Spatially place particles & projectile: heal over party (left), attack over monsters (right)
+            val isAttune = parsed.spell.manaRestorePct > 0f
             val isHeal = parsed.spell.isHeal
             val startX = 260f
             val startY = 480f
-            val targetOriginX = if (isHeal) 260f else 780f
-            val targetOriginY = if (isHeal) 440f else 480f
+            val targetOriginX = if (isHeal || isAttune) 260f else 780f
+            val targetOriginY = if (isHeal || isAttune) 440f else 480f
 
             spellVfxEngine.launch(
                 startX = startX,
@@ -1377,7 +1381,9 @@ class CombatViewModel(
                 }
             )
 
-            if (isHeal) {
+            if (isAttune) {
+                applyAttuneAction(activeHero, parsed.spell)
+            } else if (isHeal) {
                 applyHealAction(activeHero, parsed.spell, parsed.target, parsed.targetHeroId, resonance)
             } else {
                 applyDamageToEnemies(activeHero, parsed.spell, parsed.target, parsed.targetEnemyId, resonance)
@@ -1418,6 +1424,35 @@ class CombatViewModel(
         }
     }
 
+    /**
+     * Attune: the hero's free breath discipline. Costs the turn, restores a flat
+     * percentage of max MP. Deliberately resonance-INDEPENDENT: sustain can never
+     * inflate the voice multiplier.
+     */
+    private fun applyAttuneAction(member: PartyMember, spell: Spell) {
+        val restore = (member.maxMp * spell.manaRestorePct).roundToInt().coerceAtLeast(1)
+        val (ax, ay) = partyFloatSlot(member.id)
+        sfxManager.playSpellCast()
+        val fct = FloatingCombatText(
+            text = "+$restore MP",
+            color = Color(0xFF4FC3F7),
+            startX = ax,
+            startY = ay,
+            isHeal = true
+        )
+        _state.value = _state.value.copy(
+            party = _state.value.party.map {
+                if (it.id == member.id) it.copy(currentMp = (it.currentMp + restore).coerceAtMost(it.maxMp)) else it
+            },
+            floatingTexts = _state.value.floatingTexts + fct
+        )
+        activeScope.launch {
+            delay(1400)
+            _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts.filterNot { it.id == fct.id })
+        }
+        combatNarrator.speak("${member.name} breathes slow and steady; $restore mana returns.", force = false)
+    }
+
     private suspend fun applyHealAction(
         caster: PartyMember,
         spell: Spell,
@@ -1427,12 +1462,6 @@ class CombatViewModel(
     ) {
         sfxManager.playLogosFanfare()
 
-        // Heals are affinity-immune: voice quality alone scales them (plus shallow level potency).
-        val healAmount = DamageResolver.resolveHeal(
-            spellBasePower = spell.basePower.toFloat(),
-            attackerLevel = caster.level,
-            resonanceMultiplier = resonance.damageMultiplier
-        )
         val healStatus = StatusId.fromNameOrNull(spell.status)
 
         val currentParty = _state.value.party
@@ -1453,6 +1482,15 @@ class CombatViewModel(
                 listOfNotNull(currentParty.filter { it.isAlive }.minByOrNull { it.hpRatio })
             }
         }
+
+        // Heals are affinity-immune: voice quality alone scales them (plus shallow level potency).
+        // Party-wide heals share the potency: a big spell spread over everyone is tuned down.
+        val healAmount = DamageResolver.resolveHeal(
+            spellBasePower = spell.basePower.toFloat(),
+            attackerLevel = caster.level,
+            resonanceMultiplier = resonance.damageMultiplier,
+            partyWide = targetsToHeal.size > 1
+        )
 
         val updatedParty = currentParty.map { hero ->
             if (targetsToHeal.any { it.id == hero.id }) {
@@ -1685,7 +1723,6 @@ class CombatViewModel(
         }
         if (toAdd.isEmpty()) return 0
 
-        val updatedEnemies = _state.value.enemies + toAdd
         val announcementText = if (toAdd.size == 1) {
             "${toAdd.first().name} Joined!"
         } else {
@@ -1704,10 +1741,12 @@ class CombatViewModel(
         triggerScreenShake(12f)
         combatNarrator.narrateReinforcements(toAdd.size, toAdd.map { it.name })
 
-        _state.value = _state.value.copy(
-            enemies = updatedEnemies,
-            floatingTexts = _state.value.floatingTexts + fct
-        )
+        _state.update { prev ->
+            prev.copy(
+                enemies = prev.enemies + toAdd,
+                floatingTexts = prev.floatingTexts + fct
+            )
+        }
 
         activeScope.launch {
             delay(1500)

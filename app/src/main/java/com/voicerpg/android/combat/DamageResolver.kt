@@ -34,6 +34,8 @@ object DamageResolver {
     const val VARIANCE_MAX = 1.1f
     const val GUARD_MULTIPLIER = 0.5f
     const val WEAKEN_MULTIPLIER = 0.75f
+    /** Party-wide heals share potency so AoE kindness never eclipses a focused single heal. */
+    const val PARTY_HEAL_SPLIT = 0.65f
 
     fun levelPower(basePower: Float, level: Int): Float =
         basePower * (1f + LEVEL_POTENCY_PER_LEVEL * (level - 1).coerceAtLeast(0))
@@ -66,10 +68,12 @@ object DamageResolver {
         spellBasePower: Float,
         attackerLevel: Int,
         resonanceMultiplier: Float,
+        partyWide: Boolean = false,
         random: Random = Random.Default
     ): Int {
         val variance = VARIANCE_MIN + random.nextFloat() * (VARIANCE_MAX - VARIANCE_MIN)
-        val amount = levelPower(spellBasePower, attackerLevel) * resonanceMultiplier.coerceAtLeast(1.0f) * variance
+        val split = if (partyWide) PARTY_HEAL_SPLIT else 1.0f
+        val amount = levelPower(spellBasePower, attackerLevel) * resonanceMultiplier.coerceAtLeast(1.0f) * variance * split
         return max(1, amount.toInt())
     }
 

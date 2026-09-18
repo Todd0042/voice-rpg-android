@@ -82,3 +82,15 @@ Interpretation for the retry:
   level-up + status narration for pocket mode.
 - Tests: app/src/test/java/com/voicerpg/android/combat/* (resolver, status, progression, brain, doctrine).
   All ./gradlew test green.
+
+## v1.6.1 — Economy actions (hero-only mana sustain)
+- Doctrine: NOTHING ever modifies the resonance multiplier (flat 35% MP restore on Attune;
+  sustain is separate from the voice axis).
+- Aethel (all 4 hero classes) gains free 0-MP `Attune` (aliases: breathe/steady/concentrate/
+  recover mana...): costs the turn, restores 35% max MP. Sweet spot sized so a MINIMUM-resonance
+  party "barely survives" corridors by spending 1–2 turns/fight breathing while allies cast/heal.
+- All heals party-wide with x0.65 potency split (Lay on Hands, Haste Cadence, Soothing Rain,
+  Aegis). Exceptions kept single/personal: Zephyr's Umbral Siphon + hero Void Drain (drains).
+- Not-enough-mana now soft-fails with a pocket-mode hint "say attune".
+- Fixed the pre-existing tickAtb/summon lost-update race (SPEC #9) with atomic MutableStateFlow.update.
+- NEXT: CombatSim headless harness to sweep attune%/costs/rest cadence across bands & chapters.

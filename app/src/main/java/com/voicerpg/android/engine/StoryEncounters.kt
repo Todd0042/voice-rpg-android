@@ -11,7 +11,18 @@ import com.voicerpg.android.model.SpellSchool
 object StoryEncounters {
 
     // Party spell sets (single source of truth; mirrors docs/combat-design/data/spells.json)
+    // Aethel's breath discipline: free, costs the turn, restores 35% of max MP regardless of
+    // chant quality (flat by design - mana sustain must never multiply the resonance axis).
+    val attuneSpell = Spell(
+        "attune", "Attune", SpellSchool.PHYSICAL, basePower = 0, mpCost = 0,
+        manaRestorePct = 0.35f,
+        aliases = listOf("attune", "breathe", "breath", "concentrate", "center", "centre", "steady", "gather", "recover mana", "restore mana"),
+        description = "Steady the inner ear; a third of your mana returns",
+        exampleChant = "Attune"
+    )
+
     val aethelSpells = listOf(
+        attuneSpell,
         Spell("fireball", "Fireball", SpellSchool.PYROMANCY, basePower = 65, mpCost = 15, status = "BURN", description = "Roaring sphere of flame", exampleChant = "Fireball archer"),
         Spell("frost_spike", "Frost Spike", SpellSchool.CRYOMANCY, basePower = 58, mpCost = 12, status = "CHILL", description = "Piercing icicle", exampleChant = "Glacial frost spike the orc!"),
         Spell("chain_lightning", "Chain Lightning", SpellSchool.ELECTROMANCY, basePower = 55, mpCost = 20, hitsAll = true, status = "OVERLOAD", description = "Arcing lightning storm", exampleChant = "Tempest lightning strike all enemies!")
@@ -19,7 +30,7 @@ object StoryEncounters {
 
     val cedricSpells = listOf(
         Spell("holy_smite", "Holy Smite", SpellSchool.HOLY, basePower = 70, mpCost = 14, description = "Righteous celestial blow", exampleChant = "By celestial dawn, smite the heretic!"),
-        Spell("lay_on_hands", "Lay on Hands", SpellSchool.HOLY, basePower = 110, mpCost = 16, isHeal = true, description = "Restorative blessing", exampleChant = "Sacred radiance mend Cedric's wounds!"),
+        Spell("lay_on_hands", "Lay on Hands", SpellSchool.HOLY, basePower = 110, mpCost = 16, isHeal = true, hitsAll = true, description = "Restorative blessing", exampleChant = "Sacred radiance mend Cedric's wounds!"),
         Spell("shield_wall", "Shield Wall", SpellSchool.PHYSICAL, basePower = 50, mpCost = 10, hitsAll = true, isGuard = true, status = "GUARD", description = "Vanguard protection", exampleChant = "Raise the golden aegis against the horde!"),
         Spell("aegis_dawn", "Aegis of the Dawn", SpellSchool.HOLY, basePower = 150, mpCost = 25, isHeal = true, hitsAll = true, isGuard = true, status = "GUARD", description = "Radiant invulnerability barrier", exampleChant = "By celestial dawn, raise the morning star!")
     )
@@ -33,7 +44,7 @@ object StoryEncounters {
     val zephyrSpells = listOf(
         Spell("shadow_strike", "Shadow Strike", SpellSchool.SHADOW, basePower = 75, mpCost = 12, description = "Lethal strike from behind", exampleChant = "From the silent umbra, strike the shaman's throat!"),
         Spell("venom_flurry", "Venom Flurry", SpellSchool.SHADOW, basePower = 52, mpCost = 15, hitsAll = true, status = "POISON", description = "Poisoned twin daggers", exampleChant = "Abyssal venom coat my blades!"),
-        Spell("umbral_siphon", "Umbral Siphon", SpellSchool.SHADOW, basePower = 60, mpCost = 14, status = "CORRODE", lifesteal = true, description = "Siphons shadow essence to mend wounds", exampleChant = "Abyssal shadow siphon drain the shaman!")
+        Spell("umbral_siphon", "Umbral Siphon", SpellSchool.SHADOW, basePower = 60, mpCost = 14, status = "CORRODE", lifesteal = true, aliases = listOf("siphon", "drain"), description = "Siphons shadow essence to mend wounds", exampleChant = "Abyssal shadow siphon drain the shaman!")
     )
 
     fun createDuoParty(): List<PartyMember> = listOf(
