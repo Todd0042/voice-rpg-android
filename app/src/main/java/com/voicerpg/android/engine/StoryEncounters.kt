@@ -16,7 +16,7 @@ object StoryEncounters {
     val attuneSpell = Spell(
         "attune", "Attune", SpellSchool.PHYSICAL, basePower = 0, mpCost = 0,
         manaRestorePct = 0.35f,
-        aliases = listOf("attune", "breathe", "breath", "concentrate", "center", "centre", "steady", "gather", "recover mana", "restore mana"),
+        aliases = listOf("attune", "tune", "breathe", "breath", "concentrate", "center", "centre", "steady", "gather", "recover mana", "restore mana"),
         description = "Steady the inner ear; a third of your mana returns",
         exampleChant = "Attune"
     )
@@ -36,13 +36,13 @@ object StoryEncounters {
 
     val deepRootSpell = Spell(
         "deep_root", "Deep Root", SpellSchool.NATURE, basePower = 0, mpCost = 0, manaRestorePct = 0.35f,
-        aliases = listOf("attune", "breathe", "breath", "deep root", "still", "concentrate", "center", "centre", "recover", "restore mana"),
+        aliases = listOf("attune", "breathe", "breath", "deep root", "route", "still", "concentrate", "center", "centre", "recover", "restore mana"),
         description = "Draw the grove's slow cadence up through your roots", exampleChant = "Deep root, warden"
     )
 
     val quietLungsSpell = Spell(
         "quiet_lungs", "Quiet Lungs", SpellSchool.SHADOW, basePower = 0, mpCost = 0, manaRestorePct = 0.35f,
-        aliases = listOf("attune", "breathe", "breath", "hush", "steady", "concentrate", "center", "centre", "recover", "restore mana"),
+        aliases = listOf("attune", "breathe", "breath", "hush", "lunge", "steady", "concentrate", "center", "centre", "recover", "restore mana"),
         description = "Silence itself becomes a reservoir", exampleChant = "Quiet lungs"
     )
 

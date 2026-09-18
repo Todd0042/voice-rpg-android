@@ -199,6 +199,12 @@ object IntentParser {
             val nameWords = spell.name.lowercase().split(" ")
             nameWords.any { it.length >= 4 && lower.contains(it) }
         } ?: availableSpells.firstOrNull { spell ->
+            // Breath/recovery high-priority: catch ASR-mangled breath commands by checking
+            // whether ANY breath alias keyword appears in the utterance (fuzzy match).
+            spell.manaRestorePct > 0f && spell.aliases.any { alias ->
+                alias.split(" ").filter { it.length >= 4 }.any { word -> lower.contains(word) }
+            }
+        } ?: availableSpells.firstOrNull { spell ->
             spell.manaRestorePct == 0f && if (hasHealKeyword) spell.isHeal else (!spell.isHeal && spell.school != SpellSchool.HOLY)
         } ?: availableSpells.firstOrNull { spell ->
             spell.manaRestorePct == 0f && if (hasHealKeyword) spell.isHeal else !spell.isHeal

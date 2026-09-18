@@ -74,6 +74,34 @@ class EconomyActionsTest {
     }
 
     @Test
+    fun `breath utterances never trigger hero steering or school keyword hijack`() {
+        // "deep root vine" should not let the "vine" keyword redirect to Lyra
+        // if it's Cedric's turn - breath is a self-action on the active member.
+        // We verify the parser picks the breath spell regardless of school keywords in the utterance.
+        for (kit in listOf(
+            StoryEncounters.aethelSpells,
+            StoryEncounters.cedricSpells,
+            StoryEncounters.lyraSpells,
+            StoryEncounters.zephyrSpells
+        )) {
+            val breathSpell = kit.first { it.manaRestorePct > 0f }
+            // Utterances with accidental school keywords must still resolve to breath
+            assertEquals(breathSpell.id, IntentParser.parse("steady breath by the dawn", kit).spell.id)
+            assertEquals(breathSpell.id, IntentParser.parse("breathe and recover mana", kit).spell.id)
+            assertEquals(breathSpell.id, IntentParser.parse("attune my focus", kit).spell.id)
+        }
+    }
+
+    @Test
+    fun `ASR-mangled breath commands still resolve to the breath spell`() {
+        // "a tune" for "attune", "deep route" for "deep root", "quiet lunge" for "quiet lungs"
+        assertEquals("attune", IntentParser.parse("a tune please", StoryEncounters.aethelSpells).spell.id)
+        assertEquals("deep_root", IntentParser.parse("deep route warden", StoryEncounters.lyraSpells).spell.id)
+        assertEquals("quiet_lungs", IntentParser.parse("quiet lunge shadow", StoryEncounters.zephyrSpells).spell.id)
+        assertEquals("steady_breath", IntentParser.parse("steady breath templar", StoryEncounters.cedricSpells).spell.id)
+    }
+
+    @Test
     fun `attune restore amount is flat - resonance can never inflate it`() {
         // applyAttuneAction uses (maxMp * pct) with no resonance input; assert the math is anchored.
         val maxMp = 140

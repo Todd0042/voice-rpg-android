@@ -1225,6 +1225,14 @@ class CombatViewModel(
         // Smart Hero Resolution: check if utterance invokes a specific hero or spell
         val aliveParty = _state.value.party.filter { it.isAlive }
 
+        // Breath/recovery utterances are SELF-actions: they belong to whoever's turn it is.
+        // Never let heroBySpell or heroBySchoolKeyword hijack the turn to another member.
+        val BREATH_KEYWORDS = setOf(
+            "attune", "breathe", "breath", "steady", "concentrate", "center", "centre",
+            "recover mana", "restore mana", "focus", "still", "hush", "deep root", "quiet lungs"
+        )
+        val isBreathUtterance = BREATH_KEYWORDS.any { lower.contains(it) }
+
         val heroByName = aliveParty.firstOrNull { member ->
             val matchesCustomName = member.name.isNotBlank() && lower.contains(member.name.lowercase())
             val matchesClassTitle = member.loreClass.isNotBlank() && lower.contains(member.loreClass.lowercase())
@@ -1237,7 +1245,7 @@ class CombatViewModel(
             }
         }
 
-        val heroBySpell = aliveParty.firstOrNull { member ->
+        val heroBySpell = if (isBreathUtterance) null else aliveParty.firstOrNull { member ->
             // Breath/restoration actions never steer: they belong to whoever's turn it is.
             member.spells.any { spell ->
                 spell.manaRestorePct == 0f && (
@@ -1247,7 +1255,7 @@ class CombatViewModel(
             }
         }
 
-        val heroBySchoolKeyword = aliveParty.firstOrNull { member ->
+        val heroBySchoolKeyword = if (isBreathUtterance) null else aliveParty.firstOrNull { member ->
             when (member.id) {
                 "hero" -> lower.contains("fire") || lower.contains("frost") || lower.contains("ice") || lower.contains("lightning") || lower.contains("tempest") || lower.contains("blaze") || lower.contains("primordial")
                 "cedric" -> lower.contains("smite") || lower.contains("aegis") || lower.contains("shield wall") || lower.contains("lay on hands") || lower.contains("dawn") || lower.contains("morning star")
