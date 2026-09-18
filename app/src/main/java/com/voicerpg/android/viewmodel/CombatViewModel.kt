@@ -618,6 +618,10 @@ class CombatViewModel(
             var anyFallen = false
             var struckHeroName: String? = null
 
+            val aoeStunTargetId = if (moveStatusId == StatusId.OVERLOAD || moveStatusId == StatusId.FREEZE) {
+                targetList.filter { it.isAlive }.randomOrNull()?.id
+            } else null
+
             val updatedParty = _state.value.party.map { hero ->
                 if (targetList.any { it.id == hero.id } && hero.isAlive) {
                     val blessMitigation = 1f / StatusSystem.defenseMult(hero.statuses).coerceAtLeast(1f)
@@ -630,7 +634,15 @@ class CombatViewModel(
                     totalDamage += damage
                     anyFallen = anyFallen || (hero.currentHp - damage) <= 0
                     struckHeroName = hero.name
-                    val landedStatus = if (moveStatusId != null) StatusSystem.apply(moveStatusId, "ADEPT", EnemyFamily.FLESH, damage.toFloat()) else null
+                    val landedStatus = if (moveStatusId != null) {
+                        if (move.targetRule == "PARTY_AOE" && (moveStatusId == StatusId.OVERLOAD || moveStatusId == StatusId.FREEZE)) {
+                            if (hero.id == aoeStunTargetId) {
+                                StatusSystem.apply(moveStatusId, "ADEPT", EnemyFamily.FLESH, damage.toFloat())
+                            } else null
+                        } else {
+                            StatusSystem.apply(moveStatusId, "ADEPT", EnemyFamily.FLESH, damage.toFloat())
+                        }
+                    } else null
                     val (hx, hy) = partyFloatSlot(hero.id)
                     newFloats += FloatingCombatText(text = "-$damage", color = Color(0xFFFF1744), startX = hx, startY = hy)
                     val newHp = (hero.currentHp - damage).coerceAtLeast(0)

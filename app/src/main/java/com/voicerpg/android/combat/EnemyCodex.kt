@@ -87,10 +87,10 @@ object EnemyCodex {
         "nullifier warden" to EnemyCodexEntry(family = "SILENCE", selfElement = "PHYSICAL", defense = 14, baseXp = 90, moveset = "silence_bruiser"),
         "nullifier sibilant" to EnemyCodexEntry(family = "SILENCE", selfElement = "PHYSICAL", defense = 8, baseXp = 80, moveset = "silence_sniper"),
         "vestibule archivist" to EnemyCodexEntry(family = "SILENCE", selfElement = "SHADOW", defense = 8, baseXp = 85, moveset = "silence_caster"),
-        "shadow of the knight" to EnemyCodexEntry(family = "VOID", selfElement = "PHYSICAL", defense = 10, baseXp = 110, moveset = "mirror_doppel"),
-        "shadow of the warden" to EnemyCodexEntry(family = "VOID", selfElement = "NATURE", defense = 8, baseXp = 110, moveset = "mirror_doppel"),
-        "shadow of the blade" to EnemyCodexEntry(family = "VOID", selfElement = "SHADOW", defense = 8, baseXp = 110, moveset = "mirror_doppel"),
-        "shadow of the invocator" to EnemyCodexEntry(family = "VOID", selfElement = "ELECTROMANCY", defense = 8, baseXp = 120, moveset = "mirror_doppel"),
+        "shadow of the knight" to EnemyCodexEntry(family = "VOID", selfElement = "PHYSICAL", defense = 10, baseXp = 110, moveset = "shadow_knight"),
+        "shadow of the warden" to EnemyCodexEntry(family = "VOID", selfElement = "NATURE", defense = 8, baseXp = 110, moveset = "shadow_warden"),
+        "shadow of the blade" to EnemyCodexEntry(family = "VOID", selfElement = "SHADOW", defense = 8, baseXp = 110, moveset = "shadow_blade"),
+        "shadow of the invocator" to EnemyCodexEntry(family = "VOID", selfElement = "ELECTROMANCY", defense = 8, baseXp = 120, moveset = "shadow_invocator"),
         "gallery of doubts" to EnemyCodexEntry(family = "SILENCE", selfElement = "SHADOW", defense = 16, baseXp = 120, moveset = "silence_bruiser"),
     )
 

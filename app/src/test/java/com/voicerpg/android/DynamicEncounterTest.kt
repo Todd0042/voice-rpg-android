@@ -15,6 +15,7 @@ import com.voicerpg.android.model.SavedCharacterStats
 import com.voicerpg.android.model.Spell
 import com.voicerpg.android.model.SpellSchool
 import com.voicerpg.android.model.TargetSelection
+import com.voicerpg.android.combat.MovesetTable
 import com.voicerpg.android.viewmodel.CombatViewModel
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -559,5 +560,27 @@ class DynamicEncounterTest {
         assertEquals(400f, projectiles[0].targetY, 0.1f)
         assertEquals(600f, projectiles[1].targetY, 0.1f)
         assertEquals(800f, projectiles[2].targetY, 0.1f)
+    }
+
+    @Test
+    fun testChapter16MirrorGauntletShadowMovesets() {
+        val gauntlet = StoryEncounters.CH16_MIRROR_GAUNTLET
+        viewModel.startEncounter(gauntlet)
+        val decoratedEnemies = viewModel.state.value.enemies
+        assertEquals(5, decoratedEnemies.size)
+
+        // Verify each enemy in the Mirror Gauntlet resolves to a distinct moveset and none have party-wide AoE stun
+        decoratedEnemies.forEach { enemy ->
+            val moveset = MovesetTable.movesetFor(enemy.movesetId)
+            assertNotNull("Moveset for ${enemy.name} (${enemy.movesetId}) must exist", moveset)
+            moveset!!.moves.forEach { move ->
+                if (move.targetRule == "PARTY_AOE") {
+                    assertTrue(
+                        "Move ${move.name} on ${enemy.name} must not be party-wide OVERLOAD stun",
+                        move.applyStatus != "OVERLOAD" && move.applyStatus != "FREEZE"
+                    )
+                }
+            }
+        }
     }
 }

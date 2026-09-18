@@ -76,10 +76,10 @@
     { "name":"Nullifier Warden",       "family":"SILENCE",   "selfElement":"PHYSICAL", "role":"Vanguard", "hp":380,  "atk":26, "speed":48, "defense":14, "baseXp":90,  "moveset":"silence_bruiser", "variants":2 },
     { "name":"Nullifier Sibilant",     "family":"SILENCE",   "selfElement":"PHYSICAL", "role":"Sniper",   "hp":300,  "atk":24, "speed":64, "defense":8,  "baseXp":80,  "moveset":"silence_sniper" },
     { "name":"Vestibule Archivist",    "family":"SILENCE",   "selfElement":"SHADOW",   "role":"Occultist","hp":340,  "atk":22, "speed":56, "defense":8,  "baseXp":85,  "moveset":"silence_caster" },
-    { "name":"Shadow of the Knight",   "family":"VOID",      "selfElement":"PHYSICAL", "role":"Vanguard", "hp":380,  "atk":26, "speed":52, "defense":10, "baseXp":110, "moveset":"mirror_doppel", "mirrorOf":"cedric" },
-    { "name":"Shadow of the Warden",   "family":"VOID",      "selfElement":"NATURE",   "role":"Sniper",   "hp":330,  "atk":24, "speed":62, "defense":8,  "baseXp":110, "moveset":"mirror_doppel", "mirrorOf":"lyra" },
-    { "name":"Shadow of the Blade",    "family":"VOID",      "selfElement":"SHADOW",   "role":"Sniper",   "hp":330,  "atk":24, "speed":74, "defense":8,  "baseXp":110, "moveset":"mirror_doppel", "mirrorOf":"zephyr" },
-    { "name":"Shadow of the Invocator","family":"VOID",      "selfElement":"ELECTROMANCY","role":"Occultist","hp":360,"atk":26, "speed":58, "defense":8, "baseXp":120, "moveset":"mirror_doppel", "mirrorOf":"hero" },
+    { "name":"Shadow of the Knight",   "family":"VOID",      "selfElement":"PHYSICAL", "role":"Vanguard", "hp":380,  "atk":26, "speed":52, "defense":10, "baseXp":110, "moveset":"shadow_knight", "mirrorOf":"cedric" },
+    { "name":"Shadow of the Warden",   "family":"VOID",      "selfElement":"NATURE",   "role":"Sniper",   "hp":330,  "atk":24, "speed":62, "defense":8,  "baseXp":110, "moveset":"shadow_warden", "mirrorOf":"lyra" },
+    { "name":"Shadow of the Blade",    "family":"VOID",      "selfElement":"SHADOW",   "role":"Sniper",   "hp":330,  "atk":24, "speed":74, "defense":8,  "baseXp":110, "moveset":"shadow_blade", "mirrorOf":"zephyr" },
+    { "name":"Shadow of the Invocator","family":"VOID",      "selfElement":"ELECTROMANCY","role":"Occultist","hp":360,"atk":26, "speed":58, "defense":8, "baseXp":120, "moveset":"shadow_invocator", "mirrorOf":"hero" },
     { "name":"Gallery of Doubts",      "family":"SILENCE",   "selfElement":"SHADOW",   "role":"Vanguard", "hp":420,  "atk":22, "speed":40, "defense":16, "baseXp":120, "moveset":"silence_bruiser" }
   ]
 }

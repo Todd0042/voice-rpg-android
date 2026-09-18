@@ -113,8 +113,28 @@
     ]},
     "mirror_doppel": { "moves": [
       { "name":"Mimic Strike",  "school":"PHYSICAL", "kind":"BASIC", "powerMult":1.0, "targetRule":"SINGLE_RANDOM",   "weight":5 },
-      { "name":"Echo Incantation","school":"ELECTROMANCY","kind":"AOE","powerMult":0.7,"targetRule":"PARTY_AOE",      "applyStatus":"OVERLOAD", "cooldownTurns":4, "weight":3 }
-    ], "_":"school mirrors the original party member it doubles (mirrorOf)" },
+      { "name":"Echo Incantation","school":"ELECTROMANCY","kind":"AOE","powerMult":0.7,"targetRule":"PARTY_AOE",      "applyStatus":"WEAKEN", "cooldownTurns":4, "weight":3 }
+    ], "_":"generic mirror fallback; shadows use dedicated archetypes below" },
+    "shadow_knight": { "moves": [
+      { "name":"Holy Cleave",   "school":"HOLY",     "kind":"BASIC", "powerMult":1.0, "targetRule":"SINGLE_RANDOM",   "weight":5 },
+      { "name":"Radiant Smite", "school":"HOLY",     "kind":"HEAVY", "powerMult":1.4, "targetRule":"SINGLE_LOWEST_HP","cooldownTurns":3, "weight":3 },
+      { "name":"Petrified Aegis","school":"HOLY",    "kind":"BUFF",  "powerMult":0.0, "targetRule":"SELF",            "applyStatus":"GUARD", "cooldownTurns":4, "weight":2 }
+    ]},
+    "shadow_warden": { "moves": [
+      { "name":"Briar Shot",    "school":"NATURE",   "kind":"BASIC", "powerMult":1.0, "targetRule":"SINGLE_RANDOM",   "weight":5 },
+      { "name":"Snare of Doubt","school":"NATURE",   "kind":"HEAVY", "powerMult":1.2, "targetRule":"SINGLE_RANDOM",   "applyStatus":"ROOT", "cooldownTurns":3, "weight":3 },
+      { "name":"Shadow Bloom",  "school":"NATURE",   "kind":"BUFF",  "powerMult":0.0, "targetRule":"SELF",            "applyStatus":"BLESS", "cooldownTurns":4, "weight":2 }
+    ]},
+    "shadow_blade": { "moves": [
+      { "name":"Shadow Slash",  "school":"SHADOW",   "kind":"BASIC", "powerMult":1.0, "targetRule":"SINGLE_RANDOM",   "weight":5 },
+      { "name":"Severing Cut",  "school":"SHADOW",   "kind":"HEAVY", "powerMult":1.5, "targetRule":"SINGLE_LOWEST_HP","applyStatus":"BLEED", "cooldownTurns":3, "weight":3 },
+      { "name":"Shadow Step",   "school":"SHADOW",   "kind":"BASIC", "powerMult":1.1, "targetRule":"SINGLE_RANDOM",   "cooldownTurns":2, "weight":2 }
+    ]},
+    "shadow_invocator": { "moves": [
+      { "name":"Arcane Bolt",   "school":"ELECTROMANCY","kind":"BASIC","powerMult":1.0,"targetRule":"SINGLE_RANDOM",   "weight":5 },
+      { "name":"Forked Lightning","school":"ELECTROMANCY","kind":"AOE","powerMult":0.7,"targetRule":"PARTY_AOE",      "cooldownTurns":4, "weight":3 },
+      { "name":"Disrupt Pulse", "school":"ELECTROMANCY","kind":"HEAVY","powerMult":1.3,"targetRule":"SINGLE_RANDOM",   "applyStatus":"WEAKEN", "cooldownTurns":3, "weight":2 }
+    ]},
 
     "boss_broodmother": { "moves": [
       { "name":"Bite",          "school":"PHYSICAL", "kind":"BASIC", "powerMult":1.0, "targetRule":"SINGLE_RANDOM",   "applyStatus":"POISON", "weight":5 },
