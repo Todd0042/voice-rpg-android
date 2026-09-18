@@ -150,6 +150,12 @@ data class FloatingCombatText(
     val isHeal: Boolean = false
 )
 
+enum class CombatantFaction {
+    NONE,
+    HERO,
+    ENEMY
+}
+
 enum class CombatPhase {
     ATB_WAITING,
     PLAYER_INPUT,

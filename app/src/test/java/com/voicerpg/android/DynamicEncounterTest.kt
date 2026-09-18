@@ -415,4 +415,82 @@ class DynamicEncounterTest {
         assertTrue(cedric.spells.any { it.id == "aegis_dawn" })
         assertEquals("steady_breath", cedric.spells.last().id)
     }
+
+    @Test
+    fun testEnemiesAttackInQuadPartyEncounterWithinRoundOne() {
+        viewModel.startEncounter(StoryEncounters.CH11_ARCHIVE_ENFORCERS)
+        assertEquals(4, viewModel.state.value.party.size)
+        assertEquals(4, viewModel.state.value.enemies.size)
+
+        var enemyActed = false
+        for (i in 0 until 100) {
+            val phase = viewModel.state.value.phase
+            if (phase == CombatPhase.PLAYER_INPUT) {
+                viewModel.defendActivePartyMember()
+                Thread.sleep(60)
+            } else if (phase == CombatPhase.ENEMY_ACTIONS) {
+                enemyActed = true
+                break
+            } else {
+                viewModel.tickAtb()
+            }
+            if (viewModel.state.value.phase == CombatPhase.ENEMY_ACTIONS) {
+                enemyActed = true
+                break
+            }
+        }
+        assertTrue("Enemy should have acted in 4-hero encounter rather than being turn-starved", enemyActed)
+    }
+
+    @Test
+    fun testTurnInterleavingPreventsHeroStarvationOfReadyEnemies() {
+        val quad = StoryEncounters.createStandardParty().map { it.copy(atbGauge = 1.0f) }
+        val enemy = StoryEncounters.createMinion("dummy", "Dummy Vanguard", hp = 400).copy(atbGauge = 1.0f)
+
+        viewModel.startEncounter(party = quad, enemies = listOf(enemy), environment = BattleEnvironment.DUNGEON)
+
+        // Force ATB tick to resolve turn
+        viewModel.tickAtb()
+        assertTrue(
+            "Initial phase should be PLAYER_INPUT or ENEMY_ACTIONS",
+            viewModel.state.value.phase == CombatPhase.PLAYER_INPUT || viewModel.state.value.phase == CombatPhase.ENEMY_ACTIONS
+        )
+
+        if (viewModel.state.value.phase == CombatPhase.PLAYER_INPUT) {
+            viewModel.defendActivePartyMember()
+            var reachedEnemy = false
+            for (i in 0 until 20) {
+                Thread.sleep(50)
+                if (viewModel.lastActedFaction == com.voicerpg.android.model.CombatantFaction.ENEMY ||
+                    viewModel.state.value.phase == CombatPhase.ENEMY_ACTIONS
+                ) {
+                    reachedEnemy = true
+                    break
+                }
+            }
+            assertTrue("Enemy should get next turn after hero acts when both are ready", reachedEnemy)
+        }
+    }
+
+    @Test
+    fun testEnemyAtbAdvanceScalesWithPartySize() {
+        val soloHero = listOf(
+            PartyMember("hero", "Aethel", "Elementalist", currentHp = 240, maxHp = 240, currentMp = 140, maxMp = 140, spells = StoryEncounters.aethelSpells, speed = 50, atbGauge = 0f)
+        )
+        val enemy1 = StoryEncounters.createMinion("e1", "Minion 1", hp = 200).copy(speed = 50, atbGauge = 0f)
+        viewModel.startEncounter(party = soloHero, enemies = listOf(enemy1), environment = BattleEnvironment.DUNGEON)
+        viewModel.tickAtb()
+        val soloEnemyGauge = viewModel.state.value.enemies[0].atbGauge
+
+        val quadParty = StoryEncounters.createStandardParty().map { it.copy(atbGauge = 0f) }
+        val enemy2 = StoryEncounters.createMinion("e2", "Minion 2", hp = 200).copy(speed = 50, atbGauge = 0f)
+        viewModel.startEncounter(party = quadParty, enemies = listOf(enemy2), environment = BattleEnvironment.DUNGEON)
+        viewModel.tickAtb()
+        val quadEnemyGauge = viewModel.state.value.enemies[0].atbGauge
+
+        assertTrue(
+            "Enemy ATB rate should scale up against 4-hero party (quad=$quadEnemyGauge > solo=$soloEnemyGauge)",
+            quadEnemyGauge > soloEnemyGauge
+        )
+    }
 }

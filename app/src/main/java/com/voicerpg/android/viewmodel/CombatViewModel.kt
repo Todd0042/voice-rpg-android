@@ -27,6 +27,7 @@ import com.voicerpg.android.engine.ResonanceEngine
 import com.voicerpg.android.engine.StoryEncounters
 import com.voicerpg.android.model.BattleEnvironment
 import com.voicerpg.android.model.CharacterStance
+import com.voicerpg.android.model.CombatantFaction
 import com.voicerpg.android.model.CombatPhase
 import com.voicerpg.android.model.EncounterDefinition
 import com.voicerpg.android.model.PlayerCustomization
@@ -169,6 +170,8 @@ class CombatViewModel(
 
     private var atbJob: Job? = null
     private var lastActedHeroId: String? = null
+    var lastActedFaction: CombatantFaction = CombatantFaction.NONE
+        internal set
     private var turnsTakenInRound: Int = 0
 
     internal fun registerTurnCompleted() {
@@ -187,14 +190,14 @@ class CombatViewModel(
     private fun createInitialState(): CombatState {
         // Party members with Speed ratings and starting battle wear (Cedric pre-damaged)
         val initialParty = listOf(
-            PartyMember("hero", "Aethel", "Elementalist", currentHp = 240, maxHp = 240, currentMp = 140, maxMp = 140, spells = aethelSpells, avatarTint = Color(0xFF90CAF9), speed = 70, atbGauge = 0.85f),
-            PartyMember("cedric", "Sir Cedric", "Templar", currentHp = 310, maxHp = 420, currentMp = 80, maxMp = 80, spells = StoryEncounters.cedricStarterSpells, avatarTint = Color(0xFFFFD54F), speed = 55, atbGauge = 0.50f)
+            PartyMember("hero", "Aethel", "Elementalist", currentHp = 240, maxHp = 240, currentMp = 140, maxMp = 140, spells = aethelSpells, avatarTint = Color(0xFF90CAF9), speed = 70, atbGauge = 0.45f),
+            PartyMember("cedric", "Sir Cedric", "Templar", currentHp = 310, maxHp = 420, currentMp = 80, maxMp = 80, spells = StoryEncounters.cedricStarterSpells, avatarTint = Color(0xFFFFD54F), speed = 55, atbGauge = 0.30f)
         )
 
         val initialEnemies = listOf(
-            Enemy("orc", "Blighted Orc", "Vanguard", currentHp = 340, maxHp = 340, baseAttack = 22, isTargeted = false, spriteTint = Color(0xFFEF5350), speed = 50, atbGauge = 0.30f),
+            Enemy("orc", "Blighted Orc", "Vanguard", currentHp = 340, maxHp = 340, baseAttack = 22, isTargeted = false, spriteTint = Color(0xFFEF5350), speed = 50, atbGauge = 0.35f),
             Enemy("archer", "Corrupted Archer", "Sniper", currentHp = 240, maxHp = 240, baseAttack = 25, isTargeted = true, spriteTint = Color(0xFFAB47BC), speed = 65, atbGauge = 0.45f),
-            Enemy("shaman", "Void Shaman", "Occultist", currentHp = 280, maxHp = 280, baseAttack = 20, isTargeted = false, spriteTint = Color(0xFF5C6BC0), speed = 55, atbGauge = 0.20f)
+            Enemy("shaman", "Void Shaman", "Occultist", currentHp = 280, maxHp = 280, baseAttack = 20, isTargeted = false, spriteTint = Color(0xFF5C6BC0), speed = 55, atbGauge = 0.30f)
         )
 
         return CombatState(
@@ -219,10 +222,17 @@ class CombatViewModel(
         }
     }
 
-    private fun tickAtb() {
+    internal fun tickAtb() {
         // 1. Advance gauges strictly for ALIVE combatants (atomic recompute-from-current:
         // mid-tick summons/attacks can never be lost to a stale snapshot write).
         // Statuses modulate ATB speed (chill slows, root nearly halts, overload crawls, bless quickens).
+        val livingHeroes = _state.value.party.count { it.isAlive }
+        val enemyPartyScale = when (livingHeroes) {
+            4 -> 1.30f
+            3 -> 1.15f
+            else -> 1.0f
+        }
+
         _state.update { prev ->
             prev.copy(
                 party = prev.party.map { member ->
@@ -235,7 +245,7 @@ class CombatViewModel(
                 },
                 enemies = prev.enemies.map { enemy ->
                     if (enemy.isAlive) {
-                        val advance = (enemy.speed / 100f) * 0.022f * StatusSystem.speedMult(enemy.statuses)
+                        val advance = (enemy.speed / 100f) * 0.035f * enemyPartyScale * StatusSystem.speedMult(enemy.statuses)
                         enemy.copy(atbGauge = (enemy.atbGauge + advance).coerceAtMost(1.0f))
                     } else {
                         enemy.copy(atbGauge = 0f)
@@ -262,11 +272,17 @@ class CombatViewModel(
         val isHeroTurn = when {
             topHero != null && topEnemy == null -> true
             topHero == null && topEnemy != null -> false
-            topHero != null && topEnemy != null -> topHero.speed >= topEnemy.speed
+            topHero != null && topEnemy != null -> {
+                // Interleave factions when both are ready to prevent starvation
+                if (lastActedFaction == CombatantFaction.HERO) false
+                else if (lastActedFaction == CombatantFaction.ENEMY) true
+                else topHero.speed >= topEnemy.speed
+            }
             else -> false
         }
 
         if (isHeroTurn && topHero != null) {
+            lastActedFaction = CombatantFaction.HERO
             // HERO TURN: PAUSE EVERYTHING until player completes incantation
             val lastIdx = readyHeroes.indexOfFirst { it.id == lastActedHeroId }
             val readyHero = if (lastIdx != -1 && readyHeroes.size > 1) {
@@ -294,6 +310,7 @@ class CombatViewModel(
                 }
             }
         } else if (topEnemy != null) {
+            lastActedFaction = CombatantFaction.ENEMY
             // ENEMY TURN: PAUSE EVERYTHING until enemy executes attack
             executeSingleEnemyAttack(topEnemy)
         }
@@ -417,6 +434,8 @@ class CombatViewModel(
                         enemies = _state.value.enemies.map { if (it.id == enemy.id) it.copy(atbGauge = 0f) else it }
                     )
                     combatNarrator.speak("${enemy.name} is bound and cannot act!", force = true)
+                    lastActedFaction = CombatantFaction.ENEMY
+                    registerTurnCompleted()
                     checkAndTransitionNextTurn()
                     return@launch
                 }
@@ -463,6 +482,8 @@ class CombatViewModel(
                 } else {
                     delay(700)
                 }
+                lastActedFaction = CombatantFaction.ENEMY
+                registerTurnCompleted()
                 checkAndTransitionNextTurn()
                 return@launch
             }
@@ -480,6 +501,8 @@ class CombatViewModel(
                 )
                 combatNarrator.speak("${enemy.name} uses ${move.name}!", force = false)
                 delay(combatDelay())
+                lastActedFaction = CombatantFaction.ENEMY
+                registerTurnCompleted()
                 checkAndTransitionNextTurn()
                 return@launch
             }
@@ -620,6 +643,7 @@ class CombatViewModel(
             }
 
             // Turn transition: check if another combatant is already ready
+            lastActedFaction = CombatantFaction.ENEMY
             registerTurnCompleted()
             checkAndTransitionNextTurn()
         }
@@ -750,13 +774,30 @@ class CombatViewModel(
         val readyHeroes = currentParty.filter { it.isAlive && it.isTurnReady }
         val readyEnemies = currentEnemies.filter { it.isAlive && it.isTurnReady }
 
-        if (readyHeroes.isNotEmpty()) {
+        val shouldEnemyAct = when {
+            readyEnemies.isEmpty() -> false
+            readyHeroes.isEmpty() -> true
+            lastActedFaction == CombatantFaction.HERO -> true // Hero acted last; interleave to ready enemy!
+            lastActedFaction == CombatantFaction.ENEMY -> false // Enemy acted last; interleave to ready hero!
+            else -> {
+                val maxHeroSpeed = readyHeroes.maxOfOrNull { it.speed } ?: 0
+                val maxEnemySpeed = readyEnemies.maxOfOrNull { it.speed } ?: 0
+                maxEnemySpeed > maxHeroSpeed
+            }
+        }
+
+        if (shouldEnemyAct) {
+            val nextEnemy = readyEnemies.maxByOrNull { it.atbGauge } ?: readyEnemies.first()
+            lastActedFaction = CombatantFaction.ENEMY
+            executeSingleEnemyAttack(nextEnemy)
+        } else if (readyHeroes.isNotEmpty()) {
             val lastIdx = readyHeroes.indexOfFirst { it.id == lastActedHeroId }
             val nextHero = if (lastIdx != -1 && readyHeroes.size > 1) {
                 readyHeroes[(lastIdx + 1) % readyHeroes.size]
             } else {
                 readyHeroes.first()
             }
+            lastActedFaction = CombatantFaction.HERO
             if (beginPartyMemberTurn(nextHero.id)) return
             val refreshedParty = _state.value.party
             _state.value = _state.value.copy(
@@ -774,9 +815,6 @@ class CombatViewModel(
                     }
                 }
             }
-        } else if (readyEnemies.isNotEmpty()) {
-            val nextEnemy = readyEnemies.maxByOrNull { it.atbGauge } ?: readyEnemies.first()
-            executeSingleEnemyAttack(nextEnemy)
         } else {
             // Nobody ready yet — resume advancing turn gauges
             _state.value = _state.value.copy(phase = CombatPhase.ATB_WAITING)
@@ -937,6 +975,7 @@ class CombatViewModel(
             } else {
                 delay(300)
             }
+            lastActedFaction = CombatantFaction.HERO
             registerTurnCompleted()
             checkAndTransitionNextTurn()
         }
@@ -1466,6 +1505,7 @@ class CombatViewModel(
             delay(200)
 
             // Strictly Turn-Based Progression: check if next combatant is ready or resume charging
+            lastActedFaction = CombatantFaction.HERO
             registerTurnCompleted()
             checkAndTransitionNextTurn()
         }
@@ -1838,7 +1878,7 @@ class CombatViewModel(
             spells = spells,
             avatarTint = tint,
             speed = heroStats?.speed ?: customization.heroClass.startingSpeed,
-            atbGauge = 0.85f,
+            atbGauge = 0.45f,
             level = heroStats?.level ?: 1,
             xp = heroStats?.xp ?: 0
         )
@@ -1862,7 +1902,7 @@ class CombatViewModel(
                     currentHp = it.maxHp,
                     currentMp = it.maxMp,
                     stance = CharacterStance.READY,
-                    atbGauge = (Random.nextFloat() * 0.4f + 0.3f)
+                    atbGauge = (Random.nextFloat() * 0.3f + 0.25f)
                 )
             }
         } else {
@@ -1940,12 +1980,14 @@ class CombatViewModel(
         spellVfxEngine.projectiles.clear()
         resonanceEngine.noveltyCache.clear()
         turnsTakenInRound = 0
+        lastActedHeroId = null
+        lastActedFaction = CombatantFaction.NONE
 
         _state.value = CombatState(
             phase = CombatPhase.ATB_WAITING,
             roundNumber = 1,
             party = party,
-            enemies = enemies.map { decorateEnemy(it) }.take(6),
+            enemies = enemies.map { decorateEnemy(it).let { e -> e.copy(atbGauge = e.atbGauge.coerceAtLeast(0.25f)) } }.take(6),
             currentEnvironment = environment
         )
         startAtbLoop()
@@ -1954,6 +1996,8 @@ class CombatViewModel(
     fun restartBattle() {
         val currentEnv = _state.value.currentEnvironment
         turnsTakenInRound = 0
+        lastActedHeroId = null
+        lastActedFaction = CombatantFaction.NONE
         _state.value = createInitialState().copy(currentEnvironment = currentEnv)
         particleEmitter.clear()
         spellVfxEngine.projectiles.clear()
