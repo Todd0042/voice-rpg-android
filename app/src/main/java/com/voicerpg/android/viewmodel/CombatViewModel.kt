@@ -1168,7 +1168,7 @@ class CombatViewModel(
             amount = healAmount,
             isHeal = true,
             tierTitle = tier.title,
-            isDefeated = false
+            defeatedNames = emptyList()
         )
 
         activeScope.launch {
@@ -1189,9 +1189,10 @@ class CombatViewModel(
         tier: ResonanceTier
     ) {
         val currentEnemies = _state.value.enemies
+        val isAoe = spell.hitsAll || target == TargetSelection.ALL_ENEMIES
 
         val targetList = when {
-            target == TargetSelection.ALL_ENEMIES -> currentEnemies.filter { it.isAlive }
+            isAoe -> currentEnemies.filter { it.isAlive }
             targetEnemyId != null -> {
                 val matched = currentEnemies.filter { it.id == targetEnemyId && it.isAlive }
                 if (matched.isNotEmpty()) matched
@@ -1225,8 +1226,10 @@ class CombatViewModel(
             } else enemy
         }
 
-        val anyDefeated = updatedEnemies.any { targetList.any { t -> t.id == it.id } && !it.isAlive }
-        val enemyTargetDesc = if (target == TargetSelection.ALL_ENEMIES) "all enemies" else targetList.joinToString(", ") { it.name }
+        val defeatedNames = updatedEnemies
+            .filter { e -> targetList.any { it.id == e.id } && !e.isAlive }
+            .map { it.name }
+        val enemyTargetDesc = if (isAoe) "all foes" else targetList.joinToString(", ") { it.name }
         combatNarrator.narrateSpellCastSuspend(
             heroName = caster.name,
             spellName = spell.name,
@@ -1234,7 +1237,7 @@ class CombatViewModel(
             amount = damage,
             isHeal = false,
             tierTitle = tier.title,
-            isDefeated = anyDefeated
+            defeatedNames = defeatedNames
         )
 
         // If targeted enemy was defeated, auto-retarget the next living enemy

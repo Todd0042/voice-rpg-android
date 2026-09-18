@@ -699,7 +699,7 @@ class CombatNarrator(
         amount: Int,
         isHeal: Boolean,
         tierTitle: String?,
-        isDefeated: Boolean = false,
+        defeatedNames: List<String> = emptyList(),
         onDone: (() -> Unit)? = null
     ) {
         if (!_isEyesFreeMode.value) {
@@ -716,7 +716,11 @@ class CombatNarrator(
             "${prefix}$heroName strikes $targetName with $spellName for $amount damage."
         }
 
-        val defeatText = if (isDefeated) " $targetName is defeated!" else ""
+        val defeatText = when {
+            defeatedNames.isEmpty() -> ""
+            defeatedNames.size == 1 -> " ${defeatedNames.first()} is defeated!"
+            else -> " ${defeatedNames.joinToString(", ")} are defeated!"
+        }
         speak("$action$defeatText", force = true, onDone = onDone)
     }
 
@@ -727,14 +731,14 @@ class CombatNarrator(
         amount: Int,
         isHeal: Boolean,
         tierTitle: String?,
-        isDefeated: Boolean = false,
+        defeatedNames: List<String> = emptyList(),
         timeoutMs: Long = 8000L
     ) {
         if (!_isEyesFreeMode.value) return
         if (tts == null || !isTtsInitialized) return
         withTimeoutOrNull(timeoutMs) {
             suspendCancellableCoroutine<Unit> { cont ->
-                narrateSpellCast(heroName, spellName, targetName, amount, isHeal, tierTitle, isDefeated) {
+                narrateSpellCast(heroName, spellName, targetName, amount, isHeal, tierTitle, defeatedNames) {
                     if (cont.isActive) cont.resume(Unit)
                 }
             }
