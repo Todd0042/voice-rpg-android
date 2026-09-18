@@ -1,11 +1,13 @@
 package com.voicerpg.android.model
 
 import androidx.compose.ui.graphics.Color
+import com.voicerpg.android.combat.StatusInstance
 
 enum class SpellSchool(val displayName: String, val themeColor: Color) {
     PYROMANCY("Pyromancy", Color(0xFFFF5722)),
     CRYOMANCY("Cryomancy", Color(0xFF00E5FF)),
     ELECTROMANCY("Electromancy", Color(0xFFE040FB)),
+    NATURE("Nature", Color(0xFF66BB6A)),
     HOLY("Holy Restoration", Color(0xFFFFD700)),
     SHADOW("Shadow Arts", Color(0xFF7C4DFF)),
     PHYSICAL("Martial", Color(0xFFCFD8DC))
@@ -20,7 +22,10 @@ data class Spell(
     val isHeal: Boolean = false,
     val hitsAll: Boolean = false,
     val description: String,
-    val exampleChant: String
+    val exampleChant: String,
+    val status: String? = null,
+    val lifesteal: Boolean = false,
+    val isGuard: Boolean = false
 )
 
 enum class CharacterStance {
@@ -43,7 +48,12 @@ data class PartyMember(
     val stance: CharacterStance = CharacterStance.READY,
     val avatarTint: Color = Color(0xFF4FC3F7),
     val speed: Int = 60,
-    val atbGauge: Float = 0f
+    val atbGauge: Float = 0f,
+    val level: Int = 1,
+    val xp: Int = 0,
+    val defense: Int = 0,
+    val statuses: List<StatusInstance> = emptyList(),
+    val isGuarding: Boolean = false
 ) {
     val isAlive: Boolean get() = currentHp > 0 && stance != CharacterStance.DEAD
     val isTurnReady: Boolean get() = isAlive && atbGauge >= 1.0f
@@ -64,7 +74,14 @@ data class Enemy(
     val isDamagedFlash: Boolean = false,
     val spriteTint: Color = Color(0xFFE57373),
     val speed: Int = 50,
-    val atbGauge: Float = 0f
+    val atbGauge: Float = 0f,
+    val family: String = "FLESH",
+    val selfElement: String = "",
+    val defense: Int = 0,
+    val xpReward: Int = 60,
+    val movesetId: String = "",
+    val statuses: List<StatusInstance> = emptyList(),
+    val moveCooldowns: Map<String, Int> = emptyMap()
 ) {
     val isAlive: Boolean get() = currentHp > 0
     val isTurnReady: Boolean get() = isAlive && atbGauge >= 1.0f

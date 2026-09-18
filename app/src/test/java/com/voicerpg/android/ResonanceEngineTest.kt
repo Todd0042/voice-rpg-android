@@ -140,8 +140,8 @@ class ResonanceEngineTest {
         assertTrue(intentCedric.spell.isHeal)
 
         val lyraSpells = listOf(
-            Spell("soothing_rain", "Soothing Rain", SpellSchool.HOLY, 55, 18, true, true, "Heal", "Soothing rain party"),
-            Spell("briar_entangle", "Briar Entangle", SpellSchool.HOLY, 52, 12, false, false, "Snare", "Briar archer")
+            Spell("soothing_rain", "Soothing Rain", SpellSchool.NATURE, 55, 18, true, true, "Heal", "Soothing rain party"),
+            Spell("briar_entangle", "Briar Entangle", SpellSchool.NATURE, 52, 12, false, false, "Snare", "Briar archer")
         )
         val intentLyra = IntentParser.parse("Spirits of the grove grant soothing rain upon our party", lyraSpells)
         assertEquals("soothing_rain", intentLyra.spell.id)
@@ -231,8 +231,8 @@ class ResonanceEngineTest {
             Spell("holy_smite", "Holy Smite", SpellSchool.HOLY, 70, 14, false, false, "Smite", "Smite"),
             Spell("lay_on_hands", "Lay on Hands", SpellSchool.HOLY, 110, 16, true, false, "Heal", "Mend"),
             Spell("shield_wall", "Shield Wall", SpellSchool.PHYSICAL, 40, 10, false, true, "Shield", "Shield"),
-            Spell("soothing_rain", "Soothing Rain", SpellSchool.HOLY, 65, 18, true, true, "Rain", "Rain"),
-            Spell("briar_entangle", "Briar Entangle", SpellSchool.HOLY, 60, 12, false, false, "Snare", "Briar"),
+            Spell("soothing_rain", "Soothing Rain", SpellSchool.NATURE, 65, 18, true, true, "Rain", "Rain"),
+            Spell("briar_entangle", "Briar Entangle", SpellSchool.NATURE, 60, 12, false, false, "Snare", "Briar"),
             Spell("shadow_strike", "Shadow Strike", SpellSchool.SHADOW, 75, 12, false, false, "Shadow", "Strike"),
             Spell("venom_flurry", "Venom Flurry", SpellSchool.SHADOW, 50, 15, false, true, "Venom", "Flurry")
         )

@@ -29,8 +29,14 @@ object SpellThesaurus {
         "radiance", "radiant", "divine", "seraph", "celestial", "dawn",
         "sanctify", "blessing", "blessed", "mend", "mending", "aegis",
         "purity", "pure", "heal", "healing", "grace", "light", "halo",
-        "restorative", "prayer", "cure", "sanctuary", "smite", "soothing",
-        "rain", "grove", "nature", "rejuvenate", "briar", "thorns", "vines"
+        "restorative", "prayer", "cure", "sanctuary", "smite", "soothing"
+    )
+
+    private val NATURE_ROOTS = setOf(
+        "grove", "briar", "thorns", "thorn", "vines", "vine", "rain", "nature",
+        "rejuvenate", "verdant", "root", "roots", "canopy", "bloom", "petal",
+        "moss", "fern", "blossom", "undergrowth", "bark", "seed", "sprout",
+        "wildwood", "pollen", "bramble", "nettle", "willow", "oaken", "earthen"
     )
 
     private val SHADOW_ROOTS = setOf(
@@ -49,6 +55,7 @@ object SpellThesaurus {
         SpellSchool.PYROMANCY -> PYROMANCY_ROOTS
         SpellSchool.CRYOMANCY -> CRYOMANCY_ROOTS
         SpellSchool.ELECTROMANCY -> ELECTROMANCY_ROOTS
+        SpellSchool.NATURE -> NATURE_ROOTS
         SpellSchool.HOLY -> HOLY_ROOTS
         SpellSchool.SHADOW -> SHADOW_ROOTS
         SpellSchool.PHYSICAL -> MARTIAL_ROOTS

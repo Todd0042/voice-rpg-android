@@ -376,6 +376,7 @@ fun ResonanceConsole(
                     SpellSchool.PYROMANCY -> "🔥"
                     SpellSchool.CRYOMANCY -> "❄️"
                     SpellSchool.ELECTROMANCY -> "⚡"
+                    SpellSchool.NATURE -> "🌿"
                     SpellSchool.HOLY -> if (spell.isHeal) "💚" else "⚔️"
                     SpellSchool.SHADOW -> "🗡️"
                     SpellSchool.PHYSICAL -> "🛡️"

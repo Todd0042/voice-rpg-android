@@ -1,0 +1,34 @@
+{
+  "_note": "SINGLE SOURCE OF TRUTH for spells. Supersedes the 3 drifted lists (CombatViewModel.kt:78-99, ClassSpellLibrary.kt, StoryEncounters.kt:14-36). basePower values below are canonical (chosen from the divergent copies). New fields: lifesteal (fraction of damage healed to caster), status (ref -> status-catalog.json), tierGatedStatus, unlockLevel, role. Lyra's school corrected HOLY -> NATURE. shield_wall reclassified as a party GUARD support (no damage).",
+  "spells": [
+    { "id": "fireball", "name": "Fireball", "school": "PYROMANCY", "basePower": 65, "mpCost": 15, "role": "DAMAGE", "status": "BURN", "unlockLevel": 1, "owners": ["hero/elementalist","story"], "exampleChant": "Roaring sphere of flame" },
+    { "id": "frost_spike", "name": "Frost Spike", "school": "CRYOMANCY", "basePower": 58, "mpCost": 12, "role": "DAMAGE", "status": "CHILL", "unlockLevel": 1, "owners": ["hero/elementalist","story"], "exampleChant": "Glacial frost spike the orc!" },
+    { "id": "chain_lightning", "name": "Chain Lightning", "school": "ELECTROMANCY", "basePower": 48, "mpCost": 20, "role": "DAMAGE", "hitsAll": true, "status": "OVERLOAD", "unlockLevel": 1, "owners": ["hero/elementalist","story"], "exampleChant": "Tempest lightning strike all enemies!" },
+
+    { "id": "holy_smite", "name": "Holy Smite", "school": "HOLY", "basePower": 70, "mpCost": 14, "role": "DAMAGE", "status": null, "unlockLevel": 1, "owners": ["cedric/templar"], "exampleChant": "By celestial dawn, smite the heretic!" },
+    { "id": "lay_on_hands", "name": "Lay on Hands", "school": "HOLY", "basePower": 110, "mpCost": 16, "role": "HEAL", "targetHint": "SINGLE_OR_LOWEST", "affinityImmune": true, "unlockLevel": 1, "owners": ["cedric/templar"], "exampleChant": "Sacred radiance mend Cedric's wounds!" },
+    { "id": "shield_wall", "name": "Shield Wall", "school": "PHYSICAL", "basePower": 0, "mpCost": 10, "role": "SUPPORT", "hitsAll": true, "status": "GUARD", "affinityImmune": true, "unlockLevel": 1, "owners": ["cedric/templar"], "_": "was coded as a 40/50-power damage spell; now a party-wide GUARD (mitigation+taunt)", "exampleChant": "Raise the golden aegis against the horde!" },
+    { "id": "aegis_dawn", "name": "Aegis of the Dawn", "school": "HOLY", "basePower": 150, "mpCost": 25, "role": "HEAL", "hitsAll": true, "status": "GUARD", "affinityImmune": true, "unlockLevel": 6, "owners": ["cedric/templar"], "exampleChant": "By celestial dawn, raise the morning star!" },
+
+    { "id": "soothing_rain", "name": "Soothing Rain", "school": "NATURE", "basePower": 65, "mpCost": 18, "role": "HEAL", "hitsAll": true, "affinityImmune": true, "unlockLevel": 1, "owners": ["lyra/warden"], "exampleChant": "Spirits of the grove, grant soothing rain upon our party!" },
+    { "id": "briar_entangle", "name": "Briar Entangle", "school": "NATURE", "basePower": 60, "mpCost": 12, "role": "DAMAGE", "status": "ROOT", "unlockLevel": 1, "owners": ["lyra/warden"], "exampleChant": "Thorny vines and briars ensnare that archer!" },
+    { "id": "verdant_cataclysm", "name": "Verdant Cataclysm", "school": "NATURE", "basePower": 140, "mpCost": 25, "role": "DAMAGE", "hitsAll": true, "status": "POISON", "unlockLevel": 6, "owners": ["lyra/warden"], "exampleChant": "Ancient roots of the deep earth awaken!" },
+
+    { "id": "shadow_strike", "name": "Shadow Strike", "school": "SHADOW", "basePower": 75, "mpCost": 12, "role": "DAMAGE", "critBias": 0.25, "status": null, "unlockLevel": 1, "owners": ["zephyr/shadowblade"], "exampleChant": "From the silent umbra, strike the shaman's throat!" },
+    { "id": "venom_flurry", "name": "Venom Flurry", "school": "SHADOW", "basePower": 50, "mpCost": 15, "role": "DAMAGE", "hitsAll": true, "status": "POISON", "unlockLevel": 1, "owners": ["zephyr/shadowblade"], "exampleChant": "Abyssal venom coat my blades!" },
+    { "id": "umbral_siphon", "name": "Umbral Siphon", "school": "SHADOW", "basePower": 60, "mpCost": 14, "role": "DRAIN", "lifesteal": 1.0, "status": "CORRODE", "unlockLevel": 1, "owners": ["zephyr/shadowblade"], "_": "was isHeal-only (healed an ally, never damaged a foe); now drains: damages target and heals caster for 100% of damage", "exampleChant": "Abyssal siphon mend Zephyr's wounds!" },
+
+    { "id": "flame_strike", "name": "Flame Strike", "school": "PYROMANCY", "basePower": 72, "mpCost": 14, "role": "DAMAGE", "status": "BURN", "unlockLevel": 1, "owners": ["hero/battlemage"], "exampleChant": "Searing flame strike the orc!" },
+    { "id": "arcane_barrier", "name": "Arcane Barrier", "school": "PHYSICAL", "basePower": 45, "mpCost": 10, "role": "SUPPORT", "hitsAll": true, "status": "GUARD", "affinityImmune": true, "unlockLevel": 1, "owners": ["hero/battlemage"], "exampleChant": "Arcane barrier protect our line!" },
+    { "id": "thunder_cleave", "name": "Thunder Cleave", "school": "ELECTROMANCY", "basePower": 60, "mpCost": 16, "role": "DAMAGE", "hitsAll": true, "status": "OVERLOAD", "unlockLevel": 1, "owners": ["hero/battlemage"], "exampleChant": "Thunder cleave shatter the horde!" },
+
+    { "id": "temporal_stasis", "name": "Temporal Stasis", "school": "ELECTROMANCY", "basePower": 55, "mpCost": 12, "role": "DAMAGE", "status": "OVERLOAD", "unlockLevel": 1, "owners": ["hero/chanter"], "exampleChant": "Temporal stasis freeze the archer!" },
+    { "id": "haste_cadence", "name": "Haste Cadence", "school": "HOLY", "basePower": 65, "mpCost": 15, "role": "HEAL", "status": "BLESS", "hitsAll": true, "affinityImmune": true, "unlockLevel": 1, "owners": ["hero/chanter"], "exampleChant": "Swift rhythm hasten our fellowship!" },
+    { "id": "resonant_surge", "name": "Resonant Surge", "school": "PYROMANCY", "basePower": 70, "mpCost": 18, "role": "DAMAGE", "hitsAll": true, "status": "BURN", "unlockLevel": 1, "owners": ["hero/chanter"], "exampleChant": "Harmonic surge ignite all enemies!" },
+
+    { "id": "shadow_spike", "name": "Shadow Spike", "school": "SHADOW", "basePower": 78, "mpCost": 12, "role": "DAMAGE", "status": "CORRODE", "unlockLevel": 1, "owners": ["hero/shadowweaver"], "exampleChant": "Abyssal shadow spike the shaman!" },
+    { "id": "void_drain", "name": "Void Drain", "school": "SHADOW", "basePower": 55, "mpCost": 14, "role": "DRAIN", "lifesteal": 1.0, "status": "POISON", "unlockLevel": 1, "owners": ["hero/shadowweaver"], "exampleChant": "Void siphon drain their life essence!" },
+    { "id": "umbral_veil", "name": "Umbral Veil", "school": "SHADOW", "basePower": 52, "mpCost": 16, "role": "DAMAGE", "hitsAll": true, "status": "CORRODE", "unlockLevel": 1, "owners": ["hero/shadowweaver"], "exampleChant": "Veil of night consume the battlefield!" }
+  ],
+  "genericAttack": { "id": "strike", "name": "Strike", "school": "PHYSICAL", "basePower": 45, "mpCost": 0, "role": "DAMAGE", "status": "BLEED", "unlockLevel": 1, "_": "replaces IntentParser.defaultFallbackSpell(); always free basic attack so a spell-less turn exists" }
+}

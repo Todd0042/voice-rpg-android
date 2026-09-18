@@ -105,6 +105,7 @@ class MainActivity : ComponentActivity() {
 
             LaunchedEffect(storyState.activeEncounter) {
                 storyState.activeEncounter?.let { encounter ->
+                    combatViewModel.applySavedStats(storyState.partyStats)
                     combatViewModel.startEncounter(encounter)
                 }
             }

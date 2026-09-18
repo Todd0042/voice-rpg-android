@@ -110,8 +110,8 @@ data class SavedCharacterStats(
                 currentMp = member.currentMp,
                 maxMp = member.maxMp,
                 speed = member.speed,
-                level = 1,
-                xp = 0,
+                level = member.level,
+                xp = member.xp,
                 spellIds = member.spells.map { it.id }
             )
         }

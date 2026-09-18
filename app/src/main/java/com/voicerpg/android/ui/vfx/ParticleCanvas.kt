@@ -54,6 +54,7 @@ class ParticleEmitter {
                 SpellSchool.PYROMANCY -> -0.15f // embers float up
                 SpellSchool.CRYOMANCY -> 0.18f  // hail/frost falls down
                 SpellSchool.ELECTROMANCY -> 0.0f
+                SpellSchool.NATURE -> 0.10f // leaves and briars drift down
                 SpellSchool.HOLY -> -0.10f
                 SpellSchool.SHADOW -> -0.05f
                 SpellSchool.PHYSICAL -> 0.25f
@@ -121,6 +122,16 @@ class ParticleEmitter {
                     Color(0xFF7C4DFF),
                     Color(0xFFB388FF),
                     Color(0xFFFFFFFF)
+                )
+                palette.random()
+            }
+            SpellSchool.NATURE -> {
+                val palette = listOf(
+                    Color(0xFF66BB6A),
+                    Color(0xFFA5D6A7),
+                    Color(0xFF2E7D32),
+                    Color(0xFF9CCC65),
+                    Color(0xFFE8F5E9)
                 )
                 palette.random()
             }

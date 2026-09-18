@@ -347,8 +347,23 @@ class StoryViewModel(
 
         var updatedPartyStats = _state.value.partyStats
         if (newNode.setFlagOnEnter?.endsWith("_rest_complete") == true) {
-            updatedPartyStats = updatedPartyStats.map { member ->
-                member.copy(currentHp = member.maxHp, currentMp = member.maxMp)
+            val isStoryMilestoneRest = newNode.setFlagOnEnter == "substory_rest_complete"
+            updatedPartyStats = if (isStoryMilestoneRest) {
+                // Camp Midnight Vigil milestone: the one true full restoration.
+                updatedPartyStats.map { member ->
+                    member.copy(currentHp = member.maxHp, currentMp = member.maxMp)
+                }
+            } else {
+                // Ordinary camp rest: recover HALF of missing HP/MP (attrition keeps healing
+                // and caution meaningful); a fallen comrade is revived at half vitals.
+                updatedPartyStats.map { member ->
+                    val missingHp = (member.maxHp - member.currentHp).coerceAtLeast(0)
+                    val missingMp = (member.maxMp - member.currentMp).coerceAtLeast(0)
+                    member.copy(
+                        currentHp = if (member.currentHp <= 0) member.maxHp / 2 else (member.currentHp + missingHp / 2).coerceAtMost(member.maxHp),
+                        currentMp = if (member.currentMp <= 0) member.maxMp / 2 else (member.currentMp + missingMp / 2).coerceAtMost(member.maxMp)
+                    )
+                }
             }
         }
 
@@ -667,6 +682,8 @@ class StoryViewModel(
                 currentMp = member.currentMp,
                 maxMp = member.maxMp,
                 speed = member.speed,
+                level = member.level,
+                xp = member.xp,
                 spellIds = member.spells.map { it.id }
             )
         }

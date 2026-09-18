@@ -700,6 +700,7 @@ class CombatNarrator(
         isHeal: Boolean,
         tierTitle: String?,
         defeatedNames: List<String> = emptyList(),
+        effectNote: String? = null,
         onDone: (() -> Unit)? = null
     ) {
         if (!_isEyesFreeMode.value) {
@@ -715,13 +716,14 @@ class CombatNarrator(
         } else {
             "${prefix}$heroName strikes $targetName with $spellName for $amount damage."
         }
+        val effectText = if (effectNote.isNullOrBlank()) "" else " $effectNote"
 
         val defeatText = when {
             defeatedNames.isEmpty() -> ""
             defeatedNames.size == 1 -> " ${defeatedNames.first()} is defeated!"
             else -> " ${defeatedNames.joinToString(", ")} are defeated!"
         }
-        speak("$action$defeatText", force = true, onDone = onDone)
+        speak("$action$effectText$defeatText", force = true, onDone = onDone)
     }
 
     suspend fun narrateSpellCastSuspend(
@@ -732,13 +734,14 @@ class CombatNarrator(
         isHeal: Boolean,
         tierTitle: String?,
         defeatedNames: List<String> = emptyList(),
+        effectNote: String? = null,
         timeoutMs: Long = 8000L
     ) {
         if (!_isEyesFreeMode.value) return
         if (tts == null || !isTtsInitialized) return
         withTimeoutOrNull(timeoutMs) {
             suspendCancellableCoroutine<Unit> { cont ->
-                narrateSpellCast(heroName, spellName, targetName, amount, isHeal, tierTitle, defeatedNames) {
+                narrateSpellCast(heroName, spellName, targetName, amount, isHeal, tierTitle, defeatedNames, effectNote) {
                     if (cont.isActive) cont.resume(Unit)
                 }
             }
@@ -750,14 +753,22 @@ class CombatNarrator(
         targetHeroName: String,
         damage: Int,
         isFallen: Boolean = false,
+        moveName: String? = null,
+        statusNote: String? = null,
         onDone: (() -> Unit)? = null
     ) {
         if (!_isEyesFreeMode.value) {
             onDone?.invoke()
             return
         }
+        val actionText = if (!moveName.isNullOrBlank()) {
+            "$enemyName unleashes $moveName on $targetHeroName for $damage damage."
+        } else {
+            "$enemyName attacks $targetHeroName for $damage damage."
+        }
+        val statusText = if (!statusNote.isNullOrBlank()) " $targetHeroName is $statusNote!" else ""
         val fallenDesc = if (isFallen) " $targetHeroName has fallen!" else ""
-        speak("$enemyName attacks $targetHeroName for $damage damage.$fallenDesc", force = true, onDone = onDone)
+        speak("$actionText$statusText$fallenDesc", force = true, onDone = onDone)
     }
 
     suspend fun narrateEnemyActionSuspend(
@@ -765,13 +776,15 @@ class CombatNarrator(
         targetHeroName: String,
         damage: Int,
         isFallen: Boolean = false,
+        moveName: String? = null,
+        statusNote: String? = null,
         timeoutMs: Long = 8000L
     ) {
         if (!_isEyesFreeMode.value) return
         if (tts == null || !isTtsInitialized) return
         withTimeoutOrNull(timeoutMs) {
             suspendCancellableCoroutine<Unit> { cont ->
-                narrateEnemyAction(enemyName, targetHeroName, damage, isFallen) {
+                narrateEnemyAction(enemyName, targetHeroName, damage, isFallen, moveName, statusNote) {
                     if (cont.isActive) cont.resume(Unit)
                 }
             }

@@ -10,29 +10,30 @@ import com.voicerpg.android.model.SpellSchool
 
 object StoryEncounters {
 
-    // Party spell sets
+    // Party spell sets (single source of truth; mirrors docs/combat-design/data/spells.json)
     val aethelSpells = listOf(
-        Spell("fireball", "Fireball", SpellSchool.PYROMANCY, basePower = 65, mpCost = 15, description = "Roaring sphere of flame", exampleChant = "Fireball archer"),
-        Spell("frost_spike", "Frost Spike", SpellSchool.CRYOMANCY, basePower = 58, mpCost = 12, description = "Piercing icicle", exampleChant = "Glacial frost spike the orc!"),
-        Spell("chain_lightning", "Chain Lightning", SpellSchool.ELECTROMANCY, basePower = 55, mpCost = 20, hitsAll = true, description = "Arcing lightning storm", exampleChant = "Tempest lightning strike all enemies!")
+        Spell("fireball", "Fireball", SpellSchool.PYROMANCY, basePower = 65, mpCost = 15, status = "BURN", description = "Roaring sphere of flame", exampleChant = "Fireball archer"),
+        Spell("frost_spike", "Frost Spike", SpellSchool.CRYOMANCY, basePower = 58, mpCost = 12, status = "CHILL", description = "Piercing icicle", exampleChant = "Glacial frost spike the orc!"),
+        Spell("chain_lightning", "Chain Lightning", SpellSchool.ELECTROMANCY, basePower = 55, mpCost = 20, hitsAll = true, status = "OVERLOAD", description = "Arcing lightning storm", exampleChant = "Tempest lightning strike all enemies!")
     )
 
     val cedricSpells = listOf(
         Spell("holy_smite", "Holy Smite", SpellSchool.HOLY, basePower = 70, mpCost = 14, description = "Righteous celestial blow", exampleChant = "By celestial dawn, smite the heretic!"),
         Spell("lay_on_hands", "Lay on Hands", SpellSchool.HOLY, basePower = 110, mpCost = 16, isHeal = true, description = "Restorative blessing", exampleChant = "Sacred radiance mend Cedric's wounds!"),
-        Spell("shield_wall", "Shield Wall", SpellSchool.PHYSICAL, basePower = 50, mpCost = 10, hitsAll = true, description = "Vanguard protection", exampleChant = "Raise the golden aegis against the horde!")
+        Spell("shield_wall", "Shield Wall", SpellSchool.PHYSICAL, basePower = 50, mpCost = 10, hitsAll = true, isGuard = true, status = "GUARD", description = "Vanguard protection", exampleChant = "Raise the golden aegis against the horde!"),
+        Spell("aegis_dawn", "Aegis of the Dawn", SpellSchool.HOLY, basePower = 150, mpCost = 25, isHeal = true, hitsAll = true, isGuard = true, status = "GUARD", description = "Radiant invulnerability barrier", exampleChant = "By celestial dawn, raise the morning star!")
     )
 
     val lyraSpells = listOf(
-        Spell("soothing_rain", "Soothing Rain", SpellSchool.HOLY, basePower = 65, mpCost = 18, isHeal = true, hitsAll = true, description = "Grove restorative mist", exampleChant = "Spirits of the grove, grant soothing rain upon our party!"),
-        Spell("briar_entangle", "Briar Entangle", SpellSchool.HOLY, basePower = 60, mpCost = 12, description = "Thorny vines snare the foe", exampleChant = "Thorny vines and briars ensnare that archer!"),
-        Spell("verdant_cataclysm", "Verdant Cataclysm", SpellSchool.HOLY, basePower = 50, mpCost = 25, hitsAll = true, description = "Cataclysmic grove-cry shook the whole field", exampleChant = "Ancient roots of the deep earth awaken!")
+        Spell("soothing_rain", "Soothing Rain", SpellSchool.NATURE, basePower = 65, mpCost = 18, isHeal = true, hitsAll = true, description = "Grove restorative mist", exampleChant = "Spirits of the grove, grant soothing rain upon our party!"),
+        Spell("briar_entangle", "Briar Entangle", SpellSchool.NATURE, basePower = 60, mpCost = 12, status = "ROOT", description = "Thorny vines snare the foe", exampleChant = "Thorny vines and briars ensnare that archer!"),
+        Spell("verdant_cataclysm", "Verdant Cataclysm", SpellSchool.NATURE, basePower = 50, mpCost = 25, hitsAll = true, status = "POISON", description = "Cataclysmic grove-cry shook the whole field", exampleChant = "Ancient roots of the deep earth awaken!")
     )
 
     val zephyrSpells = listOf(
         Spell("shadow_strike", "Shadow Strike", SpellSchool.SHADOW, basePower = 75, mpCost = 12, description = "Lethal strike from behind", exampleChant = "From the silent umbra, strike the shaman's throat!"),
-        Spell("venom_flurry", "Venom Flurry", SpellSchool.SHADOW, basePower = 52, mpCost = 15, hitsAll = true, description = "Poisoned twin daggers", exampleChant = "Abyssal venom coat my blades!"),
-        Spell("umbral_siphon", "Umbral Siphon", SpellSchool.SHADOW, basePower = 60, mpCost = 14, isHeal = true, description = "Siphons shadow essence to mend wounds", exampleChant = "Abyssal shadow mend Zephyr's wounds!")
+        Spell("venom_flurry", "Venom Flurry", SpellSchool.SHADOW, basePower = 52, mpCost = 15, hitsAll = true, status = "POISON", description = "Poisoned twin daggers", exampleChant = "Abyssal venom coat my blades!"),
+        Spell("umbral_siphon", "Umbral Siphon", SpellSchool.SHADOW, basePower = 60, mpCost = 14, status = "CORRODE", lifesteal = true, description = "Siphons shadow essence to mend wounds", exampleChant = "Abyssal shadow siphon drain the shaman!")
     )
 
     fun createDuoParty(): List<PartyMember> = listOf(
