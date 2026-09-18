@@ -99,6 +99,9 @@ class CombatNarrator(
     private val _isCharacterPitchEnabled = MutableStateFlow(true)
     val isCharacterPitchEnabled: StateFlow<Boolean> = _isCharacterPitchEnabled.asStateFlow()
 
+    private val _isSpeakerAttributionEnabled = MutableStateFlow(true)
+    val isSpeakerAttributionEnabled: StateFlow<Boolean> = _isSpeakerAttributionEnabled.asStateFlow()
+
     private val _isSpeaking = MutableStateFlow(false)
     val isSpeaking: StateFlow<Boolean> = _isSpeaking.asStateFlow()
 
@@ -351,6 +354,15 @@ class CombatNarrator(
         tts?.setSpeechRate(rate)
     }
 
+    fun setSpeakerAttributionEnabled(enabled: Boolean) {
+        _isSpeakerAttributionEnabled.value = enabled
+    }
+
+    fun toggleSpeakerAttribution(): Boolean {
+        _isSpeakerAttributionEnabled.value = !_isSpeakerAttributionEnabled.value
+        return _isSpeakerAttributionEnabled.value
+    }
+
     fun setCharacterPitchEnabled(enabled: Boolean) {
         _isCharacterPitchEnabled.value = enabled
     }
@@ -558,7 +570,7 @@ class CombatNarrator(
         }
 
         val cleanedText = text.replace("...", ". ").trim()
-        val speakerPrefix = if (speaker == DialogueSpeaker.NARRATOR) "" else "${speaker.name} says: "
+        val speakerPrefix = if (speaker == DialogueSpeaker.NARRATOR || !_isSpeakerAttributionEnabled.value) "" else "${speaker.name} says: "
 
         val fullScript = StringBuilder()
         fullScript.append("$speakerPrefix$cleanedText")

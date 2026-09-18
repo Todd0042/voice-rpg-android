@@ -44,6 +44,9 @@ object IntentParser {
             lower.contains("read choices") || lower.contains("toggle choices") || lower.contains("read options") ||
                     lower.contains("toggle options reading") || lower.contains("stop reading choices") -> MetaCommand.TOGGLE_READ_CHOICES
 
+            lower.contains("speaker name") || lower.contains("toggle speaker") || lower.contains("who is speaking") ||
+                    lower.contains("toggle attribution") || lower == "attribution" || lower.contains("announcer says") -> MetaCommand.TOGGLE_SPEAKER_ATTRIBUTION
+
             lower == "options" || lower == "settings" || lower == "menu" || lower.contains("open options") ||
                     lower.contains("open settings") || lower.contains("show options") -> MetaCommand.OPEN_OPTIONS
 

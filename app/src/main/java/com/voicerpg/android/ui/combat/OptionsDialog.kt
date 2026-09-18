@@ -46,6 +46,8 @@ fun OptionsDialog(
     isNarrationEnabled: Boolean,
     isReadChoicesEnabled: Boolean,
     isCharacterPitchEnabled: Boolean,
+    isSpeakerAttributionEnabled: Boolean,
+    onToggleSpeakerAttribution: () -> Unit,
     speechRate: Float,
     isAutoListen: Boolean,
     isChimeMuted: Boolean,
@@ -168,6 +170,18 @@ fun OptionsDialog(
                     checked = isCharacterPitchEnabled,
                     activeColor = Color(0xFFCE93D8),
                     onCheckedChange = { onToggleCharacterPitch() }
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Toggle: Speaker Name Attribution
+                OptionToggleRow(
+                    title = "🗣️ Speaker Names Aloud",
+                    subtitle = "Narrator announces who is talking (\"Sir Cedric says...\"). Off keeps each character's distinct voice, just without the name.",
+                    voiceHint = "Voice command: \"Speaker names\" or \"Who is speaking\"",
+                    checked = isSpeakerAttributionEnabled,
+                    activeColor = Color(0xFFFFB74D),
+                    onCheckedChange = { onToggleSpeakerAttribution() }
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -450,6 +464,7 @@ fun OptionsDialog(
                         VoiceCommandItem(command = "🎧 \"Pocket Mode\"", desc = "Toggles audio-guided combat")
                         VoiceCommandItem(command = "👂 \"Auto Listen\"", desc = "Toggles hands-free turn mic on/off")
                         VoiceCommandItem(command = "🎭 \"Assign Voices\"", desc = "Opens companion voice customization screen")
+                        VoiceCommandItem(command = "🗣️ \"Speaker Names\"", desc = "Toggles \"Sir Cedric says...\" announcements")
                         VoiceCommandItem(command = "⚙️ \"Options\" / \"Close\"", desc = "Opens or closes this settings screen")
                         VoiceCommandItem(command = "❓ \"Help\"", desc = "Spoken audio overview of voice commands")
                     }

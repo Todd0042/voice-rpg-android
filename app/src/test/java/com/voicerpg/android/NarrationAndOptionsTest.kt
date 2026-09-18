@@ -25,6 +25,17 @@ import org.junit.Test
 
 class NarrationAndOptionsTest {
 
+    @org.junit.Test
+    fun speakerAttributionToggleMetaCommandRecognized() {
+        val sayHi = com.voicerpg.android.engine.IntentParser.parse("toggle speaker names", emptyList())
+        org.junit.Assert.assertEquals(com.voicerpg.android.model.MetaCommand.TOGGLE_SPEAKER_ATTRIBUTION, sayHi.metaCommand)
+        val who = com.voicerpg.android.engine.IntentParser.parse("who is speaking", emptyList())
+        org.junit.Assert.assertEquals(com.voicerpg.android.model.MetaCommand.TOGGLE_SPEAKER_ATTRIBUTION, who.metaCommand)
+        val plain = com.voicerpg.android.engine.IntentParser.parse("fireball the orc", emptyList())
+        org.junit.Assert.assertEquals(com.voicerpg.android.model.MetaCommand.NONE, plain.metaCommand)
+    }
+
+
     private lateinit var narrator: CombatNarrator
     private lateinit var speechManager: SpeechManager
     private lateinit var saveManager: SaveManager

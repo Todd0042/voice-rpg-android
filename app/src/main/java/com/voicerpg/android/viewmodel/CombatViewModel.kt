@@ -997,7 +997,7 @@ class CombatViewModel(
 
     fun openOptions() {
         _state.value = _state.value.copy(isOptionsOpen = true)
-        combatNarrator.speak("Options open. Say Pocket Mode, Auto Listen, Help, or Close Options.", force = _state.value.isEyesFreeMode) {
+        combatNarrator.speak("Options open. Say Pocket Mode, Auto Listen, Speaker Names, Help, or Close Options.", force = _state.value.isEyesFreeMode) {
             if (speechManager.isAutoListen.value) {
                 activeScope.launch {
                     delay(100)
@@ -1126,6 +1126,29 @@ class CombatViewModel(
                 val fct = FloatingCombatText(
                     text = if (enabled) "Read Choices: ON 🔢" else "Read Choices: OFF 🔇",
                     color = Color(0xFF80D8FF),
+                    startX = 500f,
+                    startY = 400f
+                )
+                _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts + fct)
+                activeScope.launch {
+                    delay(1500)
+                    _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts.filter { it.id != fct.id })
+                }
+            }
+            MetaCommand.TOGGLE_SPEAKER_ATTRIBUTION -> {
+                val enabled = combatNarrator.toggleSpeakerAttribution()
+                val status = if (enabled) "Speaker names will be announced." else "Speaker names hidden. Voices remain distinct."
+                combatNarrator.speak(status, force = true) {
+                    if (_state.value.phase == CombatPhase.PLAYER_INPUT && speechManager.isAutoListen.value) {
+                        activeScope.launch {
+                            delay(100)
+                            startVoiceListening()
+                        }
+                    }
+                }
+                val fct = FloatingCombatText(
+                    text = if (enabled) "Speaker Names: ON 🗣️" else "Speaker Names: OFF 🗣️",
+                    color = Color(0xFFFFB74D),
                     startX = 500f,
                     startY = 400f
                 )

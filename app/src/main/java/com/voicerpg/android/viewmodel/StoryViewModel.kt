@@ -170,6 +170,7 @@ class StoryViewModel(
             combatNarrator.setReadChoicesEnabled(existingSave.isReadChoicesEnabled)
             combatNarrator.setSpeechRate(existingSave.speechRate)
             combatNarrator.setCharacterPitchEnabled(existingSave.isCharacterPitchEnabled)
+            combatNarrator.setSpeakerAttributionEnabled(existingSave.isSpeakerAttributionEnabled)
             combatNarrator.setVoiceAssignments(existingSave.voiceAssignments)
             speechManager.setAutoListen(existingSave.isAutoListen)
             speechManager.setChimeMuted(existingSave.isChimeMuted)
@@ -710,6 +711,7 @@ class StoryViewModel(
             isReadChoicesEnabled = combatNarrator.isReadChoicesEnabled.value,
             speechRate = combatNarrator.speechRate.value,
             isCharacterPitchEnabled = combatNarrator.isCharacterPitchEnabled.value,
+            isSpeakerAttributionEnabled = combatNarrator.isSpeakerAttributionEnabled.value,
             voiceAssignments = combatNarrator.getVoiceAssignments()
         )
         saveManager.save(updatedSave)

@@ -90,6 +90,7 @@ class MainActivity : ComponentActivity() {
             val isNarrationEnabled by combatNarrator.isNarrationEnabled.collectAsState()
             val isReadChoicesEnabled by combatNarrator.isReadChoicesEnabled.collectAsState()
             val isCharacterPitchEnabled by combatNarrator.isCharacterPitchEnabled.collectAsState()
+            val isSpeakerAttributionEnabled by combatNarrator.isSpeakerAttributionEnabled.collectAsState()
             val speechRate by combatNarrator.speechRate.collectAsState()
             val isAutoListen by speechManager.isAutoListen.collectAsState()
             val isChimeMuted by speechManager.isChimeMuted.collectAsState()
@@ -170,6 +171,7 @@ class MainActivity : ComponentActivity() {
                         isNarrationEnabled = isNarrationEnabled,
                         isReadChoicesEnabled = isReadChoicesEnabled,
                         isCharacterPitchEnabled = isCharacterPitchEnabled,
+                        isSpeakerAttributionEnabled = isSpeakerAttributionEnabled,
                         speechRate = speechRate,
                         isAutoListen = isAutoListen,
                         isChimeMuted = isChimeMuted,
@@ -187,6 +189,10 @@ class MainActivity : ComponentActivity() {
                         },
                         onToggleCharacterPitch = {
                             combatNarrator.setCharacterPitchEnabled(!isCharacterPitchEnabled)
+                            storyViewModel.persistCurrentState()
+                        },
+                        onToggleSpeakerAttribution = {
+                            combatNarrator.toggleSpeakerAttribution()
                             storyViewModel.persistCurrentState()
                         },
                         onSpeechRateChange = { rate ->
