@@ -68,6 +68,10 @@ object IntentParser {
 
             lower == "stop" || lower == "halt" || lower == "pause" || lower.contains("stop skip") -> MetaCommand.STOP_FAST_FORWARD
 
+            lower == "recap" || lower == "story so far" || lower.contains("quest recap") ||
+                    lower.contains("story recap") || lower == "where was i" || lower.contains("catch me up") ||
+                    lower == "quest log" || lower.contains("what happened") -> MetaCommand.STORY_RECAP
+
             lower == "help" || lower.contains("what can i say") || lower == "commands" ||
                     lower == "voice commands" || lower == "help commands" -> MetaCommand.HELP
 

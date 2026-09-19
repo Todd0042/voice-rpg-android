@@ -1124,5 +1124,24 @@ class StoryDialogueTest {
         storyViewModel.handleStoryVoiceInput("stop")
         assertFalse(storyViewModel.state.value.isFastForwarding)
     }
+
+    @Test
+    fun testRecapVoiceCommandOpensRecapTab() {
+        assertFalse(storyViewModel.state.value.isBacklogOpen)
+
+        storyViewModel.handleStoryVoiceInput("recap")
+        assertTrue(storyViewModel.state.value.isBacklogOpen)
+        assertTrue(storyViewModel.state.value.isBacklogRecapActive)
+
+        val recap = storyViewModel.getQuestRecap()
+        assertNotNull(recap)
+        assertEquals("Prologue: The Morning Without Echo", recap.currentChapterTitle)
+
+        storyViewModel.setBacklogRecapTab(false)
+        assertFalse(storyViewModel.state.value.isBacklogRecapActive)
+
+        storyViewModel.handleStoryVoiceInput("close")
+        assertFalse(storyViewModel.state.value.isBacklogOpen)
+    }
 }
 

@@ -626,12 +626,28 @@ fun StoryScreen(
                 }
             }
 
-            // 4. Dialogue Backlog Modal
+            // 4. Dialogue Backlog & Quest Recap Modal
+            val questRecap = remember(
+                storyState.currentScene.id,
+                storyState.currentNode.id,
+                storyState.narrativeFlags,
+                storyState.partyStats
+            ) {
+                storyViewModel.getQuestRecap()
+            }
+
             DialogueBacklogDialog(
                 isOpen = storyState.isBacklogOpen,
                 history = storyState.dialogueHistory,
+                questRecap = questRecap,
+                isRecapActive = storyState.isBacklogRecapActive,
+                onTabSelect = { isRecap -> storyViewModel.setBacklogRecapTab(isRecap) },
                 onClose = { storyViewModel.closeBacklog() },
-                onReplay = { entry -> storyViewModel.replayDialogueEntry(entry) }
+                onReplay = { entry -> storyViewModel.replayDialogueEntry(entry) },
+                onListenRecap = { spoken ->
+                    combatViewModel.combatNarrator.stop()
+                    combatViewModel.combatNarrator.speak(spoken, force = true)
+                }
             )
         }
     }

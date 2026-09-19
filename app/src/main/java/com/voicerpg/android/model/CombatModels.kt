@@ -124,6 +124,7 @@ enum class MetaCommand {
     CLOSE_BACKLOG,
     FAST_FORWARD,
     STOP_FAST_FORWARD,
+    STORY_RECAP,
     HELP
 }
 

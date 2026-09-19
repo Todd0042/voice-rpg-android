@@ -7,8 +7,10 @@ import com.voicerpg.android.audio.CombatNarrator
 import com.voicerpg.android.audio.SpeechManager
 import com.voicerpg.android.engine.IntentParser
 import com.voicerpg.android.engine.SaveManager
+import com.voicerpg.android.engine.QuestRecap
 import com.voicerpg.android.engine.StoryChoiceMatcher
 import com.voicerpg.android.engine.StoryEncounters
+import com.voicerpg.android.engine.StoryRecapEngine
 import com.voicerpg.android.engine.StoryScript
 import com.voicerpg.android.model.DialogueChoice
 import com.voicerpg.android.model.DialogueLogEntry
@@ -49,7 +51,8 @@ data class StoryState(
     val saveSummary: SaveSummary? = null,
     val dialogueHistory: List<DialogueLogEntry> = emptyList(),
     val isBacklogOpen: Boolean = false,
-    val isFastForwarding: Boolean = false
+    val isFastForwarding: Boolean = false,
+    val isBacklogRecapActive: Boolean = true
 )
 
 class StoryViewModel(
@@ -966,20 +969,46 @@ class StoryViewModel(
         }
     }
 
-    fun openBacklog() {
+    fun getQuestRecap(): QuestRecap {
+        val s = _state.value
+        return StoryRecapEngine.buildRecap(
+            scene = s.currentScene,
+            node = s.currentNode,
+            flags = s.narrativeFlags,
+            partyStats = s.partyStats
+        )
+    }
+
+    fun playStoryRecap() {
         cancelPendingAutoAdvance()
         if (_state.value.isFastForwarding) {
             stopFastForward()
         }
-        _state.value = _state.value.copy(isBacklogOpen = true)
+        val recap = getQuestRecap()
+        _state.value = _state.value.copy(
+            isBacklogOpen = true,
+            isBacklogRecapActive = true
+        )
+        combatNarrator.stop()
+        combatNarrator.speak(recap.spokenRecap, force = true)
+    }
+
+    fun setBacklogRecapTab(isRecap: Boolean) {
+        _state.value = _state.value.copy(isBacklogRecapActive = isRecap)
+    }
+
+    fun openBacklog(showRecapFirst: Boolean = true) {
+        cancelPendingAutoAdvance()
+        if (_state.value.isFastForwarding) {
+            stopFastForward()
+        }
+        _state.value = _state.value.copy(
+            isBacklogOpen = true,
+            isBacklogRecapActive = showRecapFirst
+        )
         if (combatNarrator.isEyesFreeMode.value) {
-            val last = _state.value.dialogueHistory.lastOrNull()
-            val text = if (last != null) {
-                "Dialogue history opened. Most recent line from ${last.speakerName}: ${last.text}. Say Close to return."
-            } else {
-                "Dialogue history opened. No previous lines. Say Close to return."
-            }
-            combatNarrator.speak(text, force = true)
+            val recap = getQuestRecap()
+            combatNarrator.speak(recap.spokenRecap, force = true)
         }
     }
 
@@ -1111,6 +1140,10 @@ class StoryViewModel(
                     return
                 }
             }
+            MetaCommand.STORY_RECAP -> {
+                playStoryRecap()
+                return
+            }
             MetaCommand.TOGGLE_NARRATION -> {
                 val enabled = combatNarrator.toggleNarration()
                 val status = if (enabled) "Story dialogue narration enabled." else "Story dialogue narration muted."
@@ -1148,7 +1181,7 @@ class StoryViewModel(
                 return
             }
             MetaCommand.HELP -> {
-                combatNarrator.speak("Say 'Next' to advance dialogue. Say a choice keyword to select it. Say 'Log' or 'History' to review previous dialogue. Say 'Skip' to fast-forward. Say 'Options' for settings. Say 'Narration' to toggle dialogue speech.", force = true)
+                combatNarrator.speak("Say 'Next' to advance dialogue. Say a choice keyword to select it. Say 'Recap' to hear your quest summary. Say 'Log' or 'History' for dialogue history. Say 'Skip' to fast-forward. Say 'Options' for settings.", force = true)
                 return
             }
             else -> Unit

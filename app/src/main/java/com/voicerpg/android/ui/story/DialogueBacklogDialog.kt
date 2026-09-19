@@ -37,7 +37,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.voicerpg.android.engine.QuestMilestone
+import com.voicerpg.android.engine.QuestRecap
 import com.voicerpg.android.model.DialogueLogEntry
+import com.voicerpg.android.ui.theme.FrostCyan
+import com.voicerpg.android.ui.theme.HolyYellow
 import com.voicerpg.android.ui.theme.LogosGold
 import com.voicerpg.android.ui.theme.RetroBlack
 import com.voicerpg.android.ui.theme.RetroBorder
@@ -45,24 +49,30 @@ import com.voicerpg.android.ui.theme.RetroBorderGold
 import com.voicerpg.android.ui.theme.RetroPanel
 
 /**
- * Fullscreen retro dialog displaying past dialogue history in chronological order.
- * Automatically scrolled to the bottom (most recent lines) with individual audio replay.
+ * Fullscreen retro dialog offering:
+ * 1. Pokémon FireRed / LeafGreen style "Previously on your quest..." narrative story recap.
+ * 2. Verbatim line-by-line dialogue history backlog with individual speech replay.
  */
 @Composable
 fun DialogueBacklogDialog(
     isOpen: Boolean,
     history: List<DialogueLogEntry>,
+    questRecap: QuestRecap,
+    isRecapActive: Boolean,
+    onTabSelect: (Boolean) -> Unit,
     onClose: () -> Unit,
-    onReplay: (DialogueLogEntry) -> Unit
+    onReplay: (DialogueLogEntry) -> Unit,
+    onListenRecap: (String) -> Unit
 ) {
     if (!isOpen) return
 
-    val listState = rememberLazyListState()
+    val dialogueListState = rememberLazyListState()
+    val recapListState = rememberLazyListState()
 
-    // Auto-scroll to the bottom (most recent dialogue lines) on open / update
-    LaunchedEffect(isOpen, history.size) {
-        if (history.isNotEmpty()) {
-            listState.animateScrollToItem(history.size - 1)
+    // Auto-scroll dialogue to the bottom (most recent lines) on open / update
+    LaunchedEffect(isOpen, isRecapActive, history.size) {
+        if (!isRecapActive && history.isNotEmpty()) {
+            dialogueListState.animateScrollToItem(history.size - 1)
         }
     }
 
@@ -73,7 +83,7 @@ fun DialogueBacklogDialog(
         Box(
             modifier = Modifier
                 .fillMaxWidth(0.94f)
-                .fillMaxHeight(0.85f)
+                .fillMaxHeight(0.88f)
                 .clip(RoundedCornerShape(14.dp))
                 .background(RetroBlack.copy(alpha = 0.97f))
                 .border(2.dp, RetroBorderGold, RoundedCornerShape(14.dp))
@@ -88,30 +98,13 @@ fun DialogueBacklogDialog(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = "📜 DIALOGUE HISTORY",
-                            color = LogosGold,
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Black,
-                            fontFamily = FontFamily.Monospace
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(4.dp))
-                                .background(RetroPanel)
-                                .border(1.dp, RetroBorder, RoundedCornerShape(4.dp))
-                                .padding(horizontal = 6.dp, vertical = 2.dp)
-                        ) {
-                            Text(
-                                text = "${history.size} entries",
-                                color = Color.LightGray,
-                                fontSize = 9.sp,
-                                fontFamily = FontFamily.Monospace
-                            )
-                        }
-                    }
+                    Text(
+                        text = "📜 CHRONICLE & BACKLOG",
+                        color = LogosGold,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Black,
+                        fontFamily = FontFamily.Monospace
+                    )
 
                     // Close Button
                     Box(
@@ -132,36 +125,194 @@ fun DialogueBacklogDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
-                // Scrollable Backlog Content
-                if (history.isEmpty()) {
+                // Dual Tab Switcher: [📖 STORY RECAP] vs [💬 DIALOGUE LOG]
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // Tab 1: Story Recap
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .fillMaxWidth(),
+                            .height(32.dp)
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(if (isRecapActive) LogosGold.copy(alpha = 0.22f) else RetroPanel)
+                            .border(1.dp, if (isRecapActive) LogosGold else RetroBorder, RoundedCornerShape(6.dp))
+                            .clickable { onTabSelect(true) },
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "No dialogue recorded yet in this chronicle.",
-                            color = Color.Gray,
-                            fontSize = 12.sp,
+                            text = "📖 STORY RECAP",
+                            color = if (isRecapActive) LogosGold else Color.LightGray,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
                             fontFamily = FontFamily.Monospace
                         )
                     }
-                } else {
-                    LazyColumn(
-                        state = listState,
+
+                    // Tab 2: Dialogue Log
+                    Box(
                         modifier = Modifier
                             .weight(1f)
-                            .fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                            .height(32.dp)
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(if (!isRecapActive) LogosGold.copy(alpha = 0.22f) else RetroPanel)
+                            .border(1.dp, if (!isRecapActive) LogosGold else RetroBorder, RoundedCornerShape(6.dp))
+                            .clickable { onTabSelect(false) },
+                        contentAlignment = Alignment.Center
                     ) {
-                        items(history) { entry ->
-                            DialogueBacklogItem(
-                                entry = entry,
-                                onReplay = { onReplay(entry) }
+                        Text(
+                            text = "💬 DIALOGUE LOG (${history.size})",
+                            color = if (!isRecapActive) LogosGold else Color.LightGray,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                // Body Content Based on Active Tab
+                if (isRecapActive) {
+                    // ================= TAB 1: STORY RECAP (Pokémon FRLG Style) =================
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                    ) {
+                        // Current Situation Overview Card
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color(0xCC1A1C29))
+                                .border(1.dp, HolyYellow.copy(alpha = 0.7f), RoundedCornerShape(8.dp))
+                                .padding(10.dp)
+                        ) {
+                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "${questRecap.currentActTitle.uppercase()} • ${questRecap.currentChapterTitle.uppercase()}",
+                                        color = LogosGold,
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Black,
+                                        fontFamily = FontFamily.Monospace
+                                    )
+
+                                    // Spoken Recap Narration Button
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(4.dp))
+                                            .background(Color(0x44FFD700))
+                                            .border(1.dp, LogosGold, RoundedCornerShape(4.dp))
+                                            .clickable { onListenRecap(questRecap.spokenRecap) }
+                                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                                    ) {
+                                        Text(
+                                            text = "🔊 READ RECAP",
+                                            color = LogosGold,
+                                            fontSize = 8.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            fontFamily = FontFamily.Monospace
+                                        )
+                                    }
+                                }
+
+                                Text(
+                                    text = "📍 Location: ${questRecap.currentSceneName}",
+                                    color = Color.LightGray,
+                                    fontSize = 10.sp,
+                                    fontFamily = FontFamily.Monospace
+                                )
+
+                                Text(
+                                    text = "🛡️ Fellowship: " + questRecap.fellowshipRoster.joinToString(" • "),
+                                    color = FrostCyan,
+                                    fontSize = 9.sp,
+                                    fontFamily = FontFamily.Monospace
+                                )
+
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .background(Color(0x333F51B5))
+                                        .border(1.dp, Color(0xFF5C6BC0), RoundedCornerShape(4.dp))
+                                        .padding(horizontal = 6.dp, vertical = 4.dp)
+                                ) {
+                                    Text(
+                                        text = "🎯 CURRENT OBJECTIVE: ${questRecap.activeObjective}",
+                                        color = Color(0xFFC5CAE9),
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = FontFamily.Monospace
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Text(
+                            text = "PREVIOUSLY ON YOUR QUEST:",
+                            color = Color.Gray,
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Monospace
+                        )
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        // Scrollable Milestone Timeline
+                        LazyColumn(
+                            state = recapListState,
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(questRecap.milestones) { milestone ->
+                                QuestMilestoneItem(milestone = milestone)
+                            }
+                        }
+                    }
+                } else {
+                    // ================= TAB 2: DIALOGUE LOG (Verbatim) =================
+                    if (history.isEmpty()) {
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxWidth(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "No dialogue recorded yet in this chronicle.",
+                                color = Color.Gray,
+                                fontSize = 12.sp,
+                                fontFamily = FontFamily.Monospace
                             )
+                        }
+                    } else {
+                        LazyColumn(
+                            state = dialogueListState,
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(history) { entry ->
+                                DialogueBacklogItem(
+                                    entry = entry,
+                                    onReplay = { onReplay(entry) }
+                                )
+                            }
                         }
                     }
                 }
@@ -175,7 +326,7 @@ fun DialogueBacklogDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "💡 Tap 🔊 to replay speech • Say 'Close' hands-free",
+                        text = if (isRecapActive) "💡 Say 'Recap' to hear quest summary" else "💡 Tap 🔊 to replay speech • Say 'Close' hands-free",
                         color = Color.Gray,
                         fontSize = 9.sp,
                         fontFamily = FontFamily.Monospace
@@ -199,6 +350,83 @@ fun DialogueBacklogDialog(
                     }
                 }
             }
+        }
+    }
+}
+
+/**
+ * Episodic recap card representing one completed or active chapter milestone.
+ */
+@Composable
+private fun QuestMilestoneItem(
+    milestone: QuestMilestone
+) {
+    val borderColor = if (milestone.isCurrent) LogosGold else RetroBorder
+    val backgroundColor = if (milestone.isCurrent) Color(0xCC201C12) else RetroPanel.copy(alpha = 0.90f)
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .background(backgroundColor)
+            .border(1.dp, borderColor, RoundedCornerShape(8.dp))
+            .padding(10.dp)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(3.dp)
+        ) {
+            // Milestone Header: Chapter Title & Status Chip
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(text = milestone.icon, fontSize = 12.sp)
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = milestone.title,
+                        color = if (milestone.isCurrent) LogosGold else Color.White,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.Monospace
+                    )
+                }
+
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(if (milestone.isCurrent) Color(0x33FFD700) else Color(0x334CAF50))
+                        .border(1.dp, if (milestone.isCurrent) LogosGold else Color(0xFF4CAF50), RoundedCornerShape(4.dp))
+                        .padding(horizontal = 5.dp, vertical = 2.dp)
+                ) {
+                    Text(
+                        text = if (milestone.isCurrent) "⏳ CURRENT" else "✓ COMPLETED",
+                        color = if (milestone.isCurrent) LogosGold else Color(0xFF81C784),
+                        fontSize = 7.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.Monospace
+                    )
+                }
+            }
+
+            Text(
+                text = "📍 ${milestone.location}",
+                color = Color.Gray,
+                fontSize = 9.sp,
+                fontFamily = FontFamily.Monospace
+            )
+
+            Spacer(modifier = Modifier.height(2.dp))
+
+            Text(
+                text = milestone.summary,
+                color = Color.LightGray,
+                fontSize = 11.sp,
+                fontFamily = FontFamily.Monospace,
+                lineHeight = 15.sp
+            )
         }
     }
 }
