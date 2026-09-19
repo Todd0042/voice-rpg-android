@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -33,6 +34,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -183,28 +185,61 @@ fun DialogueBacklogDialog(
                             .weight(1f)
                             .fillMaxWidth()
                     ) {
-                        // Current Situation Overview Card
+                        // Current Situation Overview Card (Compact, clean badges, no ballooning)
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .wrapContentHeight()
                                 .clip(RoundedCornerShape(8.dp))
                                 .background(Color(0xCC1A1C29))
                                 .border(1.dp, HolyYellow.copy(alpha = 0.7f), RoundedCornerShape(8.dp))
-                                .padding(10.dp)
+                                .padding(horizontal = 10.dp, vertical = 8.dp)
                         ) {
-                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                // Row 1: Act Tag + Chapter Title (flexible width) + Spoken Recap Button
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Text(
-                                        text = "${questRecap.currentActTitle.uppercase()} • ${questRecap.currentChapterTitle.uppercase()}",
-                                        color = LogosGold,
-                                        fontSize = 10.sp,
-                                        fontWeight = FontWeight.Black,
-                                        fontFamily = FontFamily.Monospace
-                                    )
+                                    Row(
+                                        modifier = Modifier.weight(1f),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        // Act pill badge (e.g. "ACT IV", "ACT I", "PROLOGUE")
+                                        Box(
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(4.dp))
+                                                .background(LogosGold.copy(alpha = 0.22f))
+                                                .border(1.dp, LogosGold, RoundedCornerShape(4.dp))
+                                                .padding(horizontal = 5.dp, vertical = 2.dp)
+                                        ) {
+                                            Text(
+                                                text = parseActBadge(questRecap.currentActTitle),
+                                                color = LogosGold,
+                                                fontSize = 9.sp,
+                                                fontWeight = FontWeight.Black,
+                                                fontFamily = FontFamily.Monospace,
+                                                maxLines = 1
+                                            )
+                                        }
+
+                                        Text(
+                                            text = questRecap.currentChapterTitle.uppercase(),
+                                            color = Color.White,
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            fontFamily = FontFamily.Monospace,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    }
+
+                                    Spacer(modifier = Modifier.width(8.dp))
 
                                     // Spoken Recap Narration Button
                                     Box(
@@ -213,14 +248,16 @@ fun DialogueBacklogDialog(
                                             .background(Color(0x44FFD700))
                                             .border(1.dp, LogosGold, RoundedCornerShape(4.dp))
                                             .clickable { onListenRecap(questRecap.spokenRecap) }
-                                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                                            .padding(horizontal = 6.dp, vertical = 3.dp),
+                                        contentAlignment = Alignment.Center
                                     ) {
                                         Text(
                                             text = "🔊 READ RECAP",
                                             color = LogosGold,
                                             fontSize = 8.sp,
                                             fontWeight = FontWeight.Bold,
-                                            fontFamily = FontFamily.Monospace
+                                            fontFamily = FontFamily.Monospace,
+                                            maxLines = 1
                                         )
                                     }
                                 }
@@ -228,15 +265,20 @@ fun DialogueBacklogDialog(
                                 Text(
                                     text = "📍 Location: ${questRecap.currentSceneName}",
                                     color = Color.LightGray,
-                                    fontSize = 10.sp,
-                                    fontFamily = FontFamily.Monospace
+                                    fontSize = 9.sp,
+                                    fontFamily = FontFamily.Monospace,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
 
                                 Text(
                                     text = "🛡️ Fellowship: " + questRecap.fellowshipRoster.joinToString(" • "),
                                     color = FrostCyan,
                                     fontSize = 9.sp,
-                                    fontFamily = FontFamily.Monospace
+                                    fontFamily = FontFamily.Monospace,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis,
+                                    lineHeight = 12.sp
                                 )
 
                                 Box(
@@ -248,11 +290,14 @@ fun DialogueBacklogDialog(
                                         .padding(horizontal = 6.dp, vertical = 4.dp)
                                 ) {
                                     Text(
-                                        text = "🎯 CURRENT OBJECTIVE: ${questRecap.activeObjective}",
+                                        text = "🎯 OBJECTIVE: ${questRecap.activeObjective}",
                                         color = Color(0xFFC5CAE9),
-                                        fontSize = 10.sp,
+                                        fontSize = 9.sp,
                                         fontWeight = FontWeight.Bold,
-                                        fontFamily = FontFamily.Monospace
+                                        fontFamily = FontFamily.Monospace,
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis,
+                                        lineHeight = 12.sp
                                     )
                                 }
                             }
@@ -382,7 +427,10 @@ private fun QuestMilestoneItem(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Text(text = milestone.icon, fontSize = 12.sp)
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
@@ -390,9 +438,13 @@ private fun QuestMilestoneItem(
                         color = if (milestone.isCurrent) LogosGold else Color.White,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.Monospace
+                        fontFamily = FontFamily.Monospace,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
+
+                Spacer(modifier = Modifier.width(6.dp))
 
                 Box(
                     modifier = Modifier
@@ -406,7 +458,8 @@ private fun QuestMilestoneItem(
                         color = if (milestone.isCurrent) LogosGold else Color(0xFF81C784),
                         fontSize = 7.sp,
                         fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.Monospace
+                        fontFamily = FontFamily.Monospace,
+                        maxLines = 1
                     )
                 }
             }
@@ -527,3 +580,17 @@ private fun DialogueBacklogItem(
         }
     }
 }
+
+/**
+ * Extracts a concise badge label from an act title (e.g. "Act IV: The Primordial Syllable" -> "ACT IV").
+ */
+private fun parseActBadge(actTitle: String): String {
+    val trimmed = actTitle.trim()
+    val colonIdx = trimmed.indexOf(':')
+    return if (colonIdx > 0) {
+        trimmed.substring(0, colonIdx).trim().uppercase()
+    } else {
+        trimmed.uppercase()
+    }
+}
+
