@@ -52,7 +52,8 @@ data class StoryState(
     val dialogueHistory: List<DialogueLogEntry> = emptyList(),
     val isBacklogOpen: Boolean = false,
     val isFastForwarding: Boolean = false,
-    val isBacklogRecapActive: Boolean = true
+    val isBacklogRecapActive: Boolean = true,
+    val isNewGameFlow: Boolean = false
 )
 
 class StoryViewModel(
@@ -278,8 +279,9 @@ class StoryViewModel(
         combatNarrator.stop()
         speechManager.cancel()
         _state.value = _state.value.copy(
-            gameScreen = if (_state.value.hasExistingSave) GameScreen.CHARACTER_CREATION else GameScreen.AUDIO_SETUP,
-            previousScreen = GameScreen.TITLE
+            gameScreen = GameScreen.AUDIO_SETUP,
+            previousScreen = GameScreen.TITLE,
+            isNewGameFlow = true
         )
     }
 
@@ -317,7 +319,8 @@ class StoryViewModel(
      */
     fun proceedToCharacterCreation() {
         _state.value = _state.value.copy(
-            gameScreen = GameScreen.CHARACTER_CREATION
+            gameScreen = GameScreen.CHARACTER_CREATION,
+            previousScreen = GameScreen.AUDIO_SETUP
         )
     }
 
@@ -912,20 +915,29 @@ class StoryViewModel(
         speechManager.cancel()
         _state.value = _state.value.copy(
             previousScreen = _state.value.gameScreen,
-            gameScreen = GameScreen.AUDIO_SETUP
+            gameScreen = GameScreen.AUDIO_SETUP,
+            isNewGameFlow = false
         )
     }
 
     fun returnFromAudioSetup() {
-        val returnTarget = _state.value.previousScreen ?: GameScreen.TITLE
+        val rawTarget = _state.value.previousScreen
+        val returnTarget = if (rawTarget == null || rawTarget == GameScreen.AUDIO_SETUP) {
+            GameScreen.TITLE
+        } else {
+            rawTarget
+        }
         _state.value = _state.value.copy(
             previousScreen = null,
-            gameScreen = returnTarget
+            gameScreen = returnTarget,
+            isNewGameFlow = false
         )
         persistCurrentState()
         if (returnTarget == GameScreen.STORY_EXPLORATION) {
             musicManager?.playTrack(_state.value.currentScene.musicAsset)
             narrateCurrentNode()
+        } else if (returnTarget == GameScreen.TITLE) {
+            musicManager?.playTrack(com.voicerpg.android.audio.MusicManager.TRACK_TITLE)
         } else {
             musicManager?.playTrack(com.voicerpg.android.audio.MusicManager.TRACK_ACT1_FOREST)
         }

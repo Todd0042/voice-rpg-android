@@ -68,6 +68,7 @@ fun CharacterCreationScreen(
     initialCustomization: PlayerCustomization = PlayerCustomization(),
     speechManager: SpeechManager? = null,
     combatNarrator: CombatNarrator? = null,
+    onBack: (() -> Unit)? = null,
     onConfirmCharacter: (PlayerCustomization) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -123,6 +124,13 @@ fun CharacterCreationScreen(
             return
         }
 
+        // 1b. Back command
+        if (lower == "back" || lower.contains("go back") || lower.contains("audio setup") || lower == "return") {
+            speechManager?.cancel()
+            onBack?.invoke()
+            return
+        }
+
         // 2. Class selection commands
         when {
             lower.contains("elementalist") || lower.contains("mage") || lower.contains("sorcerer") || lower.contains("wizard") || lower.contains("pyromancer") -> {
@@ -167,9 +175,9 @@ fun CharacterCreationScreen(
     }
 
     LaunchedEffect(isAutoListen) {
-        if (isAutoListen && speechManager != null) {
+        if (isAutoListen) {
             delay(300)
-            speechManager.startListening { utterance -> processCreationVoiceInput(utterance) }
+            speechManager?.startListening { utterance -> processCreationVoiceInput(utterance) }
         }
     }
 
@@ -185,6 +193,36 @@ fun CharacterCreationScreen(
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // Optional Back navigation
+            if (onBack != null) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 10.dp),
+                    horizontalArrangement = Arrangement.Start
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(RetroPanel)
+                            .border(1.dp, LogosGold, RoundedCornerShape(6.dp))
+                            .clickable {
+                                speechManager?.cancel()
+                                onBack()
+                            }
+                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                    ) {
+                        Text(
+                            text = "◀ BACK TO AUDIO SETUP",
+                            color = LogosGold,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    }
+                }
+            }
+
             // Header
             Text(
                 text = "⚔️ FORGE YOUR INVOCATOR ⚔️",

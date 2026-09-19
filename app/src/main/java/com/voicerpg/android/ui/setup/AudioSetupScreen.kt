@@ -74,6 +74,7 @@ fun AudioSetupScreen(
     speechManager: SpeechManager,
     onProceed: () -> Unit,
     isFromGame: Boolean = false,
+    isNewGameFlow: Boolean = false,
     onBack: (() -> Unit)? = null,
     onVoiceChanged: () -> Unit = {},
     modifier: Modifier = Modifier
@@ -261,7 +262,7 @@ fun AudioSetupScreen(
                             .padding(horizontal = 12.dp, vertical = 6.dp)
                     ) {
                         Text(
-                            text = "◀ RETURN TO GAME",
+                            text = if (isFromGame) "◀ RETURN TO GAME" else "◀ BACK TO TITLE",
                             color = LogosGold,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
@@ -733,7 +734,11 @@ fun AudioSetupScreen(
                     .height(48.dp)
             ) {
                 Text(
-                    text = if (isFromGame) "◀ RETURN TO GAME ➔" else "PROCEED TO CHARACTER CREATION ➔",
+                    text = when {
+                        isNewGameFlow -> "PROCEED TO CHARACTER CREATION ➔"
+                        isFromGame -> "◀ RETURN TO GAME ➔"
+                        else -> "◀ RETURN TO TITLE ➔"
+                    },
                     fontFamily = FontFamily.Monospace,
                     fontWeight = FontWeight.Black,
                     fontSize = 13.sp

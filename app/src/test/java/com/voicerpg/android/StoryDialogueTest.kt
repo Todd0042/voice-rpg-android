@@ -1143,5 +1143,47 @@ class StoryDialogueTest {
         storyViewModel.handleStoryVoiceInput("close")
         assertFalse(storyViewModel.state.value.isBacklogOpen)
     }
+
+    @Test
+    fun testNewGameFlowAudioSetupToCharacterCreation() {
+        storyViewModel.returnToTitle()
+        assertEquals(GameScreen.TITLE, storyViewModel.state.value.gameScreen)
+        assertFalse(storyViewModel.state.value.isNewGameFlow)
+
+        // User taps NEW GAME
+        storyViewModel.startNewGameFlow()
+        assertEquals(GameScreen.AUDIO_SETUP, storyViewModel.state.value.gameScreen)
+        assertEquals(GameScreen.TITLE, storyViewModel.state.value.previousScreen)
+        assertTrue(storyViewModel.state.value.isNewGameFlow)
+
+        // Audio Setup "PROCEED" advances to Character Creation
+        storyViewModel.proceedToCharacterCreation()
+        assertEquals(GameScreen.CHARACTER_CREATION, storyViewModel.state.value.gameScreen)
+        assertEquals(GameScreen.AUDIO_SETUP, storyViewModel.state.value.previousScreen)
+        assertTrue(storyViewModel.state.value.isNewGameFlow)
+
+        // Character Creation "EMBARK" starts new game
+        storyViewModel.startNewGame(com.voicerpg.android.model.PlayerCustomization(name = "Rowan"))
+        assertEquals(GameScreen.STORY_EXPLORATION, storyViewModel.state.value.gameScreen)
+        assertEquals("Rowan", storyViewModel.state.value.player.name)
+        assertFalse(storyViewModel.state.value.isNewGameFlow)
+    }
+
+    @Test
+    fun testAudioSetupFromTitleAndReturn() {
+        storyViewModel.returnToTitle()
+        assertEquals(GameScreen.TITLE, storyViewModel.state.value.gameScreen)
+
+        // User taps AUDIO SETUP from Title screen
+        storyViewModel.openAudioSetup()
+        assertEquals(GameScreen.AUDIO_SETUP, storyViewModel.state.value.gameScreen)
+        assertEquals(GameScreen.TITLE, storyViewModel.state.value.previousScreen)
+        assertFalse(storyViewModel.state.value.isNewGameFlow)
+
+        // Returning from Audio Setup goes back to Title
+        storyViewModel.returnFromAudioSetup()
+        assertEquals(GameScreen.TITLE, storyViewModel.state.value.gameScreen)
+        assertFalse(storyViewModel.state.value.isNewGameFlow)
+    }
 }
 

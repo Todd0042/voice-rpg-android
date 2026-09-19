@@ -207,7 +207,8 @@ class MainActivity : ComponentActivity() {
                             AudioSetupScreen(
                                 combatNarrator = combatNarrator,
                                 speechManager = speechManager,
-                                isFromGame = storyState.previousScreen != null,
+                                isFromGame = storyState.previousScreen != null && !storyState.isNewGameFlow && storyState.previousScreen != GameScreen.TITLE,
+                                isNewGameFlow = storyState.isNewGameFlow,
                                 onBack = {
                                     storyViewModel.returnFromAudioSetup()
                                 },
@@ -215,12 +216,10 @@ class MainActivity : ComponentActivity() {
                                     storyViewModel.persistCurrentState()
                                 },
                                 onProceed = {
-                                    if (storyState.previousScreen == GameScreen.TITLE) {
-                                        storyViewModel.returnFromAudioSetup()
-                                    } else if (storyState.previousScreen != null) {
-                                        storyViewModel.returnFromAudioSetup()
-                                    } else {
+                                    if (storyState.isNewGameFlow) {
                                         storyViewModel.proceedToCharacterCreation()
+                                    } else {
+                                        storyViewModel.returnFromAudioSetup()
                                     }
                                 }
                             )
@@ -230,6 +229,13 @@ class MainActivity : ComponentActivity() {
                                 initialCustomization = storyState.player,
                                 speechManager = speechManager,
                                 combatNarrator = combatNarrator,
+                                onBack = {
+                                    if (storyState.isNewGameFlow) {
+                                        storyViewModel.startNewGameFlow()
+                                    } else {
+                                        storyViewModel.returnToTitle()
+                                    }
+                                },
                                 onConfirmCharacter = { customization ->
                                     storyViewModel.startNewGame(customization)
                                     combatViewModel.applyPlayerCustomization(customization)
