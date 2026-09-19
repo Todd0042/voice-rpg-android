@@ -909,6 +909,25 @@ class StoryViewModel(
         narrateCurrentNode()
     }
 
+    fun openTutorial() {
+        cancelPendingAutoAdvance()
+        combatNarrator.stop()
+        speechManager.cancel()
+        _state.value = _state.value.copy(
+            previousScreen = _state.value.gameScreen,
+            gameScreen = GameScreen.TUTORIAL
+        )
+    }
+
+    fun returnFromTutorial() {
+        combatNarrator.stop()
+        speechManager.cancel()
+        _state.value = _state.value.copy(
+            previousScreen = null,
+            gameScreen = GameScreen.TITLE
+        )
+    }
+
     fun openAudioSetup() {
         cancelPendingAutoAdvance()
         combatNarrator.stop()
@@ -1101,6 +1120,10 @@ class StoryViewModel(
                 }
                 lower.contains("audio setup") || lower.contains("voices") || lower.contains("calibrate") -> {
                     openAudioSetup()
+                    return
+                }
+                lower.contains("tutorial") || lower.contains("guide") || lower.contains("how to play") || lower.contains("help me") -> {
+                    openTutorial()
                     return
                 }
                 lower.contains("options") || lower.contains("settings") -> {

@@ -28,6 +28,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.GraphicEq
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
@@ -86,6 +87,7 @@ fun TitleScreen(
     onNewGame: () -> Unit,
     onAudioSetup: () -> Unit,
     onOptions: () -> Unit,
+    onTutorial: () -> Unit,
     onStartListening: () -> Unit,
     onStopListening: () -> Unit,
     modifier: Modifier = Modifier
@@ -391,6 +393,38 @@ fun TitleScreen(
                         )
                     }
                 }
+
+                // 5. Chronicle Guide / Tutorial Button
+                Button(
+                    onClick = onTutorial,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(1.dp, RetroBorder, RoundedCornerShape(8.dp)),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = RetroDeepSlate.copy(alpha = 0.85f)
+                    ),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Default.MenuBook,
+                            contentDescription = null,
+                            tint = FrostCyan,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "CHRONICLE GUIDE",
+                            color = Color.White,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -424,9 +458,9 @@ fun TitleScreen(
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = if (isListening) {
-                            "🎤 Listening... Speak 'Continue', 'New Game', or 'Options'"
+                            "🎤 Listening... Speak 'Continue', 'New Game', 'Tutorial', or 'Options'"
                         } else {
-                            "🎤 Speak 'Continue', 'New Game', or Tap to Talk"
+                            "🎤 Speak 'Continue', 'New Game', 'Tutorial', or Tap to Talk"
                         },
                         color = if (isListening) Color.White else Color.LightGray,
                         fontSize = 11.sp,

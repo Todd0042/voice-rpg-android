@@ -37,6 +37,7 @@ import com.voicerpg.android.ui.setup.AudioSetupScreen
 import com.voicerpg.android.ui.story.StoryScreen
 import com.voicerpg.android.ui.theme.VoiceRPGTheme
 import com.voicerpg.android.ui.title.TitleScreen
+import com.voicerpg.android.ui.title.TutorialScreen
 import com.voicerpg.android.viewmodel.CombatViewModel
 import com.voicerpg.android.viewmodel.StoryViewModel
 
@@ -174,7 +175,7 @@ class MainActivity : ComponentActivity() {
                     musicManager.playCombatMusic()
                 } else if (storyState.gameScreen == GameScreen.STORY_EXPLORATION) {
                     musicManager.playTrack(storyState.currentScene.musicAsset)
-                } else if (storyState.gameScreen == GameScreen.TITLE) {
+                } else if (storyState.gameScreen == GameScreen.TITLE || storyState.gameScreen == GameScreen.TUTORIAL) {
                     musicManager.playTrack(MusicManager.TRACK_TITLE)
                 } else {
                     musicManager.playTrack(MusicManager.TRACK_ACT1_FOREST)
@@ -195,12 +196,18 @@ class MainActivity : ComponentActivity() {
                                 onNewGame = { storyViewModel.startNewGameFlow() },
                                 onAudioSetup = { storyViewModel.openAudioSetup() },
                                 onOptions = { combatViewModel.openOptions() },
+                                onTutorial = { storyViewModel.openTutorial() },
                                 onStartListening = {
                                     speechManager.startListening(
                                         onResult = { storyViewModel.handleStoryVoiceInput(it) }
                                     )
                                 },
                                 onStopListening = { speechManager.stopListening() }
+                            )
+                        }
+                        GameScreen.TUTORIAL -> {
+                            TutorialScreen(
+                                onBack = { storyViewModel.returnFromTutorial() }
                             )
                         }
                         GameScreen.AUDIO_SETUP -> {
@@ -393,6 +400,8 @@ class MainActivity : ComponentActivity() {
                             "${storyState.currentScene.chapterTitle} • ${storyState.currentScene.name}"
                         } else if (storyState.gameScreen == GameScreen.TITLE) {
                             "Title Screen"
+                        } else if (storyState.gameScreen == GameScreen.TUTORIAL) {
+                            "Chronicle Guide"
                         } else {
                             "Echoes of the Logos"
                         }

@@ -183,6 +183,7 @@ data class StoryScene(
 
 enum class GameScreen {
     TITLE,
+    TUTORIAL,
     AUDIO_SETUP,
     CHARACTER_CREATION,
     STORY_EXPLORATION,
