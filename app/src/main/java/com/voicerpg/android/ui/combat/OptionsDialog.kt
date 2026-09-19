@@ -66,6 +66,7 @@ fun OptionsDialog(
     onOpenVoiceAssignment: (() -> Unit)? = null,
     isDebugWarpEnabled: Boolean = false,
     onOpenDebugWarp: (() -> Unit)? = null,
+    onReturnToTitle: (() -> Unit)? = null,
     onClose: () -> Unit
 ) {
     if (!isOpen) return
@@ -569,6 +570,7 @@ fun OptionsDialog(
                         VoiceCommandItem(command = "🎭 \"Assign Voices\"", desc = "Opens companion voice customization screen")
                         VoiceCommandItem(command = "🗣️ \"Speaker Names\"", desc = "Toggles \"Sir Cedric says...\" announcements")
                         VoiceCommandItem(command = "🎵 \"Music\" / \"Toggle Music\"", desc = "Toggles ambient background music on/off")
+                        VoiceCommandItem(command = "🏠 \"Title Screen\" / \"Main Menu\"", desc = "Saves and returns to Title Screen")
                         VoiceCommandItem(command = "⚙️ \"Options\" / \"Close\"", desc = "Opens or closes this settings screen")
                         VoiceCommandItem(command = "❓ \"Help\"", desc = "Spoken audio overview of voice commands")
                     }
@@ -592,6 +594,31 @@ fun OptionsDialog(
                         fontFamily = FontFamily.Monospace,
                         fontSize = 13.sp
                     )
+                }
+
+                if (onReturnToTitle != null) {
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Button(
+                        onClick = {
+                            onClose()
+                            onReturnToTitle()
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF1E293B),
+                            contentColor = Color.White
+                        ),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .border(1.dp, RetroBorder, RoundedCornerShape(8.dp))
+                    ) {
+                        Text(
+                            text = "💾 SAVE & RETURN TO TITLE",
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Monospace,
+                            fontSize = 12.sp
+                        )
+                    }
                 }
             }
         }

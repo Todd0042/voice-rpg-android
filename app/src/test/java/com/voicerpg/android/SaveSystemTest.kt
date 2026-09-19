@@ -182,6 +182,10 @@ class SaveSystemTest {
             scopeOverride = testScope
         )
 
+        assertEquals(GameScreen.TITLE, storyVm.state.value.gameScreen)
+        assertFalse(storyVm.state.value.hasExistingSave)
+
+        storyVm.startNewGameFlow()
         assertEquals(GameScreen.AUDIO_SETUP, storyVm.state.value.gameScreen)
         storyVm.proceedToCharacterCreation()
         assertEquals(GameScreen.CHARACTER_CREATION, storyVm.state.value.gameScreen)
@@ -268,13 +272,26 @@ class SaveSystemTest {
             scopeOverride = testScope
         )
 
-        // Automatically resumes at village_intro without going to Character Creation!
+        // Opens at Title Screen with save detected, ready to continue!
+        assertEquals(GameScreen.TITLE, storyVm2.state.value.gameScreen)
+        assertTrue(storyVm2.state.value.hasExistingSave)
+        assertNotNull(storyVm2.state.value.saveSummary)
+        assertEquals("Elora", storyVm2.state.value.saveSummary?.heroName)
+        assertEquals(1, storyVm2.state.value.saveSummary?.partySize)
+
+        // Continue chronicle resumes directly into story
+        storyVm2.continueGame()
         assertEquals(GameScreen.STORY_EXPLORATION, storyVm2.state.value.gameScreen)
         assertEquals("scene_village", storyVm2.state.value.currentScene.id)
         assertEquals("village_intro", storyVm2.state.value.currentNode.id)
         assertEquals("Elora", storyVm2.state.value.player.name)
         assertEquals(HeroClass.CHANTER, storyVm2.state.value.player.heroClass)
         assertEquals(listOf("c1_speak", "jump"), storyVm2.state.value.decisionsMade)
+
+        // Return to title persists and transitions back to Title Screen
+        storyVm2.returnToTitle()
+        assertEquals(GameScreen.TITLE, storyVm2.state.value.gameScreen)
+        assertTrue(storyVm2.state.value.hasExistingSave)
     }
 
     @Test

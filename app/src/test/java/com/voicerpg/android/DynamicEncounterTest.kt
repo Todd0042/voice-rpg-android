@@ -214,6 +214,7 @@ class DynamicEncounterTest {
     @Test
     fun testPlayerIncantationAgainstReinforcedMinion() {
         viewModel.startEncounter(StoryEncounters.DUNGEON_DESCENT)
+        viewModel.pauseAtb()
 
         // Spawn a reinforcement mid-battle
         val summonSuccess = viewModel.spawnEnemy(

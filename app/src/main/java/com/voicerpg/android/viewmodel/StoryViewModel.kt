@@ -18,6 +18,7 @@ import com.voicerpg.android.model.GameScreen
 import com.voicerpg.android.model.MetaCommand
 import com.voicerpg.android.model.PartyMember
 import com.voicerpg.android.model.PlayerCustomization
+import com.voicerpg.android.model.SaveSummary
 import com.voicerpg.android.model.SavedCharacterStats
 import com.voicerpg.android.model.StoryScene
 import kotlinx.coroutines.CoroutineScope
@@ -31,7 +32,7 @@ import kotlinx.coroutines.launch
 data class StoryState(
     val currentScene: StoryScene = StoryScript.SCENE_COTTAGE,
     val currentNode: DialogueNode = StoryScript.ALL_NODES["cottage_intro"]!!,
-    val gameScreen: GameScreen = GameScreen.AUDIO_SETUP,
+    val gameScreen: GameScreen = GameScreen.TITLE,
     val previousScreen: GameScreen? = null,
     val activeEncounter: EncounterDefinition? = null,
     val player: PlayerCustomization = PlayerCustomization(),
@@ -41,7 +42,9 @@ data class StoryState(
     val achievements: List<String> = emptyList(),
     val partyStats: List<SavedCharacterStats> = emptyList(),
     val isNarratorSpeaking: Boolean = false,
-    val isTypingComplete: Boolean = true
+    val isTypingComplete: Boolean = true,
+    val hasExistingSave: Boolean = false,
+    val saveSummary: SaveSummary? = null
 )
 
 class StoryViewModel(
@@ -155,16 +158,27 @@ class StoryViewModel(
             val rawRestoredNode = StoryScript.ALL_NODES[existingSave.currentNodeId] ?: StoryScript.ALL_NODES["cottage_intro"]!!
             val restoredNode = resolveEffectiveHubNode(rawRestoredNode, existingSave.narrativeFlags)
 
+            val summary = SaveSummary(
+                heroName = existingSave.player.name,
+                heroClassTitle = existingSave.player.heroClass.title,
+                chapterTitle = restoredScene.chapterTitle,
+                sceneName = restoredScene.name,
+                partySize = existingSave.partyStats.size.coerceAtLeast(1),
+                timestamp = existingSave.saveTimestamp
+            )
+
             _state.value = StoryState(
                 currentScene = restoredScene,
                 currentNode = restoredNode,
-                gameScreen = GameScreen.STORY_EXPLORATION,
+                gameScreen = GameScreen.TITLE,
                 player = existingSave.player,
                 decisionsMade = existingSave.decisionsMade,
                 narrativeFlags = existingSave.narrativeFlags,
                 defeatedEncounters = existingSave.defeatedEncounters,
                 achievements = existingSave.achievements,
-                partyStats = existingSave.partyStats
+                partyStats = existingSave.partyStats,
+                hasExistingSave = true,
+                saveSummary = summary
             )
             combatNarrator.setEyesFreeMode(existingSave.isEyesFreeMode)
             combatNarrator.setNarrationEnabled(existingSave.isNarrationEnabled)
@@ -177,15 +191,83 @@ class StoryViewModel(
             speechManager.setChimeMuted(existingSave.isChimeMuted)
             musicManager?.setMusicEnabled(existingSave.isMusicEnabled)
             musicManager?.setVolume(existingSave.musicVolume)
-            musicManager?.playTrack(restoredScene.musicAsset)
-            narrateCurrentNode()
+            musicManager?.playTrack(com.voicerpg.android.audio.MusicManager.TRACK_ACT1_FOREST)
         } else {
-            // First time player: start at Audio Setup
+            // First time player: start at Title Screen
             musicManager?.playTrack(com.voicerpg.android.audio.MusicManager.TRACK_ACT1_FOREST)
             _state.value = StoryState(
-                gameScreen = GameScreen.AUDIO_SETUP
+                gameScreen = GameScreen.TITLE,
+                hasExistingSave = false,
+                saveSummary = null
             )
         }
+    }
+
+    /**
+     * Resumes the active game save from the Title Screen.
+     */
+    fun continueGame() {
+        val existingSave = saveManager.load() ?: return
+        val restoredScene = StoryScript.ALL_SCENES[existingSave.currentSceneId] ?: StoryScript.SCENE_COTTAGE
+        val rawRestoredNode = StoryScript.ALL_NODES[existingSave.currentNodeId] ?: StoryScript.ALL_NODES["cottage_intro"]!!
+        val restoredNode = resolveEffectiveHubNode(rawRestoredNode, existingSave.narrativeFlags)
+
+        _state.value = _state.value.copy(
+            currentScene = restoredScene,
+            currentNode = restoredNode,
+            gameScreen = GameScreen.STORY_EXPLORATION,
+            previousScreen = null,
+            player = existingSave.player,
+            decisionsMade = existingSave.decisionsMade,
+            narrativeFlags = existingSave.narrativeFlags,
+            defeatedEncounters = existingSave.defeatedEncounters,
+            achievements = existingSave.achievements,
+            partyStats = existingSave.partyStats
+        )
+        musicManager?.playTrack(restoredScene.musicAsset)
+        narrateCurrentNode()
+    }
+
+    /**
+     * Starts the new game wizard flow from the Title Screen.
+     */
+    fun startNewGameFlow() {
+        cancelPendingAutoAdvance()
+        combatNarrator.stop()
+        speechManager.cancel()
+        _state.value = _state.value.copy(
+            gameScreen = if (_state.value.hasExistingSave) GameScreen.CHARACTER_CREATION else GameScreen.AUDIO_SETUP,
+            previousScreen = GameScreen.TITLE
+        )
+    }
+
+    /**
+     * Saves current campaign progress and returns to the Title Screen.
+     */
+    fun returnToTitle() {
+        cancelPendingAutoAdvance()
+        combatNarrator.stop()
+        speechManager.cancel()
+        persistCurrentState()
+        val latestSave = saveManager.load()
+        val summary = latestSave?.let { save ->
+            val scene = StoryScript.ALL_SCENES[save.currentSceneId] ?: StoryScript.SCENE_COTTAGE
+            SaveSummary(
+                heroName = save.player.name,
+                heroClassTitle = save.player.heroClass.title,
+                chapterTitle = scene.chapterTitle,
+                sceneName = scene.name,
+                partySize = save.partyStats.size.coerceAtLeast(1),
+                timestamp = save.saveTimestamp
+            )
+        }
+        _state.value = _state.value.copy(
+            gameScreen = GameScreen.TITLE,
+            previousScreen = null,
+            hasExistingSave = latestSave != null,
+            saveSummary = summary
+        )
+        musicManager?.playTrack(com.voicerpg.android.audio.MusicManager.TRACK_ACT1_FOREST)
     }
 
     /**
@@ -212,7 +294,8 @@ class StoryViewModel(
             narrativeFlags = emptyMap(),
             defeatedEncounters = emptyList(),
             achievements = initialSave.achievements,
-            partyStats = initialSave.partyStats
+            partyStats = initialSave.partyStats,
+            hasExistingSave = true
         )
         musicManager?.playTrack(StoryScript.SCENE_COTTAGE.musicAsset)
         persistCurrentState()
@@ -223,7 +306,9 @@ class StoryViewModel(
         cancelPendingAutoAdvance()
         saveManager.deleteSave()
         _state.value = StoryState(
-            gameScreen = GameScreen.AUDIO_SETUP
+            gameScreen = GameScreen.TITLE,
+            hasExistingSave = false,
+            saveSummary = null
         )
     }
 
@@ -752,20 +837,54 @@ class StoryViewModel(
     }
 
     fun returnFromAudioSetup() {
-        val returnTarget = _state.value.previousScreen ?: GameScreen.STORY_EXPLORATION
+        val returnTarget = _state.value.previousScreen ?: GameScreen.TITLE
         _state.value = _state.value.copy(
             previousScreen = null,
             gameScreen = returnTarget
         )
         persistCurrentState()
         if (returnTarget == GameScreen.STORY_EXPLORATION) {
+            musicManager?.playTrack(_state.value.currentScene.musicAsset)
             narrateCurrentNode()
+        } else {
+            musicManager?.playTrack(com.voicerpg.android.audio.MusicManager.TRACK_ACT1_FOREST)
         }
     }
 
     fun handleStoryVoiceInput(utterance: String) {
         val lower = utterance.lowercase().trim()
         val node = _state.value.currentNode
+
+        // Handle voice navigation on Title Screen
+        if (_state.value.gameScreen == GameScreen.TITLE) {
+            when {
+                lower.contains("continue") || lower.contains("resume") || lower.contains("load") -> {
+                    if (_state.value.hasExistingSave) {
+                        continueGame()
+                    }
+                    return
+                }
+                lower.contains("new game") || lower.contains("start game") || lower.contains("start new") || lower.contains("begin") -> {
+                    startNewGameFlow()
+                    return
+                }
+                lower.contains("audio setup") || lower.contains("voices") || lower.contains("calibrate") -> {
+                    openAudioSetup()
+                    return
+                }
+                lower.contains("options") || lower.contains("settings") -> {
+                    onOpenOptions?.invoke()
+                    return
+                }
+            }
+            return
+        }
+
+        // In-game return to title voice command
+        if (lower.contains("title screen") || lower.contains("main menu") || lower.contains("return to title")) {
+            returnToTitle()
+            return
+        }
 
         // Intercept direct companion voice assignment voice command
         if (lower.contains("assign voice") || lower.contains("companion voice") || lower.contains("customize voice")) {

@@ -2048,12 +2048,17 @@ class CombatViewModel(
 
         activeScope.launch {
             delay(1500)
-            _state.value = _state.value.copy(
-                floatingTexts = _state.value.floatingTexts.filter { it.id != fct.id }
-            )
+            _state.update { prev ->
+                prev.copy(floatingTexts = prev.floatingTexts.filter { it.id != fct.id })
+            }
         }
 
         return toAdd.size
+    }
+
+    fun pauseAtb() {
+        atbJob?.cancel()
+        atbJob = null
     }
 
     fun spawnEnemy(enemy: Enemy): Boolean = summonReinforcements(listOf(enemy)) > 0

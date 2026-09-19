@@ -615,22 +615,24 @@ class NarrationAndOptionsTest {
         assertEquals(null, narrator.getVoiceForSpeaker(DialogueSpeaker.MALAKOR))
         assertEquals(null, narrator.getVoiceForSpeaker(DialogueSpeaker.LYRA))
 
-        // Verify fresh story state begins at AUDIO_SETUP
+        // Verify fresh story state begins at TITLE
         val freshVm = StoryViewModel(
             speechManager = speechManager,
             combatNarrator = narrator,
             saveManager = SaveManager(context = null),
             scopeOverride = CoroutineScope(Dispatchers.Default)
         )
-        assertEquals(GameScreen.AUDIO_SETUP, freshVm.state.value.gameScreen)
+        assertEquals(GameScreen.TITLE, freshVm.state.value.gameScreen)
 
-        // Player proceeds to CHARACTER_CREATION
+        // Starting new game flow routes to AUDIO_SETUP then CHARACTER_CREATION
+        freshVm.startNewGameFlow()
+        assertEquals(GameScreen.AUDIO_SETUP, freshVm.state.value.gameScreen)
         freshVm.proceedToCharacterCreation()
         assertEquals(GameScreen.CHARACTER_CREATION, freshVm.state.value.gameScreen)
 
-        // Reset returns to AUDIO_SETUP
+        // Reset returns to TITLE
         freshVm.resetGame()
-        assertEquals(GameScreen.AUDIO_SETUP, freshVm.state.value.gameScreen)
+        assertEquals(GameScreen.TITLE, freshVm.state.value.gameScreen)
     }
 }
 

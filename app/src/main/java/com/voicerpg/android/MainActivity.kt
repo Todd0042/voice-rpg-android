@@ -30,6 +30,7 @@ import com.voicerpg.android.ui.creation.CharacterCreationScreen
 import com.voicerpg.android.ui.setup.AudioSetupScreen
 import com.voicerpg.android.ui.story.StoryScreen
 import com.voicerpg.android.ui.theme.VoiceRPGTheme
+import com.voicerpg.android.ui.title.TitleScreen
 import com.voicerpg.android.viewmodel.CombatViewModel
 import com.voicerpg.android.viewmodel.StoryViewModel
 
@@ -144,6 +145,25 @@ class MainActivity : ComponentActivity() {
             VoiceRPGTheme {
                 Box(modifier = Modifier.fillMaxSize()) {
                     when (storyState.gameScreen) {
+                        GameScreen.TITLE -> {
+                            val speechState by speechManager.speechState.collectAsState()
+                            TitleScreen(
+                                hasSave = storyState.hasExistingSave,
+                                saveSummary = storyState.saveSummary,
+                                speechState = speechState,
+                                isAutoListen = isAutoListen,
+                                onContinue = { storyViewModel.continueGame() },
+                                onNewGame = { storyViewModel.startNewGameFlow() },
+                                onAudioSetup = { storyViewModel.openAudioSetup() },
+                                onOptions = { combatViewModel.openOptions() },
+                                onStartListening = {
+                                    speechManager.startListening(
+                                        onResult = { storyViewModel.handleStoryVoiceInput(it) }
+                                    )
+                                },
+                                onStopListening = { speechManager.stopListening() }
+                            )
+                        }
                         GameScreen.AUDIO_SETUP -> {
                             AudioSetupScreen(
                                 combatNarrator = combatNarrator,
@@ -156,7 +176,9 @@ class MainActivity : ComponentActivity() {
                                     storyViewModel.persistCurrentState()
                                 },
                                 onProceed = {
-                                    if (storyState.previousScreen != null) {
+                                    if (storyState.previousScreen == GameScreen.TITLE) {
+                                        storyViewModel.returnFromAudioSetup()
+                                    } else if (storyState.previousScreen != null) {
                                         storyViewModel.returnFromAudioSetup()
                                     } else {
                                         storyViewModel.proceedToCharacterCreation()
@@ -256,6 +278,10 @@ class MainActivity : ComponentActivity() {
                         },
                         isDebugWarpEnabled = BuildConfig.DEBUG_WARP_MENU,
                         onOpenDebugWarp = { showDebugWarp = true },
+                        onReturnToTitle = {
+                            combatViewModel.closeOptions()
+                            storyViewModel.returnToTitle()
+                        },
                         onClose = { combatViewModel.closeOptions() }
                     )
 
