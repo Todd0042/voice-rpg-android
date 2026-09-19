@@ -154,6 +154,8 @@ data class GameSaveData(
     val speechRate: Float = 1.05f,
     val isCharacterPitchEnabled: Boolean = true,
     val isSpeakerAttributionEnabled: Boolean = true,
+    val isMusicEnabled: Boolean = true,
+    val musicVolume: Float = 0.55f,
 
     // 7. Per-speaker TTS voice assignments (installed Android voice model names keyed by speaker id)
     val voiceAssignments: Map<String, String> = emptyMap()

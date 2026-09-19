@@ -118,6 +118,13 @@ class CombatNarrator(
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
             tts?.let { engine ->
+                val audioAttributes = android.media.AudioAttributes.Builder()
+                    .setUsage(android.media.AudioAttributes.USAGE_MEDIA)
+                    .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SPEECH)
+                    .build()
+                try {
+                    engine.setAudioAttributes(audioAttributes)
+                } catch (_: Exception) {}
                 val result = engine.setLanguage(Locale.US)
                 if (result != TextToSpeech.LANG_MISSING_DATA && result != TextToSpeech.LANG_NOT_SUPPORTED) {
                     engine.setSpeechRate(1.15f) // Crisp, brisk pacing for combat flow

@@ -177,7 +177,8 @@ data class StoryScene(
     val chapterTitle: String,
     val backgroundAsset: String,
     val initialNodeId: String,
-    val ambientDescription: String
+    val ambientDescription: String,
+    val musicAsset: String = "audio/music/bgm_act1_forest.ogg"
 )
 
 enum class GameScreen {

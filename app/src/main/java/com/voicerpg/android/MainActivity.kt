@@ -16,9 +16,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.lifecycleScope
 import com.voicerpg.android.audio.CombatNarrator
+import com.voicerpg.android.audio.MusicManager
 import com.voicerpg.android.audio.SpeechManager
 import com.voicerpg.android.engine.SaveManager
+import kotlinx.coroutines.launch
 import com.voicerpg.android.model.GameScreen
 import com.voicerpg.android.ui.combat.DebugWarpDialog
 import com.voicerpg.android.ui.combat.OptionsDialog
@@ -34,6 +37,7 @@ class MainActivity : ComponentActivity() {
 
     private lateinit var speechManager: SpeechManager
     private lateinit var combatNarrator: CombatNarrator
+    private lateinit var musicManager: MusicManager
     private lateinit var saveManager: SaveManager
     private lateinit var combatViewModel: CombatViewModel
     private lateinit var storyViewModel: StoryViewModel
@@ -51,17 +55,31 @@ class MainActivity : ComponentActivity() {
 
         speechManager = SpeechManager(this)
         combatNarrator = CombatNarrator(this)
+        musicManager = MusicManager(this)
         saveManager = SaveManager(this)
 
         combatViewModel = CombatViewModel(
             speechManager = speechManager,
-            combatNarrator = combatNarrator
+            combatNarrator = combatNarrator,
+            musicManager = musicManager
         )
         storyViewModel = StoryViewModel(
             speechManager = speechManager,
             combatNarrator = combatNarrator,
-            saveManager = saveManager
+            saveManager = saveManager,
+            musicManager = musicManager
         )
+
+        // Connect automatic speech ducking: BGM ducks during narration, smoothly restoring after
+        lifecycleScope.launch {
+            combatNarrator.isSpeaking.collect { speaking ->
+                if (speaking) {
+                    musicManager.duckForSpeech()
+                } else {
+                    musicManager.restoreFromSpeech()
+                }
+            }
+        }
 
         // Apply saved or initial character customization to combat
         combatViewModel.applyPlayerCustomization(
@@ -94,6 +112,8 @@ class MainActivity : ComponentActivity() {
             val speechRate by combatNarrator.speechRate.collectAsState()
             val isAutoListen by speechManager.isAutoListen.collectAsState()
             val isChimeMuted by speechManager.isChimeMuted.collectAsState()
+            val isMusicEnabled by musicManager.isMusicEnabled.collectAsState()
+            val musicVolume by musicManager.musicVolume.collectAsState()
             var showDebugWarp by remember { mutableStateOf(false) }
             val isDeveloperToolsEnabled by combatViewModel.isDeveloperToolsEnabled.collectAsState()
 
@@ -108,6 +128,16 @@ class MainActivity : ComponentActivity() {
                 storyState.activeEncounter?.let { encounter ->
                     combatViewModel.applySavedStats(storyState.partyStats)
                     combatViewModel.startEncounter(encounter)
+                }
+            }
+
+            LaunchedEffect(storyState.currentScene.id, storyState.gameScreen) {
+                if (storyState.gameScreen == GameScreen.COMBAT_ARENA) {
+                    musicManager.playCombatMusic()
+                } else if (storyState.gameScreen == GameScreen.STORY_EXPLORATION) {
+                    musicManager.playTrack(storyState.currentScene.musicAsset)
+                } else {
+                    musicManager.playTrack(MusicManager.TRACK_ACT1_FOREST)
                 }
             }
 
@@ -207,6 +237,16 @@ class MainActivity : ComponentActivity() {
                             speechManager.toggleChimeMute()
                             storyViewModel.persistCurrentState()
                         },
+                        isMusicEnabled = isMusicEnabled,
+                        musicVolume = musicVolume,
+                        onToggleMusic = {
+                            musicManager.toggleMusic()
+                            storyViewModel.persistCurrentState()
+                        },
+                        onMusicVolumeChange = { vol ->
+                            musicManager.setVolume(vol)
+                            storyViewModel.persistCurrentState()
+                        },
                         onOpenVoiceSettings = {
                             combatNarrator.openVoiceSettings(this@MainActivity)
                         },
@@ -248,5 +288,6 @@ class MainActivity : ComponentActivity() {
         storyViewModel.persistCurrentState()
         speechManager.destroy()
         combatNarrator.destroy()
+        musicManager.destroy()
     }
 }

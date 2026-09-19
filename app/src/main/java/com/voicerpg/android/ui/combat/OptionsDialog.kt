@@ -51,6 +51,8 @@ fun OptionsDialog(
     speechRate: Float,
     isAutoListen: Boolean,
     isChimeMuted: Boolean,
+    isMusicEnabled: Boolean = true,
+    musicVolume: Float = 0.55f,
     onToggleEyesFreeMode: () -> Unit,
     onToggleNarration: () -> Unit,
     onToggleReadChoices: () -> Unit,
@@ -58,6 +60,8 @@ fun OptionsDialog(
     onSpeechRateChange: (Float) -> Unit,
     onToggleAutoListen: () -> Unit,
     onToggleChimeMute: () -> Unit,
+    onToggleMusic: () -> Unit = {},
+    onMusicVolumeChange: (Float) -> Unit = {},
     onOpenVoiceSettings: (() -> Unit)? = null,
     onOpenVoiceAssignment: (() -> Unit)? = null,
     isDebugWarpEnabled: Boolean = false,
@@ -383,7 +387,106 @@ fun OptionsDialog(
                 Spacer(modifier = Modifier.height(14.dp))
 
                 // =============================================================
-                // Section 2: Pocket & Hands-Free Accessibility
+                // Section 2: Ambient Music & Sound
+                // =============================================================
+                Text(
+                    text = "🎵 AMBIENT MUSIC & SOUND",
+                    color = LogosGlow,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Monospace,
+                    modifier = Modifier.align(Alignment.Start)
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Toggle: Background Music
+                OptionToggleRow(
+                    title = "🎵 Background Music (BGM)",
+                    subtitle = "Continuous ambient soundtrack per Act & battle arena. Automatically ducks during narration.",
+                    voiceHint = "Voice command: \"Toggle music\" or \"Music on/off\"",
+                    checked = isMusicEnabled,
+                    activeColor = Color(0xFFFFD54F),
+                    onCheckedChange = { onToggleMusic() }
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Music Volume Selector
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(RetroPanel.copy(alpha = 0.8f))
+                        .border(1.dp, RetroBorder, RoundedCornerShape(8.dp))
+                        .padding(10.dp)
+                ) {
+                    Column {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "🔊 Music Volume",
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 12.sp,
+                                fontFamily = FontFamily.Monospace
+                            )
+                            Text(
+                                text = "${(musicVolume * 100).toInt()}%",
+                                color = LogosGold,
+                                fontWeight = FontWeight.Black,
+                                fontSize = 11.sp,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            listOf(
+                                0.25f to "25% Soft",
+                                0.55f to "55% Balanced",
+                                0.80f to "80% Epic",
+                                1.00f to "100% Max"
+                            ).forEach { (vol, label) ->
+                                val isSelected = kotlin.math.abs(musicVolume - vol) < 0.12f
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(if (isSelected) LogosGold else RetroBlack)
+                                        .border(
+                                            1.dp,
+                                            if (isSelected) LogosGold else RetroBorder,
+                                            RoundedCornerShape(6.dp)
+                                        )
+                                        .clickable { onMusicVolumeChange(vol) }
+                                        .padding(vertical = 6.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = label,
+                                        color = if (isSelected) RetroBlack else Color.LightGray,
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = FontFamily.Monospace
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // =============================================================
+                // Section 3: Pocket & Hands-Free Accessibility
                 // =============================================================
                 Text(
                     text = "🎧 POCKET & ACCESSIBILITY",
@@ -465,6 +568,7 @@ fun OptionsDialog(
                         VoiceCommandItem(command = "👂 \"Auto Listen\"", desc = "Toggles hands-free turn mic on/off")
                         VoiceCommandItem(command = "🎭 \"Assign Voices\"", desc = "Opens companion voice customization screen")
                         VoiceCommandItem(command = "🗣️ \"Speaker Names\"", desc = "Toggles \"Sir Cedric says...\" announcements")
+                        VoiceCommandItem(command = "🎵 \"Music\" / \"Toggle Music\"", desc = "Toggles ambient background music on/off")
                         VoiceCommandItem(command = "⚙️ \"Options\" / \"Close\"", desc = "Opens or closes this settings screen")
                         VoiceCommandItem(command = "❓ \"Help\"", desc = "Spoken audio overview of voice commands")
                     }

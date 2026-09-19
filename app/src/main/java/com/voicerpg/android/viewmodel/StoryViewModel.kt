@@ -48,6 +48,7 @@ class StoryViewModel(
     val speechManager: SpeechManager,
     val combatNarrator: CombatNarrator,
     val saveManager: SaveManager = SaveManager(),
+    val musicManager: com.voicerpg.android.audio.MusicManager? = null,
     private val scopeOverride: CoroutineScope? = null
 ) : ViewModel() {
 
@@ -174,9 +175,13 @@ class StoryViewModel(
             combatNarrator.setVoiceAssignments(existingSave.voiceAssignments)
             speechManager.setAutoListen(existingSave.isAutoListen)
             speechManager.setChimeMuted(existingSave.isChimeMuted)
+            musicManager?.setMusicEnabled(existingSave.isMusicEnabled)
+            musicManager?.setVolume(existingSave.musicVolume)
+            musicManager?.playTrack(restoredScene.musicAsset)
             narrateCurrentNode()
         } else {
             // First time player: start at Audio Setup
+            musicManager?.playTrack(com.voicerpg.android.audio.MusicManager.TRACK_ACT1_FOREST)
             _state.value = StoryState(
                 gameScreen = GameScreen.AUDIO_SETUP
             )
@@ -209,6 +214,7 @@ class StoryViewModel(
             achievements = initialSave.achievements,
             partyStats = initialSave.partyStats
         )
+        musicManager?.playTrack(StoryScript.SCENE_COTTAGE.musicAsset)
         persistCurrentState()
         narrateCurrentNode()
     }
@@ -269,6 +275,7 @@ class StoryViewModel(
             narrativeFlags = clearedFlags + seededFlags,
             partyStats = trimmedParty
         )
+        musicManager?.playTrack(introScene.musicAsset)
         applyNodeTransition(introNode)
     }
 
@@ -482,6 +489,7 @@ class StoryViewModel(
             partyStats = updatedPartyStats
         )
 
+        musicManager?.playTrack(targetScene.musicAsset)
         persistCurrentState()
         narrateCurrentNode()
     }
@@ -714,6 +722,8 @@ class StoryViewModel(
             speechRate = combatNarrator.speechRate.value,
             isCharacterPitchEnabled = combatNarrator.isCharacterPitchEnabled.value,
             isSpeakerAttributionEnabled = combatNarrator.isSpeakerAttributionEnabled.value,
+            isMusicEnabled = musicManager?.isMusicEnabled?.value ?: currentSave.isMusicEnabled,
+            musicVolume = musicManager?.musicVolume?.value ?: currentSave.musicVolume,
             voiceAssignments = combatNarrator.getVoiceAssignments()
         )
         saveManager.save(updatedSave)
@@ -721,11 +731,13 @@ class StoryViewModel(
 
     fun switchToCombat() {
         combatNarrator.stop()
+        musicManager?.playCombatMusic()
         _state.value = _state.value.copy(gameScreen = GameScreen.COMBAT_ARENA)
     }
 
     fun switchToStory() {
         _state.value = _state.value.copy(gameScreen = GameScreen.STORY_EXPLORATION)
+        musicManager?.playTrack(_state.value.currentScene.musicAsset)
         narrateCurrentNode()
     }
 
@@ -797,6 +809,13 @@ class StoryViewModel(
                 speechManager.toggleAutoListen()
                 val enabled = speechManager.isAutoListen.value
                 val status = if (enabled) "Hands free auto listen enabled." else "Auto listen disabled."
+                combatNarrator.speak(status, force = true)
+                persistCurrentState()
+                return
+            }
+            MetaCommand.TOGGLE_MUSIC -> {
+                val enabled = musicManager?.toggleMusic() ?: true
+                val status = if (enabled) "Background music enabled." else "Background music muted."
                 combatNarrator.speak(status, force = true)
                 persistCurrentState()
                 return

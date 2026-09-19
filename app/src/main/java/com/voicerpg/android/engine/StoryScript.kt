@@ -98,7 +98,8 @@ object StoryScript {
         chapterTitle = "Chapter 5: The Severed Resonance",
         backgroundAsset = "story/marsh_fane.jpg",
         initialNodeId = "ch5_intro",
-        ambientDescription = "Murky emerald waters lap against sunken gothic pillars and twisted weeping willow roots."
+        ambientDescription = "Murky emerald waters lap against sunken gothic pillars and twisted weeping willow roots.",
+        musicAsset = "audio/music/bgm_act2_marsh.ogg"
     )
 
     val SCENE_WILLOW_SANCTUARY = StoryScene(
@@ -107,7 +108,8 @@ object StoryScript {
         chapterTitle = "Chapter 6: The Warden's Oath",
         backgroundAsset = "story/willow_sanctuary.jpg",
         initialNodeId = "ch6_intro",
-        ambientDescription = "Bioluminescent emerald motes float among the hanging moss of the ancient sacred willow."
+        ambientDescription = "Bioluminescent emerald motes float among the hanging moss of the ancient sacred willow.",
+        musicAsset = "audio/music/bgm_act2_marsh.ogg"
     )
 
     val SCENE_SUNKEN_CATACOMBS = StoryScene(
@@ -116,7 +118,8 @@ object StoryScript {
         chapterTitle = "Chapter 7: Tuning the Veridian Chime",
         backgroundAsset = "story/sunken_catacombs.jpg",
         initialNodeId = "ch7_intro",
-        ambientDescription = "Jade-infused bronze rings over crystal clear waters as ancient stone pathways emerge from the bog."
+        ambientDescription = "Jade-infused bronze rings over crystal clear waters as ancient stone pathways emerge from the bog.",
+        musicAsset = "audio/music/bgm_act2_marsh.ogg"
     )
 
     val SCENE_SHADOWED_CRAGS = StoryScene(
@@ -125,7 +128,8 @@ object StoryScript {
         chapterTitle = "Chapter 8: The Shadowed Crags & Zephyr's Defection",
         backgroundAsset = "story/shadowed_crags.jpg",
         initialNodeId = "ch8_intro",
-        ambientDescription = "Razor obsidian crags tower over a cold canyon shrouded in purple mountain mist."
+        ambientDescription = "Razor obsidian crags tower over a cold canyon shrouded in purple mountain mist.",
+        musicAsset = "audio/music/bgm_act2_marsh.ogg"
     )
 
     val SCENE_MAUSOLEUM = StoryScene(
@@ -134,7 +138,8 @@ object StoryScript {
         chapterTitle = "Chapter 9: The Broken Vow of Dawn",
         backgroundAsset = "story/mausoleum_sun.jpg",
         initialNodeId = "ch9_intro",
-        ambientDescription = "Shattered marble statues of the Golden Chime knights lie beneath weeping golden sunburst banners."
+        ambientDescription = "Shattered marble statues of the Golden Chime knights lie beneath weeping golden sunburst banners.",
+        musicAsset = "audio/music/bgm_act3_bastion.ogg"
     )
 
     val SCENE_EMERALD_CHOIR = StoryScene(
@@ -143,7 +148,8 @@ object StoryScript {
         chapterTitle = "Chapter 10: The Song of the Mute Grove",
         backgroundAsset = "story/emerald_choir.jpg",
         initialNodeId = "ch10_intro",
-        ambientDescription = "Petrified dryads stand frozen around a dark spring choked in obsidian silt."
+        ambientDescription = "Petrified dryads stand frozen around a dark spring choked in obsidian silt.",
+        musicAsset = "audio/music/bgm_act3_bastion.ogg"
     )
 
     val SCENE_BLIND_GORGE = StoryScene(
@@ -152,7 +158,8 @@ object StoryScript {
         chapterTitle = "Chapter 11: The Silent Blade's Reckoning",
         backgroundAsset = "story/blind_gorge.jpg",
         initialNodeId = "ch11_intro",
-        ambientDescription = "Thick silence and shadow mist cling to the jagged canyon hideout of the Black Guild."
+        ambientDescription = "Thick silence and shadow mist cling to the jagged canyon hideout of the Black Guild.",
+        musicAsset = "audio/music/bgm_act3_bastion.ogg"
     )
 
     val SCENE_CLOCKWORK_BASTION = StoryScene(
@@ -161,7 +168,8 @@ object StoryScript {
         chapterTitle = "Chapter 12: Awakening the Third Bell",
         backgroundAsset = "story/clockwork_bastion.jpg",
         initialNodeId = "ch12_intro",
-        ambientDescription = "Colossal brass cogs and steam pipes hum within the towering iron belfry of Ouros."
+        ambientDescription = "Colossal brass cogs and steam pipes hum within the towering iron belfry of Ouros.",
+        musicAsset = "audio/music/bgm_act3_bastion.ogg"
     )
 
     val SCENE_SILENT_CITADEL = StoryScene(
@@ -170,7 +178,8 @@ object StoryScript {
         chapterTitle = "Chapter 13: Breach of the Silent Citadel",
         backgroundAsset = "story/silent_citadel_gates.jpg",
         initialNodeId = "ch13_intro",
-        ambientDescription = "Banners of the Mute Sovereign hang from monolithic black glass battlements before Sol-Aethel."
+        ambientDescription = "Banners of the Mute Sovereign hang from monolithic black glass battlements before Sol-Aethel.",
+        musicAsset = "audio/music/bgm_act4_celestial.ogg"
     )
 
     val SCENE_VOID_RESERVOIR = StoryScene(
@@ -179,7 +188,8 @@ object StoryScript {
         chapterTitle = "Chapter 14: The Void Reservoir",
         backgroundAsset = "story/void_reservoir.jpg",
         initialNodeId = "ch14_intro",
-        ambientDescription = "A cosmic lake of pure liquid silence that drinks all echoes high above the clouds."
+        ambientDescription = "A cosmic lake of pure liquid silence that drinks all echoes high above the clouds.",
+        musicAsset = "audio/music/bgm_act4_celestial.ogg"
     )
 
     val SCENE_CELESTIAL_SPIRE = StoryScene(
@@ -188,7 +198,8 @@ object StoryScript {
         chapterTitle = "Chapter 15: Ascent of the Celestial Spire",
         backgroundAsset = "story/celestial_stair.jpg",
         initialNodeId = "ch15_intro",
-        ambientDescription = "A ribbon staircase of crystallized harmonic light rises toward the aurora of the stars."
+        ambientDescription = "A ribbon staircase of crystallized harmonic light rises toward the aurora of the stars.",
+        musicAsset = "audio/music/bgm_act4_celestial.ogg"
     )
 
     val SCENE_FINAL_SUMMIT = StoryScene(
@@ -197,7 +208,8 @@ object StoryScript {
         chapterTitle = "Chapter 16: The Primordial Syllable",
         backgroundAsset = "story/final_summit.jpg",
         initialNodeId = "ch16_intro",
-        ambientDescription = "The colossal Fourth Great Bell hangs beneath cosmic auroras where Grand Inquisitor Malakor waits."
+        ambientDescription = "The colossal Fourth Great Bell hangs beneath cosmic auroras where Grand Inquisitor Malakor waits.",
+        musicAsset = "audio/music/bgm_act4_celestial.ogg"
     )
 
     val SCENE_OBSIDIAN_VAULTS = StoryScene(
@@ -206,7 +218,8 @@ object StoryScript {
         chapterTitle = "Chapter 11: The Silent Blade's Reckoning",
         backgroundAsset = "story/obsidian_vaults.jpg",
         initialNodeId = "ch11_vaults_entry",
-        ambientDescription = "Racks of severed tongues sealed in lead, and the ledgers that record them, line the guild's subterranean reliquary."
+        ambientDescription = "Racks of severed tongues sealed in lead, and the ledgers that record them, line the guild's subterranean reliquary.",
+        musicAsset = "audio/music/bgm_act3_bastion.ogg"
     )
 
     val SCENE_UMBRAL_TRENCH = StoryScene(
@@ -215,7 +228,8 @@ object StoryScript {
         chapterTitle = "Chapter 14: The Void Reservoir",
         backgroundAsset = "story/umbral_trench.jpg",
         initialNodeId = "ch14_trench_entry",
-        ambientDescription = "Starlight is muted here; the stolen voices of the drowned pool thicken into a living, breathing dark."
+        ambientDescription = "Starlight is muted here; the stolen voices of the drowned pool thicken into a living, breathing dark.",
+        musicAsset = "audio/music/bgm_act4_celestial.ogg"
     )
 
     val SCENE_CELESTIAL_VESTIBULE = StoryScene(
@@ -224,7 +238,8 @@ object StoryScript {
         chapterTitle = "Chapter 16: The Primordial Syllable",
         backgroundAsset = "story/vestibule_echoes.jpg",
         initialNodeId = "ch16_vestibule_entry",
-        ambientDescription = "Frozen supplicants kneel in rings around four pillars of glass, each a severed fragment of the world's song."
+        ambientDescription = "Frozen supplicants kneel in rings around four pillars of glass, each a severed fragment of the world's song.",
+        musicAsset = "audio/music/bgm_act4_celestial.ogg"
     )
 
     val SCENE_EPILOGUE = StoryScene(
@@ -233,7 +248,8 @@ object StoryScript {
         chapterTitle = "Epilogue: The Great Awakening",
         backgroundAsset = "story/village_bright.jpg",
         initialNodeId = "epilogue_awakening",
-        ambientDescription = "Golden sunlight bathes the awakened village square as songbirds fill the living pines."
+        ambientDescription = "Golden sunlight bathes the awakened village square as songbirds fill the living pines.",
+        musicAsset = "audio/music/bgm_act4_celestial.ogg"
     )
 
     val ALL_SCENES = mapOf(

@@ -47,6 +47,10 @@ object IntentParser {
             lower.contains("speaker name") || lower.contains("toggle speaker") || lower.contains("who is speaking") ||
                     lower.contains("toggle attribution") || lower == "attribution" || lower.contains("announcer says") -> MetaCommand.TOGGLE_SPEAKER_ATTRIBUTION
 
+            lower.contains("toggle music") || lower == "music" || lower.contains("music on") ||
+                    lower.contains("music off") || lower.contains("mute music") || lower.contains("unmute music") ||
+                    lower.contains("background music") || lower.contains("bgm") -> MetaCommand.TOGGLE_MUSIC
+
             lower == "options" || lower == "settings" || lower == "menu" || lower.contains("open options") ||
                     lower.contains("open settings") || lower.contains("show options") -> MetaCommand.OPEN_OPTIONS
 

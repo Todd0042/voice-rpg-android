@@ -37,6 +37,33 @@ class AssetWiringTest {
     }
 
     @Test
+    fun everySceneMusicAssetResolvesToARealFile() {
+        val missing = mutableListOf<String>()
+        for (scene in StoryScript.ALL_SCENES.values) {
+            val file = File(assetsDir, scene.musicAsset)
+            if (!file.isFile) missing.add("${scene.id} -> ${scene.musicAsset}")
+        }
+        assertTrue("Missing scene music assets: $missing", missing.isEmpty())
+    }
+
+    @Test
+    fun allBgmAudioFilesExist() {
+        val expectedTracks = listOf(
+            "audio/music/bgm_act1_forest.ogg",
+            "audio/music/bgm_act2_marsh.ogg",
+            "audio/music/bgm_act3_bastion.ogg",
+            "audio/music/bgm_act4_celestial.ogg",
+            "audio/music/bgm_combat.ogg"
+        )
+        val missing = mutableListOf<String>()
+        for (track in expectedTracks) {
+            val file = File(assetsDir, track)
+            if (!file.isFile) missing.add(track)
+        }
+        assertTrue("Missing BGM tracks: $missing", missing.isEmpty())
+    }
+
+    @Test
     fun everyPortraitAssetResolvesToARealFile() {
         val speakers = listOf(
             DialogueSpeaker.AETHEL,

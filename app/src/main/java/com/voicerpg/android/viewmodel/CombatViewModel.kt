@@ -85,6 +85,7 @@ class CombatViewModel(
     val particleEmitter: ParticleEmitter = ParticleEmitter(),
     val spellVfxEngine: SpellVfxEngine = SpellVfxEngine(),
     val combatNarrator: CombatNarrator = CombatNarrator(),
+    val musicManager: com.voicerpg.android.audio.MusicManager? = null,
     private val scopeOverride: CoroutineScope? = null
 ) : ViewModel() {
 
@@ -1294,6 +1295,29 @@ class CombatViewModel(
                     _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts.filter { it.id != fct.id })
                 }
             }
+            MetaCommand.TOGGLE_MUSIC -> {
+                val enabled = musicManager?.toggleMusic() ?: true
+                val status = if (enabled) "Background music enabled." else "Background music muted."
+                combatNarrator.speak(status, force = true) {
+                    if (_state.value.phase == CombatPhase.PLAYER_INPUT && speechManager.isAutoListen.value) {
+                        activeScope.launch {
+                            delay(100)
+                            startVoiceListening()
+                        }
+                    }
+                }
+                val fct = FloatingCombatText(
+                    text = if (enabled) "Music: ON 🎵" else "Music: OFF 🎵",
+                    color = Color(0xFFFFD54F),
+                    startX = 500f,
+                    startY = 400f
+                )
+                _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts + fct)
+                activeScope.launch {
+                    delay(1500)
+                    _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts.filter { it.id != fct.id })
+                }
+            }
             MetaCommand.OPEN_OPTIONS -> {
                 openOptions()
             }
@@ -2083,6 +2107,7 @@ class CombatViewModel(
         isPhase3Triggered = false
         _combatantPositions.clear()
         sfxManager.mute(false)
+        musicManager?.playCombatMusic()
 
         val baseParty = encounter.initialParty ?: if (_state.value.party.isNotEmpty()) {
             _state.value.party.map {
@@ -2171,6 +2196,7 @@ class CombatViewModel(
         turnsTakenInRound = 0
         lastActedHeroId = null
         lastActedFaction = CombatantFaction.NONE
+        musicManager?.playCombatMusic()
 
         _state.value = CombatState(
             phase = CombatPhase.ATB_WAITING,
