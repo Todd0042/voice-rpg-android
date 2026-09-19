@@ -133,6 +133,7 @@ data class GameSaveData(
     // 3. Complete Decision History (every choice ever selected by player)
     val decisionsMade: List<String> = emptyList(),
     val narrativeFlags: Map<String, Boolean> = emptyMap(),
+    val recentDialogueLog: List<DialogueLogEntry> = emptyList(),
 
     // 4. Current Stats for all Party Members
     val partyStats: List<SavedCharacterStats> = emptyList(),

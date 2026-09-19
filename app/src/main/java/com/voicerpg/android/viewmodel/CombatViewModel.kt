@@ -1334,6 +1334,10 @@ class CombatViewModel(
                     }
                 }
             }
+            MetaCommand.OPEN_BACKLOG,
+            MetaCommand.CLOSE_BACKLOG,
+            MetaCommand.FAST_FORWARD,
+            MetaCommand.STOP_FAST_FORWARD,
             MetaCommand.NONE -> Unit
         }
     }

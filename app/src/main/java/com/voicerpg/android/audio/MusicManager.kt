@@ -34,6 +34,7 @@ class MusicManager(
 ) {
     companion object {
         private const val TAG = "MusicManager"
+        const val TRACK_TITLE = "audio/music/bgm_title.ogg"
         const val TRACK_ACT1_FOREST = "audio/music/bgm_act1_forest.ogg"
         const val TRACK_ACT2_MARSH = "audio/music/bgm_act2_marsh.ogg"
         const val TRACK_ACT3_BASTION = "audio/music/bgm_act3_bastion.ogg"

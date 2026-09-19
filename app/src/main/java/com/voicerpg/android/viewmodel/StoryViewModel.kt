@@ -11,7 +11,9 @@ import com.voicerpg.android.engine.StoryChoiceMatcher
 import com.voicerpg.android.engine.StoryEncounters
 import com.voicerpg.android.engine.StoryScript
 import com.voicerpg.android.model.DialogueChoice
+import com.voicerpg.android.model.DialogueLogEntry
 import com.voicerpg.android.model.DialogueNode
+import com.voicerpg.android.model.DialogueSpeaker
 import com.voicerpg.android.model.EncounterDefinition
 import com.voicerpg.android.model.GameSaveData
 import com.voicerpg.android.model.GameScreen
@@ -44,7 +46,10 @@ data class StoryState(
     val isNarratorSpeaking: Boolean = false,
     val isTypingComplete: Boolean = true,
     val hasExistingSave: Boolean = false,
-    val saveSummary: SaveSummary? = null
+    val saveSummary: SaveSummary? = null,
+    val dialogueHistory: List<DialogueLogEntry> = emptyList(),
+    val isBacklogOpen: Boolean = false,
+    val isFastForwarding: Boolean = false
 )
 
 class StoryViewModel(
@@ -167,6 +172,21 @@ class StoryViewModel(
                 timestamp = existingSave.saveTimestamp
             )
 
+            val restoredHistory = if (existingSave.recentDialogueLog.isNotEmpty()) {
+                existingSave.recentDialogueLog
+            } else {
+                listOf(
+                    DialogueLogEntry(
+                        speakerId = restoredNode.speaker.id,
+                        speakerName = restoredNode.speaker.name,
+                        speakerTitle = restoredNode.speaker.title,
+                        text = restoredNode.text,
+                        sceneName = restoredScene.name,
+                        isNarrator = restoredNode.speaker == DialogueSpeaker.NARRATOR
+                    )
+                )
+            }
+
             _state.value = StoryState(
                 currentScene = restoredScene,
                 currentNode = restoredNode,
@@ -178,7 +198,8 @@ class StoryViewModel(
                 achievements = existingSave.achievements,
                 partyStats = existingSave.partyStats,
                 hasExistingSave = true,
-                saveSummary = summary
+                saveSummary = summary,
+                dialogueHistory = restoredHistory
             )
             combatNarrator.setEyesFreeMode(existingSave.isEyesFreeMode)
             combatNarrator.setNarrationEnabled(existingSave.isNarrationEnabled)
@@ -212,6 +233,23 @@ class StoryViewModel(
         val rawRestoredNode = StoryScript.ALL_NODES[existingSave.currentNodeId] ?: StoryScript.ALL_NODES["cottage_intro"]!!
         val restoredNode = resolveEffectiveHubNode(rawRestoredNode, existingSave.narrativeFlags)
 
+        val restoredHistory = if (existingSave.recentDialogueLog.isNotEmpty()) {
+            existingSave.recentDialogueLog
+        } else if (_state.value.dialogueHistory.isNotEmpty()) {
+            _state.value.dialogueHistory
+        } else {
+            listOf(
+                DialogueLogEntry(
+                    speakerId = restoredNode.speaker.id,
+                    speakerName = restoredNode.speaker.name,
+                    speakerTitle = restoredNode.speaker.title,
+                    text = restoredNode.text,
+                    sceneName = restoredScene.name,
+                    isNarrator = restoredNode.speaker == DialogueSpeaker.NARRATOR
+                )
+            )
+        }
+
         _state.value = _state.value.copy(
             currentScene = restoredScene,
             currentNode = restoredNode,
@@ -222,7 +260,8 @@ class StoryViewModel(
             narrativeFlags = existingSave.narrativeFlags,
             defeatedEncounters = existingSave.defeatedEncounters,
             achievements = existingSave.achievements,
-            partyStats = existingSave.partyStats
+            partyStats = existingSave.partyStats,
+            dialogueHistory = restoredHistory
         )
         musicManager?.playTrack(restoredScene.musicAsset)
         narrateCurrentNode()
@@ -285,9 +324,19 @@ class StoryViewModel(
     fun startNewGame(customization: PlayerCustomization) {
         cancelPendingAutoAdvance()
         val initialSave = saveManager.createInitialSave(customization)
+        val initialNode = StoryScript.ALL_NODES["cottage_intro"]!!
+        val initialScene = StoryScript.SCENE_COTTAGE
+        val initialEntry = DialogueLogEntry(
+            speakerId = initialNode.speaker.id,
+            speakerName = initialNode.speaker.name,
+            speakerTitle = initialNode.speaker.title,
+            text = initialNode.text,
+            sceneName = initialScene.name,
+            isNarrator = initialNode.speaker == DialogueSpeaker.NARRATOR
+        )
         _state.value = StoryState(
-            currentScene = StoryScript.SCENE_COTTAGE,
-            currentNode = StoryScript.ALL_NODES["cottage_intro"]!!,
+            currentScene = initialScene,
+            currentNode = initialNode,
             gameScreen = GameScreen.STORY_EXPLORATION,
             player = customization,
             decisionsMade = emptyList(),
@@ -295,7 +344,8 @@ class StoryViewModel(
             defeatedEncounters = emptyList(),
             achievements = initialSave.achievements,
             partyStats = initialSave.partyStats,
-            hasExistingSave = true
+            hasExistingSave = true,
+            dialogueHistory = listOf(initialEntry)
         )
         musicManager?.playTrack(StoryScript.SCENE_COTTAGE.musicAsset)
         persistCurrentState()
@@ -365,9 +415,19 @@ class StoryViewModel(
     }
 
     fun advanceDialogue() {
+        if (_state.value.isFastForwarding) {
+            stopFastForward()
+            return
+        }
+        advanceDialogueInternal(suppressNarration = false)
+    }
+
+    private fun advanceDialogueInternal(suppressNarration: Boolean = false) {
         cancelPendingAutoAdvance()
-        combatNarrator.stop()
-        speechManager.cancel()
+        if (!suppressNarration) {
+            combatNarrator.stop()
+            speechManager.cancel()
+        }
         val node = _state.value.currentNode
         if (effectiveDialogueChoices(node).isNotEmpty()) {
             return
@@ -380,7 +440,7 @@ class StoryViewModel(
                 if (nextNode != null) {
                     val updatedDecisions = _state.value.decisionsMade + sole.id
                     _state.value = _state.value.copy(decisionsMade = updatedDecisions)
-                    applyNodeTransition(nextNode)
+                    applyNodeTransition(nextNode, suppressNarration = suppressNarration)
                 }
             }
             return
@@ -395,7 +455,7 @@ class StoryViewModel(
         if (nextId != null) {
             val nextNode = StoryScript.ALL_NODES[nextId]
             if (nextNode != null) {
-                applyNodeTransition(nextNode)
+                applyNodeTransition(nextNode, suppressNarration = suppressNarration)
             }
         } else if (node.choices.isEmpty()) {
             if (node.id == "epilogue_credits" || node.setFlagOnEnter == "game_completed") {
@@ -407,12 +467,15 @@ class StoryViewModel(
             }
             val fallbackNode = StoryScript.ALL_NODES["camp_intro"] ?: StoryScript.ALL_NODES["crossroads_intro"]
             if (fallbackNode != null) {
-                applyNodeTransition(fallbackNode)
+                applyNodeTransition(fallbackNode, suppressNarration = suppressNarration)
             }
         }
     }
 
     fun selectChoice(choice: DialogueChoice) {
+        if (_state.value.isFastForwarding) {
+            stopFastForward()
+        }
         cancelPendingAutoAdvance()
         if (choice.completionFlag != null && _state.value.narrativeFlags[choice.completionFlag] == true) {
             combatNarrator.speak("That objective has already been completed. Please select a remaining task.", force = true)
@@ -429,7 +492,7 @@ class StoryViewModel(
         }
     }
 
-    private fun applyNodeTransition(newNode: DialogueNode) {
+    private fun applyNodeTransition(newNode: DialogueNode, suppressNarration: Boolean = false) {
         val updatedFlags = if (newNode.setFlagOnEnter != null) {
             _state.value.narrativeFlags + (newNode.setFlagOnEnter to true)
         } else {
@@ -567,16 +630,29 @@ class StoryViewModel(
         val sceneIdToUse = effectiveNode.changeSceneId ?: _state.value.currentScene.id
         val targetScene = StoryScript.ALL_SCENES[sceneIdToUse] ?: _state.value.currentScene
 
+        val entry = DialogueLogEntry(
+            speakerId = effectiveNode.speaker.id,
+            speakerName = effectiveNode.speaker.name,
+            speakerTitle = effectiveNode.speaker.title,
+            text = effectiveNode.text,
+            sceneName = targetScene.name,
+            isNarrator = effectiveNode.speaker == DialogueSpeaker.NARRATOR
+        )
+        val updatedHistory = (_state.value.dialogueHistory + entry).takeLast(100)
+
         _state.value = _state.value.copy(
             currentScene = targetScene,
             currentNode = effectiveNode,
             narrativeFlags = updatedFlags,
-            partyStats = updatedPartyStats
+            partyStats = updatedPartyStats,
+            dialogueHistory = updatedHistory
         )
 
         musicManager?.playTrack(targetScene.musicAsset)
         persistCurrentState()
-        narrateCurrentNode()
+        if (!suppressNarration) {
+            narrateCurrentNode()
+        }
     }
 
     private fun resolveEffectiveHubNode(node: DialogueNode, flags: Map<String, Boolean>): DialogueNode {
@@ -799,6 +875,7 @@ class StoryViewModel(
             partyStats = s.partyStats,
             defeatedEncounters = s.defeatedEncounters,
             achievements = s.achievements,
+            recentDialogueLog = s.dialogueHistory.takeLast(60),
             isEyesFreeMode = combatNarrator.isEyesFreeMode.value,
             isAutoListen = speechManager.isAutoListen.value,
             isChimeMuted = speechManager.isChimeMuted.value,
@@ -851,9 +928,122 @@ class StoryViewModel(
         }
     }
 
+    private var fastForwardJob: Job? = null
+
+    fun startFastForward() {
+        if (_state.value.isFastForwarding) return
+        cancelPendingAutoAdvance()
+        combatNarrator.stop()
+        speechManager.cancel()
+        _state.value = _state.value.copy(isFastForwarding = true)
+
+        fastForwardJob = activeScope.launch {
+            while (_state.value.isFastForwarding) {
+                if (!canAdvanceDialogue()) {
+                    stopFastForward()
+                    break
+                }
+                advanceDialogueInternal(suppressNarration = true)
+                delay(120)
+            }
+        }
+    }
+
+    fun stopFastForward() {
+        fastForwardJob?.cancel()
+        fastForwardJob = null
+        if (_state.value.isFastForwarding) {
+            _state.value = _state.value.copy(isFastForwarding = false)
+            narrateCurrentNode()
+        }
+    }
+
+    fun toggleFastForward() {
+        if (_state.value.isFastForwarding) {
+            stopFastForward()
+        } else {
+            startFastForward()
+        }
+    }
+
+    fun openBacklog() {
+        cancelPendingAutoAdvance()
+        if (_state.value.isFastForwarding) {
+            stopFastForward()
+        }
+        _state.value = _state.value.copy(isBacklogOpen = true)
+        if (combatNarrator.isEyesFreeMode.value) {
+            val last = _state.value.dialogueHistory.lastOrNull()
+            val text = if (last != null) {
+                "Dialogue history opened. Most recent line from ${last.speakerName}: ${last.text}. Say Close to return."
+            } else {
+                "Dialogue history opened. No previous lines. Say Close to return."
+            }
+            combatNarrator.speak(text, force = true)
+        }
+    }
+
+    fun closeBacklog() {
+        combatNarrator.stop()
+        _state.value = _state.value.copy(isBacklogOpen = false)
+        if (combatNarrator.isEyesFreeMode.value) {
+            combatNarrator.speak("Resuming story.", force = true) {
+                narrateCurrentNode()
+            }
+        }
+    }
+
+    fun toggleBacklog() {
+        if (_state.value.isBacklogOpen) {
+            closeBacklog()
+        } else {
+            openBacklog()
+        }
+    }
+
+    fun replayDialogueEntry(entry: DialogueLogEntry) {
+        val speaker = when (entry.speakerId) {
+            "aethel" -> DialogueSpeaker.AETHEL
+            "cedric" -> DialogueSpeaker.CEDRIC
+            "lyra" -> DialogueSpeaker.LYRA
+            "zephyr" -> DialogueSpeaker.ZEPHYR
+            "malakor" -> DialogueSpeaker.MALAKOR
+            "shadow_wisp" -> DialogueSpeaker.SHADOW_WISP
+            "vaelor" -> DialogueSpeaker.VAELOR
+            "galahault" -> DialogueSpeaker.GALAHAULT
+            "nocturne" -> DialogueSpeaker.NOCTURNE
+            "ouros" -> DialogueSpeaker.OUROS
+            "dryad_matron" -> DialogueSpeaker.DRYAD_MATRON
+            "voice_mote" -> DialogueSpeaker.VOICE_MOTE
+            else -> DialogueSpeaker.NARRATOR
+        }
+        combatNarrator.stop()
+        combatNarrator.narrateDialogue(
+            speaker = speaker,
+            text = entry.text,
+            choices = emptyList()
+        )
+    }
+
     fun handleStoryVoiceInput(utterance: String) {
         val lower = utterance.lowercase().trim()
         val node = _state.value.currentNode
+
+        // Intercept backlog dismissal when backlog is open
+        if (_state.value.isBacklogOpen) {
+            if (lower.contains("close") || lower == "back" || lower == "return" || lower == "dismiss" || lower.contains("exit")) {
+                closeBacklog()
+                return
+            }
+        }
+
+        // Intercept fast-forward stop
+        if (_state.value.isFastForwarding) {
+            if (lower == "stop" || lower == "halt" || lower == "pause" || lower.contains("stop skip")) {
+                stopFastForward()
+                return
+            }
+        }
 
         // Handle voice navigation on Title Screen
         if (_state.value.gameScreen == GameScreen.TITLE) {
@@ -892,7 +1082,7 @@ class StoryViewModel(
             return
         }
 
-        // 0. Intercept Meta Voice Commands (Options, Narration, Choice Reading, Pocket Mode)
+        // 0. Intercept Meta Voice Commands (Options, Narration, Choice Reading, Pocket Mode, Backlog, Fast-Forward)
         val peek = IntentParser.parse(utterance, emptyList(), emptyList(), emptyList())
         when (peek.metaCommand) {
             MetaCommand.OPEN_OPTIONS -> {
@@ -902,6 +1092,24 @@ class StoryViewModel(
             MetaCommand.CLOSE_OPTIONS -> {
                 onCloseOptions?.invoke()
                 return
+            }
+            MetaCommand.OPEN_BACKLOG -> {
+                openBacklog()
+                return
+            }
+            MetaCommand.CLOSE_BACKLOG -> {
+                closeBacklog()
+                return
+            }
+            MetaCommand.FAST_FORWARD -> {
+                startFastForward()
+                return
+            }
+            MetaCommand.STOP_FAST_FORWARD -> {
+                if (_state.value.isFastForwarding) {
+                    stopFastForward()
+                    return
+                }
             }
             MetaCommand.TOGGLE_NARRATION -> {
                 val enabled = combatNarrator.toggleNarration()
@@ -940,7 +1148,7 @@ class StoryViewModel(
                 return
             }
             MetaCommand.HELP -> {
-                combatNarrator.speak("Say 'Next' to advance dialogue. Say a choice keyword to select it. Say 'Options' for settings. Say 'Narration' to toggle dialogue speech. Say 'Read choices' to toggle options reading.", force = true)
+                combatNarrator.speak("Say 'Next' to advance dialogue. Say a choice keyword to select it. Say 'Log' or 'History' to review previous dialogue. Say 'Skip' to fast-forward. Say 'Options' for settings. Say 'Narration' to toggle dialogue speech.", force = true)
                 return
             }
             else -> Unit
@@ -1080,6 +1288,7 @@ class StoryViewModel(
 
     override fun onCleared() {
         super.onCleared()
+        stopFastForward()
         cancelPendingAutoAdvance()
     }
 }

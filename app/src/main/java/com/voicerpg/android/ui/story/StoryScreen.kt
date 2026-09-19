@@ -162,7 +162,9 @@ fun StoryScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
                 .then(
-                    if (speechState is com.voicerpg.android.audio.SpeechState.Standby) {
+                    if (storyState.isFastForwarding) {
+                        Modifier.clickable { storyViewModel.stopFastForward() }
+                    } else if (speechState is com.voicerpg.android.audio.SpeechState.Standby) {
                         Modifier.clickable { storyViewModel.resumeVoiceListening() }
                     } else Modifier
                 )
@@ -245,52 +247,108 @@ fun StoryScreen(
                     }
                 }
 
-                // Stacked Action Buttons (Outside the banner: Options above Battle)
+                // Stacked Action Buttons (Outside the banner: 2x2 grid for Log, Options, Skip, Battle)
                 Column(
-                    modifier = Modifier.width(96.dp),
+                    modifier = Modifier.width(if (isLandscape) 144.dp else 134.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                     horizontalAlignment = Alignment.End
                 ) {
-                    // Top: Options / Pocket Mode Toggle Button
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(if (isLandscape) 24.dp else 28.dp)
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(if (isEyesFreeMode) Color(0xFF1565C0) else RetroPanel.copy(alpha = 0.92f))
-                            .border(1.dp, if (isEyesFreeMode) Color(0xFF64B5F6) else RetroBorder, RoundedCornerShape(6.dp))
-                            .clickable { onOpenOptions() },
-                        contentAlignment = Alignment.Center
+                    val btnHeight = if (isLandscape) 24.dp else 28.dp
+
+                    // Row 1: Backlog + Options
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        Text(
-                            text = if (isEyesFreeMode) "🎧 POCKET" else "⚙️ OPTIONS",
-                            color = if (isEyesFreeMode) Color(0xFFE3F2FD) else LogosGold,
-                            fontSize = 9.sp,
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = FontFamily.Monospace,
-                            maxLines = 1
-                        )
+                        // Log / History Button
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(btnHeight)
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(RetroPanel.copy(alpha = 0.92f))
+                                .border(1.dp, RetroBorderGold, RoundedCornerShape(6.dp))
+                                .clickable { storyViewModel.openBacklog() },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "📜 LOG",
+                                color = LogosGold,
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = FontFamily.Monospace,
+                                maxLines = 1
+                            )
+                        }
+
+                        // Options / Pocket Mode Toggle Button
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(btnHeight)
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(if (isEyesFreeMode) Color(0xFF1565C0) else RetroPanel.copy(alpha = 0.92f))
+                                .border(1.dp, if (isEyesFreeMode) Color(0xFF64B5F6) else RetroBorder, RoundedCornerShape(6.dp))
+                                .clickable { onOpenOptions() },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = if (isEyesFreeMode) "🎧 POCKET" else "⚙️ OPT",
+                                color = if (isEyesFreeMode) Color(0xFFE3F2FD) else LogosGold,
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = FontFamily.Monospace,
+                                maxLines = 1
+                            )
+                        }
                     }
 
-                    // Bottom: Switch to Combat Sandbox Button
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(if (isLandscape) 24.dp else 28.dp)
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(Color(0xFF37474F).copy(alpha = 0.92f))
-                            .border(1.dp, Color(0xFF78909C), RoundedCornerShape(6.dp))
-                            .clickable { storyViewModel.switchToCombat() },
-                        contentAlignment = Alignment.Center
+                    // Row 2: Skip/Fast-Forward + Battle Sandbox
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        Text(
-                            text = "⚔️ BATTLE",
-                            color = Color.White,
-                            fontSize = 9.sp,
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = FontFamily.Monospace,
-                            maxLines = 1
-                        )
+                        // Skip / Fast-Forward Button
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(btnHeight)
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(if (storyState.isFastForwarding) Color(0xFFD32F2F) else RetroPanel.copy(alpha = 0.92f))
+                                .border(1.dp, if (storyState.isFastForwarding) Color(0xFFFF8A80) else RetroBorder, RoundedCornerShape(6.dp))
+                                .clickable { storyViewModel.toggleFastForward() },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = if (storyState.isFastForwarding) "⏹️ STOP" else "⏩ SKIP",
+                                color = if (storyState.isFastForwarding) Color.White else LogosGold,
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = FontFamily.Monospace,
+                                maxLines = 1
+                            )
+                        }
+
+                        // Switch to Combat Sandbox Button
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(btnHeight)
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(Color(0xFF37474F).copy(alpha = 0.92f))
+                                .border(1.dp, Color(0xFF78909C), RoundedCornerShape(6.dp))
+                                .clickable { storyViewModel.switchToCombat() },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "⚔️ BTL",
+                                color = Color.White,
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = FontFamily.Monospace,
+                                maxLines = 1
+                            )
+                        }
                     }
                 }
             }
@@ -567,6 +625,14 @@ fun StoryScreen(
                     )
                 }
             }
+
+            // 4. Dialogue Backlog Modal
+            DialogueBacklogDialog(
+                isOpen = storyState.isBacklogOpen,
+                history = storyState.dialogueHistory,
+                onClose = { storyViewModel.closeBacklog() },
+                onReplay = { entry -> storyViewModel.replayDialogueEntry(entry) }
+            )
         }
     }
 }

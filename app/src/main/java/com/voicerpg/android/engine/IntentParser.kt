@@ -57,6 +57,17 @@ object IntentParser {
             lower.contains("close options") || lower.contains("close settings") || lower == "resume" ||
                     lower == "back" || lower == "close menu" -> MetaCommand.CLOSE_OPTIONS
 
+            lower == "log" || lower == "history" || lower == "backlog" || lower.contains("open log") ||
+                    lower.contains("show log") || lower.contains("open history") || lower.contains("dialogue history") ||
+                    lower.contains("review dialogue") -> MetaCommand.OPEN_BACKLOG
+
+            lower.contains("close log") || lower.contains("close history") || lower.contains("close backlog") ||
+                    lower.contains("dismiss log") -> MetaCommand.CLOSE_BACKLOG
+
+            lower == "skip" || lower.contains("fast forward") || lower.contains("skip dialogue") || lower == "rush" -> MetaCommand.FAST_FORWARD
+
+            lower == "stop" || lower == "halt" || lower == "pause" || lower.contains("stop skip") -> MetaCommand.STOP_FAST_FORWARD
+
             lower == "help" || lower.contains("what can i say") || lower == "commands" ||
                     lower == "voice commands" || lower == "help commands" -> MetaCommand.HELP
 

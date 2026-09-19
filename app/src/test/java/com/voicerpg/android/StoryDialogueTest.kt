@@ -1074,5 +1074,55 @@ class StoryDialogueTest {
             }
         }
     }
+
+    @Test
+    fun testDialogueBacklogAppendsEntries() {
+        val initialHistory = storyViewModel.state.value.dialogueHistory
+        assertTrue("Initial history should have the intro node", initialHistory.isNotEmpty())
+        assertEquals("Narrator", initialHistory.first().speakerName)
+
+        val speakChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "c1_speak" }
+        storyViewModel.selectChoice(speakChoice)
+
+        val updatedHistory = storyViewModel.state.value.dialogueHistory
+        assertTrue(updatedHistory.size >= 2)
+        val lastEntry = updatedHistory.last()
+        assertEquals("Aethel", lastEntry.speakerName)
+        assertTrue(lastEntry.text.contains("Hello"))
+    }
+
+    @Test
+    fun testBacklogOpenCloseAndVoiceCommands() {
+        assertFalse(storyViewModel.state.value.isBacklogOpen)
+
+        storyViewModel.handleStoryVoiceInput("log")
+        assertTrue(storyViewModel.state.value.isBacklogOpen)
+
+        storyViewModel.handleStoryVoiceInput("close")
+        assertFalse(storyViewModel.state.value.isBacklogOpen)
+
+        storyViewModel.handleStoryVoiceInput("history")
+        assertTrue(storyViewModel.state.value.isBacklogOpen)
+
+        storyViewModel.closeBacklog()
+        assertFalse(storyViewModel.state.value.isBacklogOpen)
+    }
+
+    @Test
+    fun testFastForwardControls() {
+        assertFalse(storyViewModel.state.value.isFastForwarding)
+
+        storyViewModel.startFastForward()
+        assertTrue(storyViewModel.state.value.isFastForwarding)
+
+        storyViewModel.stopFastForward()
+        assertFalse(storyViewModel.state.value.isFastForwarding)
+
+        storyViewModel.handleStoryVoiceInput("skip")
+        assertTrue(storyViewModel.state.value.isFastForwarding)
+
+        storyViewModel.handleStoryVoiceInput("stop")
+        assertFalse(storyViewModel.state.value.isFastForwarding)
+    }
 }
 

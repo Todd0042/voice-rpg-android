@@ -137,6 +137,8 @@ class MainActivity : ComponentActivity() {
                     musicManager.playCombatMusic()
                 } else if (storyState.gameScreen == GameScreen.STORY_EXPLORATION) {
                     musicManager.playTrack(storyState.currentScene.musicAsset)
+                } else if (storyState.gameScreen == GameScreen.TITLE) {
+                    musicManager.playTrack(MusicManager.TRACK_TITLE)
                 } else {
                     musicManager.playTrack(MusicManager.TRACK_ACT1_FOREST)
                 }

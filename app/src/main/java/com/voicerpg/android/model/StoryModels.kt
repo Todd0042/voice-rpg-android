@@ -198,3 +198,50 @@ data class SaveSummary(
     val timestamp: Long
 )
 
+data class DialogueLogEntry(
+    val speakerId: String,
+    val speakerName: String,
+    val speakerTitle: String,
+    val text: String,
+    val sceneName: String,
+    val isNarrator: Boolean = false,
+    val timestamp: Long = System.currentTimeMillis()
+) {
+    fun speakerThemeColor(): Color {
+        return when (speakerId) {
+            "aethel" -> DialogueSpeaker.AETHEL.themeColor
+            "cedric" -> DialogueSpeaker.CEDRIC.themeColor
+            "lyra" -> DialogueSpeaker.LYRA.themeColor
+            "zephyr" -> DialogueSpeaker.ZEPHYR.themeColor
+            "malakor" -> DialogueSpeaker.MALAKOR.themeColor
+            "shadow_wisp" -> DialogueSpeaker.SHADOW_WISP.themeColor
+            "vaelor" -> DialogueSpeaker.VAELOR.themeColor
+            "galahault" -> DialogueSpeaker.GALAHAULT.themeColor
+            "nocturne" -> DialogueSpeaker.NOCTURNE.themeColor
+            "ouros" -> DialogueSpeaker.OUROS.themeColor
+            "dryad_matron" -> DialogueSpeaker.DRYAD_MATRON.themeColor
+            "voice_mote" -> DialogueSpeaker.VOICE_MOTE.themeColor
+            else -> if (isNarrator) LogosGold else Color.White
+        }
+    }
+
+    fun speakerPortraitAsset(): String? {
+        return when (speakerId) {
+            "aethel" -> DialogueSpeaker.AETHEL.portraitAsset
+            "cedric" -> DialogueSpeaker.CEDRIC.portraitAsset
+            "lyra" -> DialogueSpeaker.LYRA.portraitAsset
+            "zephyr" -> DialogueSpeaker.ZEPHYR.portraitAsset
+            "malakor" -> DialogueSpeaker.MALAKOR.portraitAsset
+            "shadow_wisp" -> DialogueSpeaker.SHADOW_WISP.portraitAsset
+            "vaelor" -> DialogueSpeaker.VAELOR.portraitAsset
+            "galahault" -> DialogueSpeaker.GALAHAULT.portraitAsset
+            "nocturne" -> DialogueSpeaker.NOCTURNE.portraitAsset
+            "ouros" -> DialogueSpeaker.OUROS.portraitAsset
+            "dryad_matron" -> DialogueSpeaker.DRYAD_MATRON.portraitAsset
+            "voice_mote" -> DialogueSpeaker.VOICE_MOTE.portraitAsset
+            "narrator" -> DialogueSpeaker.NARRATOR.portraitAsset
+            else -> null
+        }
+    }
+}
+

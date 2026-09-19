@@ -49,6 +49,7 @@ class AssetWiringTest {
     @Test
     fun allBgmAudioFilesExist() {
         val expectedTracks = listOf(
+            "audio/music/bgm_title.ogg",
             "audio/music/bgm_act1_forest.ogg",
             "audio/music/bgm_act2_marsh.ogg",
             "audio/music/bgm_act3_bastion.ogg",

@@ -120,6 +120,10 @@ enum class MetaCommand {
     TOGGLE_MUSIC,
     OPEN_OPTIONS,
     CLOSE_OPTIONS,
+    OPEN_BACKLOG,
+    CLOSE_BACKLOG,
+    FAST_FORWARD,
+    STOP_FAST_FORWARD,
     HELP
 }
 
