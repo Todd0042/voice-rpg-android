@@ -2782,14 +2782,14 @@ object StoryScript {
             id = "ch16_confrontation",
             speaker = DialogueSpeaker.MALAKOR,
             side = SpeakerSide.RIGHT,
-            text = "Why do you fight for voice? Every war began with a proclamation. Every heartbreak began with a whisper. Every cruelty was justified with a spoken lie. Silence is the only mercy that lasts forever.",
+            text = "Why do you fight so fiercely for voice? Every war began with a proclamation. Every betrayal began with a whisper. Every cruelty was sanctified with a spoken lie. In the Great Stillness, there is no grief, no malice, no deceit. Silence is the only mercy that endures.",
             nextNodeId = "ch16_fellowship_reply"
         ),
         DialogueNode(
             id = "ch16_fellowship_reply",
             speaker = DialogueSpeaker.AETHEL,
             side = SpeakerSide.LEFT,
-            text = "Words can wound, Malakor, but words are also how we say I love you. Words are how we promise to protect each other. Without voice, peace is just an empty grave! We will not let your sorrow mute the universe!",
+            text = "A world without voice is not peace, Malakor—it is an unmarked grave. Words can wound, yes, but they are also how we reach across the dark. How we forge our sacred vows, remember the fallen, and stand together against despair. To silence the living to spare them sorrow is not mercy—it is surrender. We will not let your grief extinguish the dawn!",
             nextNodeId = "ch16_mirror_entry",
         ),
         DialogueNode(
@@ -2829,7 +2829,7 @@ object StoryScript {
             side = SpeakerSide.CENTER_NARRATOR,
             setFlagOnEnter = "ch16_mirror_cleared",
             changeSceneId = "scene_final_summit",
-            text = "The doubt-shadows dissolve into falling light, and the gallery empties into the open air of the summit. Ahead, across the star-lit dais, Malakor stands beneath the Bell of Eternity — mask level, hands still, patient as the void he has become. There is nothing left between you now.",
+            text = "The doubt-shadows dissolve into cascading starlight, and the gallery opens onto the windswept summit of the Spire. Above, the Fourth Great Bell—the Bell of Eternity—hangs suspended between the constellations. Ahead, upon the obsidian dais, Grand Inquisitor Malakor turns to face you. There is nothing left between you now.",
             nextNodeId = "ch16_malakor_assault"
         ),
         DialogueNode(
@@ -2837,7 +2837,7 @@ object StoryScript {
             speaker = DialogueSpeaker.NARRATOR,
             side = SpeakerSide.CENTER_NARRATOR,
             triggerBattleEncounterId = "ch16_malakor_finale",
-            text = "The final battle begins! Malakor shields himself in the Glass Monolith and summons the Echo Nullifiers! In Phase 3, the Death of Voice will silence all sound—speak the four-line Primordial Incantation in unison to shatter the void!"
+            text = "Grand Inquisitor Malakor strikes his meteoric staff upon the dais! The Glass Monolith hums with blinding void-resonance as the Echo Nullifiers materialize to seal creation in perpetual stillness. Stand firm, Awakened Invocators—speak your truth and shatter the silence!"
         ),
         DialogueNode(
             id = "ch16_malakor_victory",
