@@ -248,4 +248,86 @@ class EyesFreeAccessibilityTest {
         // resumeVoiceListening resets attempt count and requests speech recognition
         assertEquals(0, dummySpeech.getAutoListenAttemptCount())
     }
+
+    @Test
+    fun testMetaCommandParsingUnlockAndLockScreen() {
+        val unlockQueries = listOf("unlock", "unlock screen", "show screen", "turn on screen", "open screen", "wake up", "wake screen", "dismiss lock", "resume screen")
+        for (q in unlockQueries) {
+            val intent = IntentParser.parse(q)
+            assertEquals("Expected UNLOCK_SCREEN for '$q'", MetaCommand.UNLOCK_SCREEN, intent.metaCommand)
+        }
+
+        val lockQueries = listOf("lock", "lock screen", "lock display", "pocket lock", "blank screen", "hide screen", "dim screen")
+        for (q in lockQueries) {
+            val intent = IntentParser.parse(q)
+            assertEquals("Expected LOCK_SCREEN for '$q'", MetaCommand.LOCK_SCREEN, intent.metaCommand)
+        }
+    }
+
+    @Test
+    fun testMetaCommandParsingEnableAndDisableEyesFree() {
+        val disableQueries = listOf("exit pocket mode", "disable pocket mode", "turn off pocket mode", "stop pocket mode", "leave pocket mode", "exit eyes free", "disable eyes free")
+        for (q in disableQueries) {
+            val intent = IntentParser.parse(q)
+            assertEquals("Expected DISABLE_EYES_FREE for '$q'", MetaCommand.DISABLE_EYES_FREE, intent.metaCommand)
+        }
+
+        val enableQueries = listOf("enable pocket mode", "turn on pocket mode", "start pocket mode", "enable eyes free", "turn on eyes free")
+        for (q in enableQueries) {
+            val intent = IntentParser.parse(q)
+            assertEquals("Expected ENABLE_EYES_FREE for '$q'", MetaCommand.ENABLE_EYES_FREE, intent.metaCommand)
+        }
+    }
+
+    @Test
+    fun testPocketGuardLockStateAndTransitions() {
+        dummyNarrator.setEyesFreeMode(false)
+        assertFalse(dummyNarrator.isEyesFreeMode.value)
+        assertFalse(dummyNarrator.isPocketGuardLocked.value)
+
+        // Toggling on enables eyes-free and locks the touch guard
+        val enabled = dummyNarrator.toggleEyesFreeMode()
+        assertTrue(enabled)
+        assertTrue(dummyNarrator.isEyesFreeMode.value)
+        assertTrue(dummyNarrator.isPocketGuardLocked.value)
+
+        // Temporarily unlocking touch guard leaves eyes free active
+        dummyNarrator.unlockPocketGuard()
+        assertFalse(dummyNarrator.isPocketGuardLocked.value)
+        assertTrue(dummyNarrator.isEyesFreeMode.value)
+
+        // Re-locking touch guard
+        dummyNarrator.lockPocketGuard()
+        assertTrue(dummyNarrator.isPocketGuardLocked.value)
+
+        // Disabling eyes free unlocks the guard as well
+        dummyNarrator.setEyesFreeMode(false)
+        assertFalse(dummyNarrator.isEyesFreeMode.value)
+        assertFalse(dummyNarrator.isPocketGuardLocked.value)
+    }
+
+    @Test
+    fun testCombatViewModelUnlockAndLockVoiceCommands() {
+        assertFalse(viewModel.state.value.isEyesFreeMode)
+
+        // Say "pocket mode" -> enables pocket mode, locks guard, enables auto-listen
+        viewModel.processIncantation("pocket mode")
+        assertTrue(viewModel.state.value.isEyesFreeMode)
+        assertTrue(dummyNarrator.isPocketGuardLocked.value)
+        assertTrue(dummySpeech.isAutoListen.value)
+
+        // Say "unlock" -> screen unlocked
+        viewModel.processIncantation("unlock")
+        assertFalse(dummyNarrator.isPocketGuardLocked.value)
+        assertTrue(viewModel.state.value.isEyesFreeMode)
+
+        // Say "lock" -> screen locked
+        viewModel.processIncantation("lock")
+        assertTrue(dummyNarrator.isPocketGuardLocked.value)
+
+        // Say "disable pocket mode" -> pocket mode disabled completely
+        viewModel.processIncantation("disable pocket mode")
+        assertFalse(dummyNarrator.isEyesFreeMode.value)
+        assertFalse(dummyNarrator.isPocketGuardLocked.value)
+    }
 }

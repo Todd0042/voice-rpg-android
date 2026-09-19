@@ -1115,7 +1115,10 @@ class CombatViewModel(
     fun toggleEyesFreeMode(): Boolean {
         val enabled = combatNarrator.toggleEyesFreeMode()
         _state.value = _state.value.copy(isEyesFreeMode = enabled)
-        val text = if (enabled) "Eyes-free pocket mode enabled." else "Eyes-free pocket mode disabled."
+        if (enabled) {
+            speechManager.setAutoListen(true)
+        }
+        val text = if (enabled) "Eyes-free pocket mode enabled. Screen locked." else "Eyes-free pocket mode disabled."
         combatNarrator.speak(text, force = true) {
             if (_state.value.phase == CombatPhase.PLAYER_INPUT && speechManager.isAutoListen.value) {
                 activeScope.launch {
@@ -1200,6 +1203,49 @@ class CombatViewModel(
                 activeScope.launch {
                     delay(1500)
                     _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts.filter { it.id != fct.id })
+                }
+            }
+            MetaCommand.ENABLE_EYES_FREE -> {
+                setEyesFreeMode(true)
+                speechManager.setAutoListen(true)
+                val text = "Eyes-free pocket mode enabled. Screen locked."
+                combatNarrator.speak(text, force = true) {
+                    if (_state.value.phase == CombatPhase.PLAYER_INPUT && speechManager.isAutoListen.value) {
+                        activeScope.launch {
+                            delay(100)
+                            startVoiceListening()
+                        }
+                    }
+                }
+            }
+            MetaCommand.DISABLE_EYES_FREE -> {
+                setEyesFreeMode(false)
+                combatNarrator.speak("Eyes-free pocket mode disabled.", force = true)
+            }
+            MetaCommand.UNLOCK_SCREEN -> {
+                combatNarrator.unlockPocketGuard()
+                combatNarrator.speak("Screen unlocked.", force = true) {
+                    if (_state.value.phase == CombatPhase.PLAYER_INPUT && speechManager.isAutoListen.value) {
+                        activeScope.launch {
+                            delay(100)
+                            startVoiceListening()
+                        }
+                    }
+                }
+            }
+            MetaCommand.LOCK_SCREEN -> {
+                if (!combatNarrator.isEyesFreeMode.value) {
+                    setEyesFreeMode(true)
+                    speechManager.setAutoListen(true)
+                }
+                combatNarrator.lockPocketGuard()
+                combatNarrator.speak("Screen locked. Pocket mode active.", force = true) {
+                    if (_state.value.phase == CombatPhase.PLAYER_INPUT && speechManager.isAutoListen.value) {
+                        activeScope.launch {
+                            delay(100)
+                            startVoiceListening()
+                        }
+                    }
                 }
             }
             MetaCommand.TOGGLE_AUTO_LISTEN -> {

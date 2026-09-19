@@ -503,7 +503,7 @@ fun OptionsDialog(
                 // Toggle: Screenless / Pocket Mode
                 OptionToggleRow(
                     title = "🎧 Screenless Pocket Mode",
-                    subtitle = "Hands-free & eyes-free play: spoken combat narration and autoplays non-branching dialogue after a 1.5s delay.",
+                    subtitle = "Hands-free & eyes-free play: AMOLED true-black touch guard prevents pocket taps, keeps display awake, spoken combat narration, and autoplays dialogue.",
                     voiceHint = "Voice command: \"Pocket mode\" or \"Eyes free\"",
                     checked = isEyesFreeMode,
                     activeColor = Color(0xFF64B5F6),

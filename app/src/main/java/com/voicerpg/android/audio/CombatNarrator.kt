@@ -87,6 +87,9 @@ class CombatNarrator(
     private val _isEyesFreeMode = MutableStateFlow(false)
     val isEyesFreeMode: StateFlow<Boolean> = _isEyesFreeMode.asStateFlow()
 
+    private val _isPocketGuardLocked = MutableStateFlow(true)
+    val isPocketGuardLocked: StateFlow<Boolean> = _isPocketGuardLocked.asStateFlow()
+
     private val _isNarrationEnabled = MutableStateFlow(true)
     val isNarrationEnabled: StateFlow<Boolean> = _isNarrationEnabled.asStateFlow()
 
@@ -327,13 +330,37 @@ class CombatNarrator(
         }
     }
 
-    fun setEyesFreeMode(enabled: Boolean) {
+    fun setEyesFreeMode(enabled: Boolean, lockGuard: Boolean = true) {
         _isEyesFreeMode.value = enabled
+        if (enabled) {
+            if (lockGuard) {
+                _isPocketGuardLocked.value = true
+            }
+        } else {
+            _isPocketGuardLocked.value = false
+        }
     }
 
     fun toggleEyesFreeMode(): Boolean {
-        _isEyesFreeMode.value = !_isEyesFreeMode.value
-        return _isEyesFreeMode.value
+        val newState = !_isEyesFreeMode.value
+        setEyesFreeMode(newState, lockGuard = true)
+        return newState
+    }
+
+    fun unlockPocketGuard() {
+        _isPocketGuardLocked.value = false
+    }
+
+    fun lockPocketGuard() {
+        _isPocketGuardLocked.value = true
+    }
+
+    fun setPocketGuardLocked(locked: Boolean) {
+        _isPocketGuardLocked.value = locked
+    }
+
+    internal fun setPocketGuardLockedForTesting(locked: Boolean) {
+        _isPocketGuardLocked.value = locked
     }
 
     fun setNarrationEnabled(enabled: Boolean) {

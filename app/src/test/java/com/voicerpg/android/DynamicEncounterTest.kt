@@ -132,6 +132,7 @@ class DynamicEncounterTest {
             enemies = initialEnemies,
             environment = BattleEnvironment.DUNGEON
         )
+        viewModel.pauseAtb()
 
         assertEquals(4, viewModel.state.value.enemies.size)
 
@@ -169,6 +170,7 @@ class DynamicEncounterTest {
             enemies = initialEnemies,
             environment = BattleEnvironment.CAVE
         )
+        viewModel.pauseAtb()
 
         // 2 alive enemies out of 4 total on field
         val currentAlive = viewModel.state.value.enemies.count { it.isAlive }

@@ -3,10 +3,12 @@ package com.voicerpg.android
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -15,6 +17,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.lifecycleScope
 import com.voicerpg.android.audio.CombatNarrator
@@ -27,6 +30,9 @@ import com.voicerpg.android.ui.combat.DebugWarpDialog
 import com.voicerpg.android.ui.combat.OptionsDialog
 import com.voicerpg.android.ui.combat.RetroBattleScreen
 import com.voicerpg.android.ui.creation.CharacterCreationScreen
+import com.voicerpg.android.ui.pocket.PocketHeroVitals
+import com.voicerpg.android.ui.pocket.PocketModeTouchGuard
+import com.voicerpg.android.ui.pocket.PocketModeUnlockedBanner
 import com.voicerpg.android.ui.setup.AudioSetupScreen
 import com.voicerpg.android.ui.story.StoryScreen
 import com.voicerpg.android.ui.theme.VoiceRPGTheme
@@ -106,6 +112,10 @@ class MainActivity : ComponentActivity() {
             val combatState by combatViewModel.state.collectAsState()
 
             val isEyesFreeMode by combatNarrator.isEyesFreeMode.collectAsState()
+            val isPocketGuardLocked by combatNarrator.isPocketGuardLocked.collectAsState()
+            val speechState by speechManager.speechState.collectAsState()
+            val rmsLevel by speechManager.rmsLevel.collectAsState()
+            val isTtsSpeaking by combatNarrator.isSpeaking.collectAsState()
             val isNarrationEnabled by combatNarrator.isNarrationEnabled.collectAsState()
             val isReadChoicesEnabled by combatNarrator.isReadChoicesEnabled.collectAsState()
             val isCharacterPitchEnabled by combatNarrator.isCharacterPitchEnabled.collectAsState()
@@ -117,6 +127,33 @@ class MainActivity : ComponentActivity() {
             val musicVolume by musicManager.musicVolume.collectAsState()
             var showDebugWarp by remember { mutableStateOf(false) }
             val isDeveloperToolsEnabled by combatViewModel.isDeveloperToolsEnabled.collectAsState()
+
+            // Keep screen on during Pocket Mode and dim AMOLED display to save power
+            DisposableEffect(isEyesFreeMode, isPocketGuardLocked) {
+                if (isEyesFreeMode) {
+                    window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                    if (isPocketGuardLocked) {
+                        val lp = window.attributes
+                        lp.screenBrightness = 0.01f
+                        window.attributes = lp
+                    } else {
+                        val lp = window.attributes
+                        lp.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+                        window.attributes = lp
+                    }
+                } else {
+                    window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                    val lp = window.attributes
+                    lp.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+                    window.attributes = lp
+                }
+                onDispose {
+                    window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                    val lp = window.attributes
+                    lp.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+                    window.attributes = lp
+                }
+            }
 
             LaunchedEffect(storyState.player) {
                 combatViewModel.applyPlayerCustomization(
@@ -230,7 +267,10 @@ class MainActivity : ComponentActivity() {
                         isAutoListen = isAutoListen,
                         isChimeMuted = isChimeMuted,
                         onToggleEyesFreeMode = {
-                            combatNarrator.toggleEyesFreeMode()
+                            val enabled = combatNarrator.toggleEyesFreeMode()
+                            if (enabled) {
+                                speechManager.setAutoListen(true)
+                            }
                             storyViewModel.persistCurrentState()
                         },
                         onToggleNarration = {
@@ -300,6 +340,93 @@ class MainActivity : ComponentActivity() {
                         },
                         onClose = { showDebugWarp = false }
                     )
+
+                    // Compute glanceable party status and current location for AMOLED Pocket Lock
+                    val heroVitals = remember(storyState.gameScreen, combatState.party, storyState.partyStats, storyState.player) {
+                        if (storyState.gameScreen == GameScreen.COMBAT_ARENA && combatState.party.isNotEmpty()) {
+                            combatState.party.map {
+                                PocketHeroVitals(
+                                    name = it.name,
+                                    loreClass = it.loreClass,
+                                    currentHp = it.currentHp,
+                                    maxHp = it.maxHp,
+                                    currentMp = it.currentMp,
+                                    maxMp = it.maxMp
+                                )
+                            }
+                        } else if (storyState.partyStats.isNotEmpty()) {
+                            storyState.partyStats.map {
+                                PocketHeroVitals(
+                                    name = it.name,
+                                    loreClass = it.loreClass,
+                                    currentHp = it.currentHp,
+                                    maxHp = it.maxHp,
+                                    currentMp = it.currentMp,
+                                    maxMp = it.maxMp
+                                )
+                            }
+                        } else {
+                            listOf(
+                                PocketHeroVitals(
+                                    name = storyState.player.name,
+                                    loreClass = storyState.player.heroClass.title,
+                                    currentHp = storyState.player.heroClass.startingHp,
+                                    maxHp = storyState.player.heroClass.startingHp,
+                                    currentMp = storyState.player.heroClass.startingMp,
+                                    maxMp = storyState.player.heroClass.startingMp
+                                )
+                            )
+                        }
+                    }
+
+                    val locationTitle: String = remember(storyState.gameScreen, storyState.currentScene, storyState.activeEncounter, combatState.enemies) {
+                        if (storyState.gameScreen == GameScreen.COMBAT_ARENA) {
+                            storyState.activeEncounter?.name?.let { "Battle: $it" }
+                                ?: (combatState.enemies.firstOrNull()?.let { "Battle: ${it.name}" } ?: "Combat Arena")
+                        } else if (storyState.gameScreen == GameScreen.STORY_EXPLORATION) {
+                            "${storyState.currentScene.chapterTitle} • ${storyState.currentScene.name}"
+                        } else if (storyState.gameScreen == GameScreen.TITLE) {
+                            "Title Screen"
+                        } else {
+                            "Echoes of the Logos"
+                        }
+                    }
+
+                    // Floating banner when pocket mode is active but screen is temporarily unlocked
+                    if (isEyesFreeMode && !isPocketGuardLocked) {
+                        PocketModeUnlockedBanner(
+                            onLock = {
+                                combatNarrator.lockPocketGuard()
+                                combatNarrator.speak("Screen locked. Pocket mode active.", force = true)
+                            },
+                            onExitPocketMode = {
+                                combatNarrator.setEyesFreeMode(false)
+                                combatNarrator.speak("Pocket mode disabled.", force = true)
+                                storyViewModel.persistCurrentState()
+                            },
+                            modifier = Modifier.align(Alignment.TopCenter)
+                        )
+                    }
+
+                    // Full-screen AMOLED true-black touch guard when pocket mode is active and locked
+                    if (isEyesFreeMode && isPocketGuardLocked) {
+                        PocketModeTouchGuard(
+                            party = heroVitals,
+                            locationTitle = locationTitle,
+                            speechState = speechState,
+                            rmsLevel = rmsLevel,
+                            isTtsSpeaking = isTtsSpeaking,
+                            onUnlock = {
+                                combatNarrator.unlockPocketGuard()
+                                combatNarrator.speak("Screen unlocked.", force = true)
+                            },
+                            onExitPocketMode = {
+                                combatNarrator.setEyesFreeMode(false)
+                                combatNarrator.speak("Pocket mode disabled.", force = true)
+                                storyViewModel.persistCurrentState()
+                            }
+                        )
+                    }
                 }
             }
         }

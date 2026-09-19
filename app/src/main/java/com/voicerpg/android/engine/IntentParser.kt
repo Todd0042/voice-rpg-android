@@ -31,6 +31,20 @@ object IntentParser {
             lower == "party" || lower == "allies" || lower == "party status" || lower == "check party" ||
                     lower == "fellowship" || lower.contains("team status") || lower == "team health" -> MetaCommand.CHECK_PARTY
 
+            lower == "unlock" || lower == "unlock screen" || lower == "show screen" || lower == "turn on screen" ||
+                    lower == "open screen" || lower == "wake up" || lower == "wake screen" || lower == "dismiss lock" ||
+                    lower == "resume screen" -> MetaCommand.UNLOCK_SCREEN
+
+            lower == "lock" || lower == "lock screen" || lower == "lock display" || lower == "pocket lock" ||
+                    lower == "blank screen" || lower == "hide screen" || lower == "dim screen" -> MetaCommand.LOCK_SCREEN
+
+            lower.contains("exit pocket mode") || lower.contains("disable pocket mode") || lower.contains("turn off pocket mode") ||
+                    lower.contains("stop pocket mode") || lower.contains("leave pocket mode") || lower.contains("exit eyes free") ||
+                    lower.contains("disable eyes free") || lower.contains("turn off eyes free") -> MetaCommand.DISABLE_EYES_FREE
+
+            lower.contains("enable pocket mode") || lower.contains("turn on pocket mode") || lower.contains("start pocket mode") ||
+                    lower.contains("enable eyes free") || lower.contains("turn on eyes free") -> MetaCommand.ENABLE_EYES_FREE
+
             lower.contains("eyes free") || lower.contains("pocket mode") || lower.contains("blind mode") ||
                     lower.contains("screenless") || lower.contains("audio mode") || lower.contains("toggle narrator") ||
                     lower.contains("toggle audio") || lower == "narrator" -> MetaCommand.TOGGLE_EYES_FREE

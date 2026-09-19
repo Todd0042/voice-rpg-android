@@ -186,10 +186,13 @@ fun AudioSetupScreen(
             return
         }
 
-        // 5. Voice command toggles
-        if (lower.contains("pocket mode") || lower.contains("screenless")) {
+        if (lower.contains("exit pocket mode") || lower.contains("disable pocket mode")) {
+            combatNarrator.setEyesFreeMode(false)
+            combatNarrator.speak("Pocket mode disabled.", force = true)
+        } else if (lower.contains("pocket mode") || lower.contains("screenless")) {
             val enabled = combatNarrator.toggleEyesFreeMode()
-            combatNarrator.speak(if (enabled) "Screenless Pocket Mode enabled." else "Pocket mode disabled.", force = true)
+            if (enabled) speechManager.setAutoListen(true)
+            combatNarrator.speak(if (enabled) "Screenless Pocket Mode enabled. Screen locked." else "Pocket mode disabled.", force = true)
         } else if (lower.contains("auto listen") || lower.contains("hands free") || lower.contains("listening")) {
             speechManager.toggleAutoListen()
             val enabled = speechManager.isAutoListen.value
@@ -568,11 +571,14 @@ fun AudioSetupScreen(
             // Toggle 1: Screenless Pocket Mode
             AudioSetupToggleRow(
                 title = "🎧 Screenless Pocket Mode",
-                subtitle = "Auto-advances dialogue after 1.5s when no choice is required. Keeps audio playing in pocket or with screen off.",
+                subtitle = "AMOLED true-black touch guard prevents pocket taps, keeps display awake, spoken combat narration, and autoplays non-branching dialogue.",
                 voiceHint = "Voice: \"Pocket mode\"",
                 checked = isEyesFreeMode,
                 activeColor = Color(0xFF69F0AE),
-                onCheckedChange = { combatNarrator.toggleEyesFreeMode() }
+                onCheckedChange = {
+                    val enabled = combatNarrator.toggleEyesFreeMode()
+                    if (enabled) speechManager.setAutoListen(true)
+                }
             )
 
             Spacer(modifier = Modifier.height(8.dp))

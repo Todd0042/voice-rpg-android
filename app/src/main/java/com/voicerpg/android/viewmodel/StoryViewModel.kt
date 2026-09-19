@@ -204,7 +204,7 @@ class StoryViewModel(
                 saveSummary = summary,
                 dialogueHistory = restoredHistory
             )
-            combatNarrator.setEyesFreeMode(existingSave.isEyesFreeMode)
+            combatNarrator.setEyesFreeMode(existingSave.isEyesFreeMode, lockGuard = false)
             combatNarrator.setNarrationEnabled(existingSave.isNarrationEnabled)
             combatNarrator.setReadChoicesEnabled(existingSave.isReadChoicesEnabled)
             combatNarrator.setSpeechRate(existingSave.speechRate)
@@ -1160,9 +1160,40 @@ class StoryViewModel(
             }
             MetaCommand.TOGGLE_EYES_FREE -> {
                 val enabled = combatNarrator.toggleEyesFreeMode()
-                val status = if (enabled) "Eyes free mode enabled." else "Eyes free mode disabled."
+                if (enabled) {
+                    speechManager.setAutoListen(true)
+                }
+                val status = if (enabled) "Screenless pocket mode enabled. Screen locked." else "Pocket mode disabled."
                 combatNarrator.speak(status, force = true)
                 persistCurrentState()
+                return
+            }
+            MetaCommand.ENABLE_EYES_FREE -> {
+                combatNarrator.setEyesFreeMode(true)
+                speechManager.setAutoListen(true)
+                combatNarrator.speak("Screenless pocket mode enabled. Screen locked.", force = true)
+                persistCurrentState()
+                return
+            }
+            MetaCommand.DISABLE_EYES_FREE -> {
+                combatNarrator.setEyesFreeMode(false)
+                combatNarrator.speak("Pocket mode disabled.", force = true)
+                persistCurrentState()
+                return
+            }
+            MetaCommand.UNLOCK_SCREEN -> {
+                combatNarrator.unlockPocketGuard()
+                combatNarrator.speak("Screen unlocked.", force = true)
+                return
+            }
+            MetaCommand.LOCK_SCREEN -> {
+                if (!combatNarrator.isEyesFreeMode.value) {
+                    combatNarrator.setEyesFreeMode(true)
+                    speechManager.setAutoListen(true)
+                    persistCurrentState()
+                }
+                combatNarrator.lockPocketGuard()
+                combatNarrator.speak("Screen locked. Pocket mode active.", force = true)
                 return
             }
             MetaCommand.TOGGLE_AUTO_LISTEN -> {
