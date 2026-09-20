@@ -515,6 +515,9 @@ class StoryDialogueTest {
         storyViewModel.advanceDialogue()
         assertEquals("ch9_post_victory", storyViewModel.state.value.currentNode.id)
         storyViewModel.advanceDialogue()
+        assertEquals("camp_pilgrim_intro", storyViewModel.state.value.currentNode.id)
+        val skipPilgrim = storyViewModel.state.value.currentNode.choices.first { it.id == "camp_pilgrim_skip" }
+        storyViewModel.selectChoice(skipPilgrim)
 
         // --- CHAPTER 10: Lyra's Trial ---
         assertEquals("scene_emerald_choir", storyViewModel.state.value.currentScene.id)
@@ -581,6 +584,9 @@ class StoryDialogueTest {
         storyViewModel.advanceDialogue()
         assertEquals("ch10_post_victory", storyViewModel.state.value.currentNode.id)
         storyViewModel.advanceDialogue()
+        assertEquals("camp_gorge_intro", storyViewModel.state.value.currentNode.id)
+        val skipGorge = storyViewModel.state.value.currentNode.choices.first { it.id == "camp_gorge_skip" }
+        storyViewModel.selectChoice(skipGorge)
 
         // --- CHAPTER 11: Zephyr's Trial ---
         assertEquals("scene_blind_gorge", storyViewModel.state.value.currentScene.id)
@@ -1184,6 +1190,71 @@ class StoryDialogueTest {
         storyViewModel.returnFromAudioSetup()
         assertEquals(GameScreen.TITLE, storyViewModel.state.value.gameScreen)
         assertFalse(storyViewModel.state.value.isNewGameFlow)
+    }
+
+    @Test
+    fun testNewCampfireHubsFlow() {
+        // 1. Belfry Slopes Camp: Test Skip/Press On option
+        val belfryIntro = StoryScript.ALL_NODES["camp_belfry_intro"]!!
+        val choiceSkip = com.voicerpg.android.model.DialogueChoice("test_skip", "test", emptyList(), belfryIntro.id)
+        storyViewModel.selectChoice(choiceSkip)
+        assertEquals("camp_belfry_intro", storyViewModel.state.value.currentNode.id)
+
+        // Select "Rest briefly and descend southwest toward the Rotting Marsh"
+        val skipToCh5 = storyViewModel.state.value.currentNode.choices.first { it.id == "camp_belfry_skip" }
+        storyViewModel.selectChoice(skipToCh5)
+        assertEquals("ch5_intro", storyViewModel.state.value.currentNode.id)
+
+        // 2. Foundry Quarry Camp: Test Sit by Fire & Talk to Zephyr
+        val foundryIntro = StoryScript.ALL_NODES["camp_foundry_intro"]!!
+        val jumpFoundry = com.voicerpg.android.model.DialogueChoice("test_foundry", "test", emptyList(), foundryIntro.id)
+        storyViewModel.selectChoice(jumpFoundry)
+        assertEquals("camp_foundry_intro", storyViewModel.state.value.currentNode.id)
+
+        // Choose "Sit by the fire with the fellowship"
+        val sitChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "camp_foundry_sit" }
+        storyViewModel.selectChoice(sitChoice)
+        assertEquals("camp_foundry_hub", storyViewModel.state.value.currentNode.id)
+
+        // Speak with Zephyr
+        val zephyrChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "camp_foundry_c_zephyr" }
+        storyViewModel.selectChoice(zephyrChoice)
+        assertEquals("camp_foundry_talk_zephyr", storyViewModel.state.value.currentNode.id)
+        assertTrue(storyViewModel.state.value.narrativeFlags["camp_foundry_zephyr_complete"] == true)
+
+        // Advance back to hub
+        storyViewModel.advanceDialogue()
+        assertEquals("camp_foundry_hub", storyViewModel.state.value.currentNode.id)
+
+        // 3. Test Full Campfire Completion Auto-Advance
+        val belfryHub = StoryScript.ALL_NODES["camp_belfry_hub"]!!
+        val jumpHub = com.voicerpg.android.model.DialogueChoice("test_hub", "test", emptyList(), belfryHub.id)
+        storyViewModel.selectChoice(jumpHub)
+        assertEquals("camp_belfry_hub", storyViewModel.state.value.currentNode.id)
+
+        // Complete option 1: bell
+        val bellChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "camp_belfry_c_bell" }
+        storyViewModel.selectChoice(bellChoice)
+        assertEquals("camp_belfry_talk_bell", storyViewModel.state.value.currentNode.id)
+        storyViewModel.advanceDialogue()
+
+        // Complete option 2: lyra
+        val lyraChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "camp_belfry_c_lyra" }
+        storyViewModel.selectChoice(lyraChoice)
+        assertEquals("camp_belfry_talk_lyra", storyViewModel.state.value.currentNode.id)
+        storyViewModel.advanceDialogue()
+
+        // Complete option 3: burden -> auto-advances to camp_belfry_all_completed
+        val burdenChoice = storyViewModel.state.value.currentNode.choices.first { it.id == "camp_belfry_c_burden" }
+        storyViewModel.selectChoice(burdenChoice)
+        assertEquals("camp_belfry_talk_burden", storyViewModel.state.value.currentNode.id)
+        storyViewModel.advanceDialogue()
+
+        // All 3 completed! Effective node resolves to camp_belfry_all_completed
+        assertEquals("camp_belfry_all_completed", storyViewModel.state.value.currentNode.id)
+        assertTrue(storyViewModel.state.value.narrativeFlags["camp_belfry_rest_complete"] == true)
+        storyViewModel.advanceDialogue()
+        assertEquals("ch5_intro", storyViewModel.state.value.currentNode.id)
     }
 }
 

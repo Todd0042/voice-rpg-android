@@ -910,7 +910,7 @@ object StoryScript {
             speaker = DialogueSpeaker.AETHEL,
             side = SpeakerSide.LEFT,
             text = "Then we rest for the noon hour and set our course southwest. To the Rotting Marsh, to Lyra the Grove Warden, and to the Second Bell Tower!",
-            nextNodeId = "ch5_intro"
+            nextNodeId = "camp_belfry_intro"
         ),
         DialogueNode(
             id = "ch4_act1_complete",
@@ -918,10 +918,67 @@ object StoryScript {
             side = SpeakerSide.CENTER_NARRATOR,
             text = "ACT I CONCLUDED: THE FALLING SILENCE SHATTERED. You have liberated the eastern valleys and restored the First Great Bell of Solaria! The journey southwest toward the Rotting Marsh and the rescue of Grove Warden Lyra begins in Act II.",
             choices = listOf(
-                DialogueChoice("ch4_start_act2", "Descend the southwestern cliffs into the Rotting Marsh (Begin Act II)", listOf("descend", "southwest", "marsh", "act2", "act two", "begin", "start"), "ch5_intro"),
+                DialogueChoice("ch4_start_act2", "Descend the southwestern cliffs into the Rotting Marsh (Begin Act II)", listOf("descend", "southwest", "marsh", "act2", "act two", "begin", "start"), "camp_belfry_intro"),
                 DialogueChoice("ch4_replay_bell", "Re-listen to the glorious chime of Solaria", listOf("relisten", "chime", "bell", "solaria"), "ch4_bell_ringing"),
                 DialogueChoice("ch4_view_epilogue", "Reflect with Sir Cedric upon the belfry", listOf("reflect", "cedric", "view", "belfry"), "ch4_epilogue")
             )
+        ),
+
+        // --- CAMPFIRE: THE BELFRY SLOPES (Act I -> Act II Breather) ---
+        DialogueNode(
+            id = "camp_belfry_intro",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            changeSceneId = SCENE_CAMP.id,
+            text = "Night falls upon the western slope below Solaria Belfry. Above, the great bronze bell glints in the moonlight, its celestial chime still humming faintly through the bedrock. Sir Cedric kindles a fire from fallen pine boughs, the warm golden light pushing back the mountain chill.",
+            choices = listOf(
+                DialogueChoice("camp_belfry_sit", "Sit by the fire with Sir Cedric", listOf("sit", "fire", "cedric", "talk", "converse"), "camp_belfry_hub"),
+                DialogueChoice("camp_belfry_skip", "Rest briefly and descend southwest toward the Rotting Marsh", listOf("rest", "descend", "southwest", "marsh", "rotting", "press", "continue"), "ch5_intro", completionFlag = "camp_belfry_rest_complete")
+            )
+        ),
+        DialogueNode(
+            id = "camp_belfry_hub",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            text = "Sir Cedric rests his broadsword across his knees, methodically wiping soot from the crossguard. 'The first province is free, Invocator. But our path southwest leads straight into the mire. What weighs on your mind before we sleep?'",
+            choices = listOf(
+                DialogueChoice("camp_belfry_c_bell", "Ask Cedric how it felt when the First Bell chimed", listOf("bell", "chimed", "sound", "relief", "felt"), "camp_belfry_talk_bell", completionFlag = "camp_belfry_bell_complete"),
+                DialogueChoice("camp_belfry_c_lyra", "Ask what kind of person Warden Lyra is", listOf("lyra", "warden", "person", "grove", "friend"), "camp_belfry_talk_lyra", completionFlag = "camp_belfry_lyra_complete"),
+                DialogueChoice("camp_belfry_c_burden", "Confess how exhausting channeling the First Voice feels", listOf("exhausting", "voice", "toll", "burden", "throat"), "camp_belfry_talk_burden", completionFlag = "camp_belfry_burden_complete"),
+                DialogueChoice("camp_belfry_c_sleep", "Extinguish the embers and set out for the Rotting Marsh", listOf("sleep", "extinguish", "march", "leave", "marsh", "rotting"), "ch5_intro", completionFlag = "camp_belfry_rest_complete")
+            )
+        ),
+        DialogueNode(
+            id = "camp_belfry_talk_bell",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            setFlagOnEnter = "camp_belfry_bell_complete",
+            text = "Cedric's hardened expression softens, a genuine smile touching his beard. 'For ten years, I believed our gods had abandoned us to the quiet. But when that bronze bell sang... I felt the stone itself remember how to weep. We gave thousands of souls their tomorrow back today. Whatever waits in the swamp, that truth cannot be unmade.'",
+            nextNodeId = "camp_belfry_hub"
+        ),
+        DialogueNode(
+            id = "camp_belfry_talk_lyra",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            setFlagOnEnter = "camp_belfry_lyra_complete",
+            text = "'Lyra was the youngest warden ever inducted at the Sunken Fane,' Cedric says quietly. 'Gentle as morning dew, yet her roots could split granite if an innocent was threatened. She has been alone in that blighted swamp for two years holding the sacred willow. If she still draws breath, we will pull her out, Invocator. That is my oath.'",
+            nextNodeId = "camp_belfry_hub"
+        ),
+        DialogueNode(
+            id = "camp_belfry_talk_burden",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            setFlagOnEnter = "camp_belfry_burden_complete",
+            text = "Cedric reaches into his haversack, producing a small tin of hardened wildflower honey and crushed mint leaves. 'The old choristers of Solaria kept this for vocal strain. Chew slowly. The Logos is an ancient fire, Aethel; it asks for your breath, your blood, and your will. Lean on my steel when your voice falters. You are not carrying this kingdom alone.'",
+            nextNodeId = "camp_belfry_hub"
+        ),
+        DialogueNode(
+            id = "camp_belfry_all_completed",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            setFlagOnEnter = "camp_belfry_rest_complete",
+            text = "The fire dwindles to a bed of glowing coals as midnight passes. Cedric wraps himself in his heavy cloak to take first watch. Rest comes deep and undisturbed. At first light, you pack your bedrolls and gaze southwest toward the rotting canopy of Chapter 5.",
+            nextNodeId = "ch5_intro"
         ),
 
         // =====================================================================
@@ -1609,7 +1666,64 @@ object StoryScript {
             speaker = DialogueSpeaker.LYRA,
             side = SpeakerSide.LEFT,
             text = "The corruption over the knights is cleansed! Look—Sir Cedric stands unburdened, and the path to the Emerald Grove is open!",
-            nextNodeId = "ch10_intro",
+            nextNodeId = "camp_pilgrim_intro",
+        ),
+
+        // --- CAMPFIRE: THE PILGRIM'S COURTYARD (Chapter 9 -> Chapter 10 Breather) ---
+        DialogueNode(
+            id = "camp_pilgrim_intro",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            changeSceneId = SCENE_CAMP.id,
+            text = "In the ruined outer colonnade of the Sunburst Mausoleum, the fellowship kindles a quiet hearth beneath statues of kneeling saints. Honeyed morning light filters through cracked marble vaults, and for the first time in weeks, the silence feels peaceful rather than suffocating.",
+            choices = listOf(
+                DialogueChoice("camp_pilgrim_sit", "Sit by the fire with the fellowship", listOf("sit", "fire", "fellowship", "talk", "converse"), "camp_pilgrim_hub"),
+                DialogueChoice("camp_pilgrim_skip", "Rest briefly and press on into the Briar Thicket", listOf("rest", "press", "briar", "thicket", "advance", "continue"), "ch10_intro", completionFlag = "camp_pilgrim_rest_complete")
+            )
+        ),
+        DialogueNode(
+            id = "camp_pilgrim_hub",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            text = "Cedric tends a small fire in a cracked marble basin, his posture upright and eyes serene. Lyra sits cross-legged, weaving wild thyme into garlands, while Zephyr leans against a sunlit pillar, tossing a fresh apple. 'The past is at peace,' Cedric says. 'Speak your heart, friends, before we face what lies in the thorns.'",
+            choices = listOf(
+                DialogueChoice("camp_pilgrim_c_cedric", "Speak with Sir Cedric about laying his master to rest", listOf("cedric", "galahault", "master", "rest", "vow"), "camp_pilgrim_talk_cedric", completionFlag = "camp_pilgrim_cedric_complete"),
+                DialogueChoice("camp_pilgrim_c_lyra", "Speak with Lyra about the encroaching Briar Thicket ahead", listOf("lyra", "thicket", "briar", "canopy", "grove"), "camp_pilgrim_talk_lyra", completionFlag = "camp_pilgrim_lyra_complete"),
+                DialogueChoice("camp_pilgrim_c_zephyr", "Speak with Zephyr about fighting alongside paladins", listOf("zephyr", "paladins", "honor", "knights", "fight"), "camp_pilgrim_talk_zephyr", completionFlag = "camp_pilgrim_zephyr_complete"),
+                DialogueChoice("camp_pilgrim_c_sleep", "Extinguish the basin fire and enter the Briar Thicket", listOf("sleep", "extinguish", "thicket", "march", "leave"), "ch10_intro", completionFlag = "camp_pilgrim_rest_complete")
+            )
+        ),
+        DialogueNode(
+            id = "camp_pilgrim_talk_cedric",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            setFlagOnEnter = "camp_pilgrim_cedric_complete",
+            text = "'For twenty years, every swing of my sword was weighed down by Galahault's shadow,' Cedric murmurs, watching the sparks drift toward the vaults. 'I thought honoring his memory meant dying on the same stones he did. But today, standing with you all... I finally understand. Honor isn't dying for the past; it's defending those who will live in the future.'",
+            nextNodeId = "camp_pilgrim_hub"
+        ),
+        DialogueNode(
+            id = "camp_pilgrim_talk_lyra",
+            speaker = DialogueSpeaker.LYRA,
+            side = SpeakerSide.LEFT,
+            setFlagOnEnter = "camp_pilgrim_lyra_complete",
+            text = "Lyra looks toward the dense, thorn-choked wall of black briars at the edge of the courtyard. 'The briars ahead are not natural, Aethel. They are dryad thorns, warped by the Blight's mute agony. My sisters are trapped inside their own petrified wood, screaming without a voice. We must be their dawn... but prepare your fire spells. Wood in agony lashes out blindly.'",
+            nextNodeId = "camp_pilgrim_hub"
+        ),
+        DialogueNode(
+            id = "camp_pilgrim_talk_zephyr",
+            speaker = DialogueSpeaker.ZEPHYR,
+            side = SpeakerSide.LEFT,
+            setFlagOnEnter = "camp_pilgrim_zephyr_complete",
+            text = "Zephyr catches the apple with a flick of his wrist and smirks wryly. 'I'll admit, watching Cedric square off with a holy ghost was more theater than I expected. In the Black Guild, if your mentor tries to kill you, you just poison his tea. But seeing you all stand your ground... it's strange. You actually care about each other. It's wildly inefficient, but damn if it isn't impressive.'",
+            nextNodeId = "camp_pilgrim_hub"
+        ),
+        DialogueNode(
+            id = "camp_pilgrim_all_completed",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            setFlagOnEnter = "camp_pilgrim_rest_complete",
+            text = "The morning sun climbs high above the mausoleum arches. The fellowship shares dried fruit and clear spring water, spirits renewed by Cedric's peace. Stepping past the colonnade, you draw weapons and advance toward Chapter 10's tangled canopy.",
+            nextNodeId = "ch10_intro"
         ),
 
         // === CHAPTER 10: THE SONG OF THE MUTE GROVE (Lyra's Required Trial) ===
@@ -1768,7 +1882,64 @@ object StoryScript {
             speaker = DialogueSpeaker.ZEPHYR,
             side = SpeakerSide.LEFT,
             text = "Lyra is radiant, surrounded by dancing woodland spirits. Zephyr tightens his gloves. 'Two debts cleared. Now comes mine. Master Nocturne has tracked us to the Blind Gorge. If I do not extinguish him today, his blades will seek us at our backs during the assault on Ouros.' Enter the Blind Gorge for Zephyr's Trial",
-            nextNodeId = "ch11_intro",
+            nextNodeId = "camp_gorge_intro",
+        ),
+
+        // --- CAMPFIRE: THE SMOG RIDGE (Chapter 10 -> Chapter 11 Breather) ---
+        DialogueNode(
+            id = "camp_gorge_intro",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            changeSceneId = SCENE_CAMP.id,
+            text = "Camp is pitched upon a narrow basalt shelf overlooking the Blind Gorge. Behind you, the emerald blossoms of Lyra's restored grove scent the breeze; ahead, yellow plumes of sulfuric smog swirl across razor-sharp ravines. A crackling fire pushes back the howling canyon draft.",
+            choices = listOf(
+                DialogueChoice("camp_gorge_sit", "Sit by the fire with the fellowship", listOf("sit", "fire", "fellowship", "talk", "converse"), "camp_gorge_hub"),
+                DialogueChoice("camp_gorge_skip", "Rest briefly and enter the Blind Gorge for Zephyr's trial", listOf("rest", "gorge", "zephyr", "advance", "continue", "trial"), "ch11_intro", completionFlag = "camp_gorge_rest_complete")
+            )
+        ),
+        DialogueNode(
+            id = "camp_gorge_hub",
+            speaker = DialogueSpeaker.ZEPHYR,
+            side = SpeakerSide.LEFT,
+            text = "Zephyr sits closest to the fire's rim, meticulously honing his throwing daggers on slate. Lyra adjusts her crown of blooming dogwood, while Cedric stands watch at the cliff edge, his cape snapping in the sulfur wind. 'We enter the Black Guild's backyard next,' Zephyr says. 'What's on your mind before the fun starts?'",
+            choices = listOf(
+                DialogueChoice("camp_gorge_c_lyra", "Speak with Lyra about the liberated dryad choir", listOf("lyra", "seed", "dryad", "sisters", "crown"), "camp_gorge_talk_lyra", completionFlag = "camp_gorge_lyra_complete"),
+                DialogueChoice("camp_gorge_c_cedric", "Speak with Cedric about fighting in the canyon smog", listOf("cedric", "smog", "tactics", "canyon", "guard"), "camp_gorge_talk_cedric", completionFlag = "camp_gorge_cedric_complete"),
+                DialogueChoice("camp_gorge_c_zephyr", "Speak with Zephyr about facing Master Nocturne", listOf("zephyr", "nocturne", "guild", "duel", "assassin"), "camp_gorge_talk_zephyr", completionFlag = "camp_gorge_zephyr_complete"),
+                DialogueChoice("camp_gorge_c_sleep", "Extinguish the fire and advance into the Blind Gorge", listOf("sleep", "extinguish", "gorge", "march", "leave"), "ch11_intro", completionFlag = "camp_gorge_rest_complete")
+            )
+        ),
+        DialogueNode(
+            id = "camp_gorge_talk_lyra",
+            speaker = DialogueSpeaker.LYRA,
+            side = SpeakerSide.LEFT,
+            setFlagOnEnter = "camp_gorge_lyra_complete",
+            text = "Lyra touches the blossoms in her hair, her eyes shining with quiet joy. 'For two long winters, I thought I was an orphan of a dead world. But seeing the Elder Dryad open her eyes... hearing the choir sing again... it healed a hollow in my chest I thought would stay empty forever. We are bringing the dawn back, Aethel. One seed at a time.'",
+            nextNodeId = "camp_gorge_hub"
+        ),
+        DialogueNode(
+            id = "camp_gorge_talk_cedric",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            setFlagOnEnter = "camp_gorge_cedric_complete",
+            text = "'This canyon is built for treachery,' Cedric grunts, squinting into the smog. 'Acoustic tripwires, narrow culverts, blind corners. My shield can turn steel, but it cannot block poison gas. Keep your voice spells ready to blast away the mist, Invocator. And keep Zephyr in your sights. Not because I doubt him... but because I intend to make sure he comes back alive.'",
+            nextNodeId = "camp_gorge_hub"
+        ),
+        DialogueNode(
+            id = "camp_gorge_talk_zephyr",
+            speaker = DialogueSpeaker.ZEPHYR,
+            side = SpeakerSide.LEFT,
+            setFlagOnEnter = "camp_gorge_zephyr_complete",
+            text = "Zephyr pauses his whetstone, gazing down into the chasm. 'Nocturne took me off the streets when I was eight. He taught me to walk without making a ripple in puddle water. He told me the world had no voice worth hearing, only targets. Tomorrow, I show him what a boy with a voice can do. Don't worry about my back, Aethel. Just keep the sky open.'",
+            nextNodeId = "camp_gorge_hub"
+        ),
+        DialogueNode(
+            id = "camp_gorge_all_completed",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            setFlagOnEnter = "camp_gorge_rest_complete",
+            text = "The fire burns down to amber embers as the four companions check straps, tighten cloaks, and share a quiet moment of unity. The bond between knight, warden, assassin, and invocator feels unbreakable. Extinguishing the coals, you plunge into Chapter 11's shadowed chasm.",
+            nextNodeId = "ch11_intro"
         ),
 
         // === CHAPTER 11: THE SILENT BLADE'S RECKONING (Zephyr's Required Trial) ===
@@ -1968,7 +2139,64 @@ object StoryScript {
             speaker = DialogueSpeaker.CEDRIC,
             side = SpeakerSide.RIGHT,
             text = "Sir Cedric claps Zephyr firmly on the shoulder. 'All four companions have proven their souls in trial! Our blades are keen, our spirits unyielding. The Clockwork Bastion of Ouros stands before us. Let us awaken the Third Great Bell!' Assault the Clockwork Bastion of Ouros!",
-            nextNodeId = "ch12_intro",
+            nextNodeId = "camp_foundry_intro",
+        ),
+
+        // --- CAMPFIRE: THE QUARRY BASTION (Chapter 11 -> Chapter 12 Breather) ---
+        DialogueNode(
+            id = "camp_foundry_intro",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            changeSceneId = SCENE_CAMP.id,
+            text = "At an abandoned stone quarry nestled beneath the smoking chimneys of the Clockwork Bastion, the four companions kindle a welcoming fire. The rhythmic, thunderous pounding of Warmaster Ouros's titan forges vibrates through the bedrock, but around the hearth, the air is warm with the scent of roasted mountain potatoes.",
+            choices = listOf(
+                DialogueChoice("camp_foundry_sit", "Sit by the fire with the fellowship", listOf("sit", "fire", "fellowship", "talk", "converse"), "camp_foundry_hub"),
+                DialogueChoice("camp_foundry_skip", "Rest briefly and begin the assault on the Clockwork Bastion", listOf("rest", "bastion", "foundry", "advance", "continue", "assault"), "ch12_intro", completionFlag = "camp_foundry_rest_complete")
+            )
+        ),
+        DialogueNode(
+            id = "camp_foundry_hub",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            text = "Cedric passes a steaming tin plate of roasted roots to Zephyr, who stares at it as if expecting it to detonate. Lyra grinds sovereign balm in an alabaster mortar, while the red furnace glow paints the night sky in molten crimson. 'Eat, lad,' Cedric grunts. 'Tomorrow we face an army of iron. What thoughts do you carry into the foundry?'",
+            choices = listOf(
+                DialogueChoice("camp_foundry_c_zephyr", "Speak with Zephyr about life after breaking his guild contract", listOf("zephyr", "contract", "freedom", "locket", "mother"), "camp_foundry_talk_zephyr", completionFlag = "camp_foundry_zephyr_complete"),
+                DialogueChoice("camp_foundry_c_cedric", "Speak with Cedric about facing Ouros's clockwork army", listOf("cedric", "ouros", "automatons", "machines", "armor"), "camp_foundry_talk_cedric", completionFlag = "camp_foundry_cedric_complete"),
+                DialogueChoice("camp_foundry_c_lyra", "Speak with Lyra about treating the land scarred by the foundries", listOf("lyra", "land", "foundries", "smoke", "salve"), "camp_foundry_talk_lyra", completionFlag = "camp_foundry_lyra_complete"),
+                DialogueChoice("camp_foundry_c_sleep", "Extinguish the hearth and assault the Clockwork Bastion", listOf("sleep", "extinguish", "bastion", "march", "leave"), "ch12_intro", completionFlag = "camp_foundry_rest_complete")
+            )
+        ),
+        DialogueNode(
+            id = "camp_foundry_talk_zephyr",
+            speaker = DialogueSpeaker.ZEPHYR,
+            side = SpeakerSide.LEFT,
+            setFlagOnEnter = "camp_foundry_zephyr_complete",
+            text = "Zephyr takes a tentative bite of the roasted potato, shaking his head with a faint chuckle. 'In ten years with Nocturne, nobody ever handed me food that wasn't meant to keep me quiet. Having people watch my flank instead of my coin purse... it's unsettling. But I could get used to it. The Third Bell is inside that iron furnace. Ouros won't know what hit him.'",
+            nextNodeId = "camp_foundry_hub"
+        ),
+        DialogueNode(
+            id = "camp_foundry_talk_cedric",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            setFlagOnEnter = "camp_foundry_cedric_complete",
+            text = "'Warmaster Ouros was the greatest siege engineer the kingdom ever produced,' Cedric rumbles, adjusting his breastplate. 'His automatons feel no fear, no remorse, and no pain. But machines have one fatal flaw: they obey rigid logic. They cannot anticipate an invocator chanting flame while an assassin drops from the ceiling vents. We will break their clockwork hearts.'",
+            nextNodeId = "camp_foundry_hub"
+        ),
+        DialogueNode(
+            id = "camp_foundry_talk_lyra",
+            speaker = DialogueSpeaker.LYRA,
+            side = SpeakerSide.LEFT,
+            setFlagOnEnter = "camp_foundry_lyra_complete",
+            text = "Lyra gently applies soothing amber salve to Zephyr's acid-scarred fingers. 'The earth here weeps black oil and choking soot,' she whispers sorrowfully. 'Ouros stripped the ancient veins of the mountain to forge cold iron soldiers. When the Third Bell rings, the pulse of dawn will purge the ash from these peaks, and grass will grow over the gears once more.'",
+            nextNodeId = "camp_foundry_hub"
+        ),
+        DialogueNode(
+            id = "camp_foundry_all_completed",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            setFlagOnEnter = "camp_foundry_rest_complete",
+            text = "The clanking of distant steam valves echoes into the midnight quiet. Fully fed and rested, the four companions take their stations. At dawn, with the furnace glare lighting your path, you advance into Chapter 12 to awaken the Third Great Bell.",
+            nextNodeId = "ch12_intro"
         ),
 
         // === CHAPTER 12: AWAKENING THE THIRD BELL (The Iron Belfry of Ouros) ===
@@ -2286,7 +2514,64 @@ object StoryScript {
             speaker = DialogueSpeaker.ZEPHYR,
             side = SpeakerSide.LEFT,
             text = "Vaelor is dead. The path to the Void Reservoir is clear. Let us reclaim what was stolen! Enter the Chamber of the Void Reservoir",
-            nextNodeId = "ch14_intro",
+            nextNodeId = "camp_reservoir_intro",
+        ),
+
+        // --- CAMPFIRE: THE HIGH RAMPARTS OVERLOOK (Chapter 13 -> Chapter 14 Breather) ---
+        DialogueNode(
+            id = "camp_reservoir_intro",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            changeSceneId = SCENE_CAMP.id,
+            text = "High upon the alabaster ramparts overlooking Sol-Aethel, the fellowship kindles a crackling brazier of white birch. Below the marble balustrade lies the sunken expanse of the Void Reservoir—silent, obsidian waters stretching into mist, holding the stolen voices of thirty thousand souls.",
+            choices = listOf(
+                DialogueChoice("camp_reservoir_sit", "Sit by the brazier with the fellowship", listOf("sit", "brazier", "fellowship", "talk", "converse"), "camp_reservoir_hub"),
+                DialogueChoice("camp_reservoir_skip", "Rest briefly and begin the descent into the Void Reservoir", listOf("rest", "reservoir", "abyss", "advance", "continue", "descend"), "ch14_intro", completionFlag = "camp_reservoir_rest_complete")
+            )
+        ),
+        DialogueNode(
+            id = "camp_reservoir_hub",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            text = "Cedric gazes down into his liberated home city, his face illuminated by the birch embers. Zephyr reclines on the balustrade, watching ripples on the black water below, while Lyra hums a soft lullaby into the evening wind. 'The high city is ours,' Cedric says quietly. 'What weighs on your minds before we plunge into the black lake?'",
+            choices = listOf(
+                DialogueChoice("camp_reservoir_c_zephyr", "Speak with Zephyr about what they will do when the war ends", listOf("zephyr", "future", "after", "war", "peace", "plans"), "camp_reservoir_talk_zephyr", completionFlag = "camp_reservoir_zephyr_complete"),
+                DialogueChoice("camp_reservoir_c_lyra", "Speak with Lyra about the drowning voices calling from the deep", listOf("lyra", "drowned", "voices", "deep", "reservoir", "water"), "camp_reservoir_talk_lyra", completionFlag = "camp_reservoir_lyra_complete"),
+                DialogueChoice("camp_reservoir_c_cedric", "Speak with Sir Cedric about seeing his homeland freed", listOf("cedric", "homeland", "capital", "mother", "freed", "city"), "camp_reservoir_talk_cedric", completionFlag = "camp_reservoir_cedric_complete"),
+                DialogueChoice("camp_reservoir_c_sleep", "Extinguish the brazier and dive into the Sunken Shallows", listOf("sleep", "extinguish", "dive", "reservoir", "leave"), "ch14_intro", completionFlag = "camp_reservoir_rest_complete")
+            )
+        ),
+        DialogueNode(
+            id = "camp_reservoir_talk_zephyr",
+            speaker = DialogueSpeaker.ZEPHYR,
+            side = SpeakerSide.LEFT,
+            setFlagOnEnter = "camp_reservoir_zephyr_complete",
+            text = "Zephyr smirks, staring out at the starlit rooftops of the capital. 'Suppose we actually kill Malakor and ring that final bell. What then? Cedric goes back to drilling recruits, Lyra tends her garden... What does an ex-assassin do in a world where everyone can shout for the guard? Maybe I'll open a tavern down on the docks. Free stew for anyone with a good song. How does that sound, Invocator?'",
+            nextNodeId = "camp_reservoir_hub"
+        ),
+        DialogueNode(
+            id = "camp_reservoir_talk_lyra",
+            speaker = DialogueSpeaker.LYRA,
+            side = SpeakerSide.LEFT,
+            setFlagOnEnter = "camp_reservoir_lyra_complete",
+            text = "Lyra leans against the cool stone railing, closing her eyes. 'The lake below is not just water, Aethel. It is a reservoir of stolen hymns, children's laughter, and dying words trapped in the silence. The Leviathan swims through their grief. When you cast your spells down there, sing with compassion. Those voices want to be free. They will guide our light if we listen.'",
+            nextNodeId = "camp_reservoir_hub"
+        ),
+        DialogueNode(
+            id = "camp_reservoir_talk_cedric",
+            speaker = DialogueSpeaker.CEDRIC,
+            side = SpeakerSide.RIGHT,
+            setFlagOnEnter = "camp_reservoir_cedric_complete",
+            text = "Cedric places his gauntleted hand over his heart, looking at the distant bell towers rising like silver spears above the rooftops. 'My whole life, I believed this city would die in chains. But seeing the lights flicker on in the market squares tonight... my mother was right. No winter lasts forever. Whatever horror lurks in that black lake, we dive with the strength of a liberated people at our backs.'",
+            nextNodeId = "camp_reservoir_hub"
+        ),
+        DialogueNode(
+            id = "camp_reservoir_all_completed",
+            speaker = DialogueSpeaker.NARRATOR,
+            side = SpeakerSide.CENTER_NARRATOR,
+            setFlagOnEnter = "camp_reservoir_rest_complete",
+            text = "The white birch burns down to fine grey ash as midnight envelopes the capital. The fellowship binds water-breathing charms to their collars and checks their gear one final time. Standing at the brink of the reservoir, you prepare to dive into the watery abyss of Chapter 14.",
+            nextNodeId = "ch14_intro"
         ),
 
         // === CHAPTER 14: THE VOID RESERVOIR ===

@@ -573,17 +573,21 @@ class StoryViewModel(
     }
 
     private fun applyNodeTransition(newNode: DialogueNode, suppressNarration: Boolean = false) {
-        val updatedFlags = if (newNode.setFlagOnEnter != null) {
+        var updatedFlags = if (newNode.setFlagOnEnter != null) {
             _state.value.narrativeFlags + (newNode.setFlagOnEnter to true)
         } else {
             _state.value.narrativeFlags
         }
 
         var effectiveNode = resolveEffectiveHubNode(newNode, updatedFlags)
+        if (effectiveNode.setFlagOnEnter != null && updatedFlags[effectiveNode.setFlagOnEnter] != true) {
+            updatedFlags = updatedFlags + (effectiveNode.setFlagOnEnter to true)
+        }
 
         var updatedPartyStats = _state.value.partyStats
-        if (newNode.setFlagOnEnter?.endsWith("_rest_complete") == true) {
-            val isStoryMilestoneRest = newNode.setFlagOnEnter == "substory_rest_complete"
+        val effectiveRestFlag = effectiveNode.setFlagOnEnter ?: newNode.setFlagOnEnter
+        if (effectiveRestFlag?.endsWith("_rest_complete") == true) {
+            val isStoryMilestoneRest = effectiveRestFlag == "substory_rest_complete"
             updatedPartyStats = if (isStoryMilestoneRest) {
                 // Camp Midnight Vigil milestone: the one true full restoration.
                 updatedPartyStats.map { member ->
@@ -811,6 +815,31 @@ class StoryViewModel(
         if (effective.id == "ch15_intro" || effective.id == "ch15_hub") {
             if (flags["ch15_cedric_complete"] == true && flags["ch15_lyra_complete"] == true && flags["ch15_zephyr_complete"] == true && flags["ch15_bell_complete"] == true) {
                 StoryScript.ALL_NODES["ch15_all_completed"]?.let { effective = it }
+            }
+        }
+        if (effective.id == "camp_belfry_intro" || effective.id == "camp_belfry_hub") {
+            if (flags["camp_belfry_bell_complete"] == true && flags["camp_belfry_lyra_complete"] == true && flags["camp_belfry_burden_complete"] == true) {
+                StoryScript.ALL_NODES["camp_belfry_all_completed"]?.let { effective = it }
+            }
+        }
+        if (effective.id == "camp_pilgrim_intro" || effective.id == "camp_pilgrim_hub") {
+            if (flags["camp_pilgrim_cedric_complete"] == true && flags["camp_pilgrim_lyra_complete"] == true && flags["camp_pilgrim_zephyr_complete"] == true) {
+                StoryScript.ALL_NODES["camp_pilgrim_all_completed"]?.let { effective = it }
+            }
+        }
+        if (effective.id == "camp_gorge_intro" || effective.id == "camp_gorge_hub") {
+            if (flags["camp_gorge_lyra_complete"] == true && flags["camp_gorge_cedric_complete"] == true && flags["camp_gorge_zephyr_complete"] == true) {
+                StoryScript.ALL_NODES["camp_gorge_all_completed"]?.let { effective = it }
+            }
+        }
+        if (effective.id == "camp_foundry_intro" || effective.id == "camp_foundry_hub") {
+            if (flags["camp_foundry_zephyr_complete"] == true && flags["camp_foundry_cedric_complete"] == true && flags["camp_foundry_lyra_complete"] == true) {
+                StoryScript.ALL_NODES["camp_foundry_all_completed"]?.let { effective = it }
+            }
+        }
+        if (effective.id == "camp_reservoir_intro" || effective.id == "camp_reservoir_hub") {
+            if (flags["camp_reservoir_zephyr_complete"] == true && flags["camp_reservoir_lyra_complete"] == true && flags["camp_reservoir_cedric_complete"] == true) {
+                StoryScript.ALL_NODES["camp_reservoir_all_completed"]?.let { effective = it }
             }
         }
         return effective
