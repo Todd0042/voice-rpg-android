@@ -20,10 +20,12 @@ import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -360,7 +362,7 @@ fun StoryScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .align(Alignment.BottomCenter)
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                        .padding(start = 12.dp, end = 12.dp, bottom = 8.dp, top = 80.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     // Character Portraits Row (Resting cleanly right on top of the speech bubble)
@@ -376,7 +378,7 @@ fun StoryScreen(
                             bitmap = aethelBitmap,
                             speaker = DialogueSpeaker.AETHEL,
                             isSpeaking = isAethelSpeaking,
-                            sizeDp = 96.dp,
+                            sizeDp = 84.dp,
                             modifier = Modifier.offset(y = (if (isAethelSpeaking) floatY else 0f).dp)
                         )
 
@@ -386,7 +388,7 @@ fun StoryScreen(
                                 ShadowWispBust(
                                     bitmap = rightBitmap,
                                     isSpeaking = isRightSpeaking,
-                                    sizeDp = 86.dp,
+                                    sizeDp = 76.dp,
                                     modifier = Modifier.offset(y = (if (isRightSpeaking) floatY else 0f).dp)
                                 )
                             } else {
@@ -394,13 +396,13 @@ fun StoryScreen(
                                     bitmap = rightBitmap,
                                     speaker = rightSpeaker,
                                     isSpeaking = isRightSpeaking,
-                                    sizeDp = 96.dp,
+                                    sizeDp = 84.dp,
                                     modifier = Modifier.offset(y = (if (isRightSpeaking) floatY else 0f).dp)
                                 )
                             }
                         } else {
                             // Empty spacer to keep left character nicely aligned
-                            Spacer(modifier = Modifier.width(96.dp))
+                            Spacer(modifier = Modifier.width(84.dp))
                         }
                     }
 
@@ -415,7 +417,9 @@ fun StoryScreen(
                             }
                         },
                         isEyesFreeMode = isEyesFreeMode,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .wrapContentHeight(Alignment.Top)
                     )
 
                     // Choice Buttons (if node has branching choices)
@@ -523,7 +527,9 @@ fun StoryScreen(
                             }
                         },
                         isEyesFreeMode = isEyesFreeMode,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .wrapContentHeight(Alignment.Top)
                     )
 
                     // Choice Buttons in Landscape: Side-by-side or compact 2-row grid to preserve artwork space
@@ -828,14 +834,22 @@ private fun RetroSpeechBubble(
             .clickable { onTapToAdvance() }
             .padding(horizontal = 12.dp, vertical = 10.dp)
     ) {
-        Column {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .wrapContentHeight(Alignment.Top),
+            verticalArrangement = Arrangement.Top
+        ) {
             // Speaker Name Badge Header with optional mini portrait circle
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    modifier = Modifier.weight(1f, fill = false),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     if (speakerBitmap != null) {
                         Image(
                             bitmap = speakerBitmap,
@@ -853,14 +867,9 @@ private fun RetroSpeechBubble(
                         color = speakerColor,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Black,
-                        fontFamily = FontFamily.Monospace
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = "• ${node.speaker.title}",
-                        color = Color.Gray,
-                        fontSize = 9.sp,
-                        fontFamily = FontFamily.Monospace
+                        fontFamily = FontFamily.Monospace,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
 
@@ -873,21 +882,36 @@ private fun RetroSpeechBubble(
                         isEyesFreeMode -> "⏩ AUTO CAMP (1.5s)"
                         else -> "⭐ NEXT (CAMP)"
                     }
+                    Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = promptText,
                         color = LogosGold.copy(alpha = arrowAlpha),
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.Monospace
+                        fontFamily = FontFamily.Monospace,
+                        maxLines = 1
                     )
                 }
+            }
+
+            // Subtitle for title if present
+            if (node.speaker.title.isNotBlank()) {
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = "• ${node.speaker.title}",
+                    color = Color.Gray,
+                    fontSize = 9.sp,
+                    fontFamily = FontFamily.Monospace,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
 
             Spacer(modifier = Modifier.height(6.dp))
 
             // Spoken Dialogue Content
             Text(
-                text = node.text,
+                text = node.text.trim(),
                 color = Color.White,
                 fontSize = 12.sp,
                 fontFamily = FontFamily.Monospace,
