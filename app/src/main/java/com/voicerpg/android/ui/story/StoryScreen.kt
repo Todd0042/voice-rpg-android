@@ -101,7 +101,7 @@ fun StoryScreen(
     val isNarratorSpeaking = (currentNode.speaker == DialogueSpeaker.NARRATOR)
 
     val narratorAsset = remember(currentNode.id) {
-        DialogueSpeaker.NARRATOR.effectivePortraitAsset(currentNode.id)
+        DialogueSpeaker.NARRATOR.effectivePortraitAsset()
     }
     val narratorBitmap = remember(narratorAsset) {
         narratorAsset?.let { StoryAssetLoader.loadBitmap(context, it) }
@@ -431,6 +431,7 @@ fun StoryScreen(
                             }
                         },
                         isEyesFreeMode = isEyesFreeMode,
+                        speakerBitmapOverride = if (isNarratorSpeaking) narratorBitmap else null,
                         modifier = Modifier
                             .fillMaxWidth()
                             .wrapContentHeight(Alignment.Top)
@@ -541,6 +542,7 @@ fun StoryScreen(
                             }
                         },
                         isEyesFreeMode = isEyesFreeMode,
+                        speakerBitmapOverride = if (isNarratorSpeaking) narratorBitmap else null,
                         modifier = Modifier
                             .fillMaxWidth()
                             .wrapContentHeight(Alignment.Top)
@@ -819,13 +821,14 @@ private fun RetroSpeechBubble(
     node: DialogueNode,
     onTapToAdvance: () -> Unit,
     isEyesFreeMode: Boolean = false,
+    speakerBitmapOverride: ImageBitmap? = null,
     modifier: Modifier = Modifier
 ) {
     val speakerColor = node.speaker.themeColor
     val context = LocalContext.current
-    val speakerAsset = remember(node.id) { node.speaker.effectivePortraitAsset(node.id) }
-    val speakerBitmap = remember(speakerAsset) {
-        speakerAsset?.let { StoryAssetLoader.loadBitmap(context, it) }
+    val speakerAsset = remember(node.id) { node.speaker.effectivePortraitAsset() }
+    val speakerBitmap = remember(speakerAsset, speakerBitmapOverride) {
+        speakerBitmapOverride ?: speakerAsset?.let { StoryAssetLoader.loadBitmap(context, it) }
     }
 
     // Subtle breathing pulse for advance arrow
