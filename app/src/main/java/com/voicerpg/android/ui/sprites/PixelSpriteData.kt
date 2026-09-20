@@ -130,6 +130,77 @@ object PixelSpriteData {
         'P' to WhiteSpec          // Arcane spark
     )
 
+    // 8. Practice Dummy: Carved wooden post, bound straw torso with painted red bullseye, crossbeam arms
+    private val DUMMY_PALETTE = mapOf(
+        '.' to Transparent,
+        'K' to DarkOutline,
+        'W' to Color(0xFF6D4C41), // Wood pole/crossbeam
+        'w' to Color(0xFF4E342E), // Dark wood shadow
+        'S' to Color(0xFFD7CCC8), // Bound straw / canvas
+        's' to Color(0xFFA1887F), // Straw shadow
+        'Y' to Color(0xFFFFD54F), // Rope ties
+        'R' to Color(0xFFE53935), // Bullseye red
+        'r' to Color(0xFFB71C1C)  // Dark bullseye
+    )
+
+    private val DUMMY_UPRIGHT = listOf(
+        ".......KKKKK........",
+        "......KSSSSSsK......",
+        ".....KSSSSSSSK......",
+        ".....KSSYYYYSSK.....",
+        ".....KSSSSSSSK......",
+        ".....KSSwWWwSK......",
+        "..KKKKWwwWWwwKKKK...",
+        ".KSSSSWWWWWWWWSSSSK.",
+        ".KSYYSWWRRRWWSSYYsK.",
+        ".KSSSSWWRRRWWSSSSsK.",
+        "..KKKKWWRRRWWKKKK...",
+        ".....KSSRRRSSK......",
+        ".....KSSwWWwSK......",
+        ".....KSSSSSSSK......",
+        ".....KSSYYYYSSK.....",
+        ".....KSSSSSSSK......",
+        "......KSSSSSsK......",
+        ".......KwwwwK.......",
+        ".......KWWWWK.......",
+        ".......KwwwwK.......",
+        ".......KWWWWK.......",
+        ".......KwwwwK.......",
+        ".......KWWWWK.......",
+        ".......KwwwwK.......",
+        "......KwwwwwwK......",
+        ".....KKKKKKKKKK....."
+    )
+
+    private val DUMMY_CROUCH = listOf(
+        "........KKKKK.......",
+        ".......KSSSSSsK.....",
+        "......KSSSSSSSK.....",
+        "......KSSYYYYSSK....",
+        "......KSSSSSSSK.....",
+        "......KSSwWWwSK.....",
+        "...KKKKWwwWWwwKKKK..",
+        "..KSSSSWWWWWWWWSSSSK",
+        "..KSYYSWWRRRWWSSYYsK",
+        "..KSSSSWWRRRWWSSSSsK",
+        "...KKKKWWRRRWWKKKK..",
+        "......KSSRRRSSK.....",
+        "......KSSwWWwSK.....",
+        "......KSSSSSSSK.....",
+        "......KSSYYYYSSK....",
+        "......KSSSSSSSK.....",
+        ".......KSSSSSsK.....",
+        ".......KwwwwK.......",
+        ".......KWWWWK.......",
+        ".......KwwwwK.......",
+        ".......KWWWWK.......",
+        ".......KwwwwK.......",
+        ".......KWWWWK.......",
+        ".......KwwwwK.......",
+        "......KwwwwwwK......",
+        ".....KKKKKKKKKK....."
+    )
+
     private val AETHEL_UPRIGHT = listOf(
         ".......KKKKK........",
         "......KCCCCCK.......",
@@ -705,6 +776,13 @@ object PixelSpriteData {
                             else -> SHAMAN_CROUCH
                         }
                         grid to SHAMAN_PALETTE
+                    }
+                    lowerId.contains("dummy") -> {
+                        val grid = when (frame) {
+                            SpriteFrame.DAMAGED -> DUMMY_CROUCH
+                            else -> DUMMY_UPRIGHT
+                        }
+                        grid to DUMMY_PALETTE
                     }
                     lowerId == "hero" || lowerId.contains("aethel") -> {
                         val grid = when (frame) {

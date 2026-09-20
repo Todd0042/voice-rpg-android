@@ -37,10 +37,10 @@ import com.voicerpg.android.ui.setup.AudioSetupScreen
 import com.voicerpg.android.ui.story.StoryScreen
 import com.voicerpg.android.ui.theme.VoiceRPGTheme
 import com.voicerpg.android.ui.title.TitleScreen
-import com.voicerpg.android.ui.title.TutorialScreen
+import com.voicerpg.android.ui.tutorial.TutorialBattleScreen
 import com.voicerpg.android.viewmodel.CombatViewModel
 import com.voicerpg.android.viewmodel.StoryViewModel
-import com.voicerpg.android.viewmodel.TutorialViewModel
+import com.voicerpg.android.viewmodel.TutorialBattleViewModel
 
 class MainActivity : ComponentActivity() {
 
@@ -50,7 +50,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var saveManager: SaveManager
     private lateinit var combatViewModel: CombatViewModel
     private lateinit var storyViewModel: StoryViewModel
-    private lateinit var tutorialViewModel: TutorialViewModel
+    private lateinit var tutorialBattleViewModel: TutorialBattleViewModel
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -79,9 +79,10 @@ class MainActivity : ComponentActivity() {
             saveManager = saveManager,
             musicManager = musicManager
         )
-        tutorialViewModel = TutorialViewModel(
+        tutorialBattleViewModel = TutorialBattleViewModel(
             speechManager = speechManager,
-            combatNarrator = combatNarrator
+            combatNarrator = combatNarrator,
+            musicManager = musicManager
         )
 
         // Connect automatic speech ducking: BGM ducks during narration, smoothly restoring after
@@ -202,7 +203,10 @@ class MainActivity : ComponentActivity() {
                                 onNewGame = { storyViewModel.startNewGameFlow() },
                                 onAudioSetup = { storyViewModel.openAudioSetup() },
                                 onOptions = { combatViewModel.openOptions() },
-                                onTutorial = { storyViewModel.openTutorial() },
+                                onTutorial = {
+                                    tutorialBattleViewModel.resetTutorial()
+                                    storyViewModel.openTutorial()
+                                },
                                 onStartListening = {
                                     speechManager.startListening(
                                         onResult = { storyViewModel.handleStoryVoiceInput(it) }
@@ -212,8 +216,8 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         GameScreen.TUTORIAL -> {
-                            TutorialScreen(
-                                viewModel = tutorialViewModel,
+                            TutorialBattleScreen(
+                                viewModel = tutorialBattleViewModel,
                                 onBack = { storyViewModel.returnFromTutorial() },
                                 onStartNewGame = { storyViewModel.startNewGameFlow() }
                             )
