@@ -197,7 +197,18 @@ class CombatViewModel(
         val hero = _state.value.party.firstOrNull { it.id == heroId } ?: _state.value.party.firstOrNull()
         _state.value = _state.value.copy(
             phase = CombatPhase.PLAYER_INPUT,
-            activePartyMemberId = hero?.id
+            activePartyMemberId = hero?.id,
+            party = _state.value.party.map {
+                if (it.id == hero?.id) it.copy(atbGauge = 1.0f) else it
+            }
+        )
+    }
+
+    fun setPartyMemberAtbForTesting(memberId: String, gauge: Float) {
+        _state.value = _state.value.copy(
+            party = _state.value.party.map {
+                if (it.id == memberId) it.copy(atbGauge = gauge) else it
+            }
         )
     }
 
@@ -1428,23 +1439,87 @@ class CombatViewModel(
 
         if (_state.value.phase != CombatPhase.PLAYER_INPUT) return
 
+        val aliveParty = _state.value.party.filter { it.isAlive }
+        val activeHero = _state.value.activePartyMember ?: return
+        if (!activeHero.isTurnReady) return
+        if (_state.value.activePartyMemberId != activeHero.id) {
+            _state.value = _state.value.copy(activePartyMemberId = activeHero.id)
+        }
+
+        // 1. Voice Hero Switch Commands
+        if (lower == "switch" || lower == "next hero" || lower == "cycle hero" || lower == "switch hero" || lower == "change hero" || lower == "next") {
+            cycleNextPartyMember()
+            return
+        }
+
+        val isExplicitSwitch = lower.startsWith("switch to ") || lower.startsWith("change to ") ||
+                lower.startsWith("select ") || lower.startsWith("choose ")
+        if (isExplicitSwitch) {
+            val switchTarget = aliveParty.firstOrNull { member ->
+                val nameMatch = member.name.isNotBlank() && lower.contains(member.name.lowercase())
+                val classMatch = member.loreClass.isNotBlank() && lower.contains(member.loreClass.lowercase())
+                nameMatch || classMatch || when (member.id) {
+                    "hero" -> lower.contains("aethel") || lower.contains("elementalist") || lower.contains("mage")
+                    "cedric" -> lower.contains("cedric") || lower.contains("templar") || lower.contains("paladin") || lower.contains("knight")
+                    "lyra" -> lower.contains("lyra") || lower.contains("warden") || lower.contains("druid")
+                    "zephyr" -> lower.contains("zephyr") || lower.contains("shadowblade") || lower.contains("assassin") || lower.contains("rogue")
+                    else -> false
+                }
+            }
+            if (switchTarget != null) {
+                if (switchTarget.id == activeHero.id) {
+                    combatNarrator.speak("Already commanding ${activeHero.name}.", force = false)
+                    return
+                }
+                if (switchTarget.isTurnReady) {
+                    selectPartyMember(switchTarget)
+                    combatNarrator.speak("Switched to ${switchTarget.name}. Ready to act.", force = true) {
+                        if (speechManager.isAutoListen.value) {
+                            activeScope.launch {
+                                delay(100)
+                                startVoiceListening()
+                            }
+                        }
+                    }
+                } else {
+                    val pct = (switchTarget.atbRatio * 100).toInt()
+                    val (sx, sy) = partyFloatSlot(switchTarget.id)
+                    val fct = FloatingCombatText(
+                        text = "${switchTarget.name} charging: $pct%",
+                        color = Color(0xFF80D8FF),
+                        startX = sx,
+                        startY = sy
+                    )
+                    _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts + fct)
+                    activeScope.launch {
+                        delay(1200)
+                        _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts.filter { it.id != fct.id })
+                    }
+                    combatNarrator.speak("${switchTarget.name} is not ready yet ($pct% charged). It is ${activeHero.name}'s turn.", force = true) {
+                        if (speechManager.isAutoListen.value) {
+                            activeScope.launch {
+                                delay(100)
+                                startVoiceListening()
+                            }
+                        }
+                    }
+                }
+                return
+            }
+        }
+
+        // 2. Tactical Defend / Guard
         if (lower == "defend" || lower == "guard" || lower == "pass" || lower.contains("defend")) {
             defendActivePartyMember()
             return
         }
 
-        // Smart Hero Resolution: check if utterance invokes a specific hero or spell
-        val aliveParty = _state.value.party.filter { it.isAlive }
+        // 3. Strict Turn Enforcement: Only the active hero whose ATB turn is ready may act!
+        val isPhase3Unison = isPhase3Triggered && lower.contains("primordial")
+        val otherHeroes = aliveParty.filter { it.id != activeHero.id }
 
-        // Breath/recovery utterances are SELF-actions: they belong to whoever's turn it is.
-        // Never let heroBySpell or heroBySchoolKeyword hijack the turn to another member.
-        val BREATH_KEYWORDS = setOf(
-            "attune", "breathe", "breath", "steady", "concentrate", "center", "centre",
-            "recover mana", "restore mana", "focus", "still", "hush", "deep root", "quiet lungs"
-        )
-        val isBreathUtterance = BREATH_KEYWORDS.any { lower.contains(it) }
-
-        val heroByName = aliveParty.firstOrNull { member ->
+        // Check if an inactive hero is explicitly invoked to take an action
+        val invokedOtherHero = if (isPhase3Unison) null else otherHeroes.firstOrNull { member ->
             val matchesCustomName = member.name.isNotBlank() && lower.contains(member.name.lowercase())
             val matchesClassTitle = member.loreClass.isNotBlank() && lower.contains(member.loreClass.lowercase())
             matchesCustomName || matchesClassTitle || when (member.id) {
@@ -1456,32 +1531,94 @@ class CombatViewModel(
             }
         }
 
-        val heroBySpell = if (isBreathUtterance) null else aliveParty.firstOrNull { member ->
-            // Breath/restoration actions never steer: they belong to whoever's turn it is.
+        val hasHealSupportKeyword = lower.contains("heal") || lower.contains("mend") || lower.contains("restore") ||
+                lower.contains("cure") || lower.contains("protect") || lower.contains("shield") ||
+                lower.contains("lay on hands") || lower.contains("soothing rain")
+        val isHealSupportForOther = invokedOtherHero != null && hasHealSupportKeyword && activeHero.spells.any { it.isHeal || it.isGuard }
+
+        // Breath/recovery utterances are self-disciplines: they always belong to whoever's turn it is.
+        val BREATH_KEYWORDS = setOf(
+            "attune", "breathe", "breath", "steady", "concentrate", "center", "centre",
+            "recover mana", "restore mana", "focus", "still", "hush", "deep root", "quiet lungs"
+        )
+        val isBreathUtterance = BREATH_KEYWORDS.any { lower.contains(it) }
+
+        // Check if the utterance matches a spell of the active hero
+        val activeHeroSpellMatch = isBreathUtterance || activeHero.spells.any { spell ->
+            spell.manaRestorePct == 0f && (
+                lower.contains(spell.name.lowercase()) ||
+                spell.aliases.any { alias -> alias.length >= 4 && lower.contains(alias.lowercase()) } ||
+                spell.name.lowercase().split(" ").any { word -> word.length >= 5 && lower.contains(word) }
+            )
+        }
+
+        // Check if another hero owns a spell that matches this utterance
+        val otherHeroWithSpell = if (isBreathUtterance || activeHeroSpellMatch || isPhase3Unison) null else otherHeroes.firstOrNull { member ->
             member.spells.any { spell ->
                 spell.manaRestorePct == 0f && (
                     lower.contains(spell.name.lowercase()) ||
+                    spell.aliases.any { alias -> alias.length >= 4 && lower.contains(alias.lowercase()) } ||
                     spell.name.lowercase().split(" ").any { word -> word.length >= 5 && lower.contains(word) }
                 )
             }
         }
 
-        val heroBySchoolKeyword = if (isBreathUtterance) null else aliveParty.firstOrNull { member ->
-            when (member.id) {
-                "hero" -> lower.contains("fire") || lower.contains("frost") || lower.contains("ice") || lower.contains("lightning") || lower.contains("tempest") || lower.contains("blaze") || lower.contains("primordial")
-                "cedric" -> lower.contains("smite") || lower.contains("aegis") || lower.contains("shield wall") || lower.contains("lay on hands") || lower.contains("dawn") || lower.contains("morning star")
-                "lyra" -> lower.contains("soothing") || lower.contains("rain") || lower.contains("briar") || lower.contains("entangle") || lower.contains("grove") || lower.contains("cataclysm") || lower.contains("verdant") || lower.contains("thorn") || lower.contains("vine") || lower.contains("nature") || (lower.contains("heal") && !lower.contains("cedric"))
+        // Check if utterance invokes an exclusive school of another hero that the active hero does not possess
+        val otherHeroBySchool = if (isBreathUtterance || activeHeroSpellMatch || otherHeroWithSpell != null || isPhase3Unison) null else otherHeroes.firstOrNull { member ->
+            val matchesSchool = when (member.id) {
+                "hero" -> lower.contains("fire") || lower.contains("frost") || lower.contains("ice") || lower.contains("lightning") || lower.contains("tempest") || lower.contains("blaze") || lower.contains("cinder") || lower.contains("inferno")
+                "cedric" -> lower.contains("smite") || lower.contains("aegis") || lower.contains("shield wall") || lower.contains("dawn") || lower.contains("morning star") || lower.contains("seraph")
+                "lyra" -> lower.contains("soothing") || lower.contains("rain") || lower.contains("briar") || lower.contains("entangle") || lower.contains("grove") || lower.contains("cataclysm") || lower.contains("verdant") || lower.contains("thorn") || lower.contains("vine")
                 "zephyr" -> lower.contains("shadow strike") || lower.contains("venom") || lower.contains("flurry") || lower.contains("dagger") || lower.contains("poison") || lower.contains("oblivion")
                 else -> false
             }
+            val activeHeroHasSchool = when (member.id) {
+                "hero" -> activeHero.spells.any { it.school in listOf(SpellSchool.PYROMANCY, SpellSchool.CRYOMANCY, SpellSchool.ELECTROMANCY) }
+                "cedric" -> activeHero.spells.any { it.school == SpellSchool.HOLY }
+                "lyra" -> activeHero.spells.any { it.school == SpellSchool.NATURE }
+                "zephyr" -> activeHero.spells.any { it.school == SpellSchool.SHADOW }
+                else -> false
+            }
+            matchesSchool && !activeHeroHasSchool
         }
 
-        val activeHero = heroByName ?: heroBySpell ?: heroBySchoolKeyword ?: _state.value.activePartyMember
-        if (activeHero == null) {
-            if (speechManager.isAutoListen.value && _state.value.phase == CombatPhase.PLAYER_INPUT) {
-                activeScope.launch {
-                    delay(200)
-                    startVoiceListening()
+        val outOfTurnHero = when {
+            invokedOtherHero != null && !isHealSupportForOther -> invokedOtherHero
+            otherHeroWithSpell != null -> otherHeroWithSpell
+            otherHeroBySchool != null -> otherHeroBySchool
+            else -> null
+        }
+
+        if (outOfTurnHero != null) {
+            val (hx, hy) = partyFloatSlot(activeHero.id)
+            val fct = FloatingCombatText(
+                text = if (!outOfTurnHero.isTurnReady) {
+                    val pct = (outOfTurnHero.atbRatio * 100).toInt()
+                    "${outOfTurnHero.name} is charging ($pct%)! It is ${activeHero.name}'s turn!"
+                } else {
+                    "It is ${activeHero.name}'s turn! Switch heroes to command ${outOfTurnHero.name}."
+                },
+                color = Color(0xFFFF8A80),
+                startX = hx,
+                startY = hy
+            )
+            _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts + fct)
+            activeScope.launch {
+                delay(1400)
+                _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts.filter { it.id != fct.id })
+            }
+            val feedbackSpeech = if (!outOfTurnHero.isTurnReady) {
+                val pct = (outOfTurnHero.atbRatio * 100).toInt()
+                "${outOfTurnHero.name} is not ready to act yet, charging at $pct percent. It is ${activeHero.name}'s turn."
+            } else {
+                "It is ${activeHero.name}'s turn. Switch heroes to command ${outOfTurnHero.name}."
+            }
+            combatNarrator.speak(feedbackSpeech, force = true) {
+                if (speechManager.isAutoListen.value && _state.value.phase == CombatPhase.PLAYER_INPUT) {
+                    activeScope.launch {
+                        delay(150)
+                        startVoiceListening()
+                    }
                 }
             }
             return

@@ -586,4 +586,119 @@ class DynamicEncounterTest {
             }
         }
     }
+
+    @Test
+    fun testStrictTurnEnforcementZephyrActiveCannotCastFireball() {
+        val quad = StoryEncounters.createQuadParty()
+        viewModel.startEncounter(StoryEncounters.FOREST_AMBUSH.copy(initialParty = quad))
+
+        // Set Zephyr as active turn holder with ATB full; other heroes are not turn ready
+        viewModel.setPlayerInputPhaseForTesting("zephyr")
+        viewModel.setPartyMemberAtbForTesting("hero", 0.45f)
+        viewModel.setPartyMemberAtbForTesting("cedric", 0.25f)
+        viewModel.setPartyMemberAtbForTesting("lyra", 0.35f)
+
+        val initialAethelMp = viewModel.state.value.party.first { it.id == "hero" }.currentMp
+        val initialEnemyHps = viewModel.state.value.enemies.associate { it.id to it.currentHp }
+
+        // Zephyr's turn: player tries to cast Aethel's Fireball
+        viewModel.processIncantation("Fireball archer")
+
+        // Wait briefly to allow any coroutines/effects to process
+        Thread.sleep(150)
+
+        val currentState = viewModel.state.value
+        // 1. Turn must NOT be consumed; still in PLAYER_INPUT with Zephyr
+        assertEquals(CombatPhase.PLAYER_INPUT, currentState.phase)
+        assertEquals("zephyr", currentState.activePartyMemberId)
+
+        // 2. Aethel must NOT have cast the spell (MP untouched)
+        val aethel = currentState.party.first { it.id == "hero" }
+        assertEquals(initialAethelMp, aethel.currentMp)
+
+        // 3. No enemies took damage from unauthorized out-of-turn cast
+        currentState.enemies.forEach { enemy ->
+            assertEquals(initialEnemyHps[enemy.id], enemy.currentHp)
+        }
+
+        // 4. Zephyr's ATB gauge must still be ready
+        val zephyr = currentState.party.first { it.id == "zephyr" }
+        assertEquals(1.0f, zephyr.atbGauge, 0.001f)
+
+        // 5. Floating text warning should be present
+        assertTrue(currentState.floatingTexts.any { it.text.contains("charging") || it.text.contains("turn") })
+    }
+
+    @Test
+    fun testStrictTurnEnforcementCannotCommandOtherHeroOutOfTurn() {
+        val quad = StoryEncounters.createQuadParty()
+        viewModel.startEncounter(StoryEncounters.FOREST_AMBUSH.copy(initialParty = quad))
+
+        viewModel.setPlayerInputPhaseForTesting("zephyr")
+        viewModel.setPartyMemberAtbForTesting("cedric", 0.30f)
+
+        val initialCedricMp = viewModel.state.value.party.first { it.id == "cedric" }.currentMp
+        val initialEnemyHps = viewModel.state.value.enemies.associate { it.id to it.currentHp }
+
+        // Player chants Cedric's smite out of turn
+        viewModel.processIncantation("Cedric attack archer")
+        Thread.sleep(150)
+
+        val currentState = viewModel.state.value
+        assertEquals(CombatPhase.PLAYER_INPUT, currentState.phase)
+        assertEquals("zephyr", currentState.activePartyMemberId)
+        assertEquals(initialCedricMp, currentState.party.first { it.id == "cedric" }.currentMp)
+        currentState.enemies.forEach { enemy ->
+            assertEquals(initialEnemyHps[enemy.id], enemy.currentHp)
+        }
+    }
+
+    @Test
+    fun testStrictTurnEnforcementZephyrActsConsumesTurn() {
+        val quad = StoryEncounters.createQuadParty()
+        viewModel.startEncounter(StoryEncounters.FOREST_AMBUSH.copy(initialParty = quad))
+
+        viewModel.setPlayerInputPhaseForTesting("zephyr")
+        val initialZephyrMp = viewModel.state.value.party.first { it.id == "zephyr" }.currentMp
+
+        // Valid command for Zephyr
+        viewModel.processIncantation("Shadow strike orc")
+
+        // Wait for resolution and VFX
+        var turnResolved = false
+        for (i in 0 until 40) {
+            Thread.sleep(50)
+            val zephyr = viewModel.state.value.party.first { it.id == "zephyr" }
+            if (zephyr.atbGauge == 0f || zephyr.currentMp < initialZephyrMp) {
+                turnResolved = true
+                break
+            }
+        }
+
+        assertTrue("Zephyr's turn must be consumed (ATB reset to 0 and MP spent)", turnResolved)
+    }
+
+    @Test
+    fun testVoiceHeroSwitchingTurnReadyVsNotReady() {
+        val quad = StoryEncounters.createQuadParty()
+        viewModel.startEncounter(StoryEncounters.FOREST_AMBUSH.copy(initialParty = quad))
+
+        viewModel.setPlayerInputPhaseForTesting("zephyr")
+        viewModel.setPartyMemberAtbForTesting("cedric", 0.40f)
+
+        // Attempt to switch to Cedric when Cedric is not ready
+        viewModel.processIncantation("Switch to Cedric")
+        Thread.sleep(100)
+
+        // Should reject switch because Cedric's ATB is < 1.0f
+        assertEquals("zephyr", viewModel.state.value.activePartyMemberId)
+
+        // Now set Cedric's ATB to 1.0f
+        viewModel.setPartyMemberAtbForTesting("cedric", 1.0f)
+        viewModel.processIncantation("Switch to Cedric")
+        Thread.sleep(100)
+
+        // Should succeed because Cedric is turn ready
+        assertEquals("cedric", viewModel.state.value.activePartyMemberId)
+    }
 }
