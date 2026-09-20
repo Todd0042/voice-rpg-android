@@ -90,6 +90,12 @@ class CombatNarrator(
     private val _isPocketGuardLocked = MutableStateFlow(true)
     val isPocketGuardLocked: StateFlow<Boolean> = _isPocketGuardLocked.asStateFlow()
 
+    private val _isPocketGuardEnabled = MutableStateFlow(true)
+    val isPocketGuardEnabled: StateFlow<Boolean> = _isPocketGuardEnabled.asStateFlow()
+
+    private val _isCombatNarrationEnabled = MutableStateFlow(true)
+    val isCombatNarrationEnabled: StateFlow<Boolean> = _isCombatNarrationEnabled.asStateFlow()
+
     private val _isNarrationEnabled = MutableStateFlow(true)
     val isNarrationEnabled: StateFlow<Boolean> = _isNarrationEnabled.asStateFlow()
 
@@ -333,8 +339,10 @@ class CombatNarrator(
     fun setEyesFreeMode(enabled: Boolean, lockGuard: Boolean = true) {
         _isEyesFreeMode.value = enabled
         if (enabled) {
-            if (lockGuard) {
+            if (lockGuard && _isPocketGuardEnabled.value) {
                 _isPocketGuardLocked.value = true
+            } else {
+                _isPocketGuardLocked.value = false
             }
         } else {
             _isPocketGuardLocked.value = false
@@ -352,11 +360,37 @@ class CombatNarrator(
     }
 
     fun lockPocketGuard() {
-        _isPocketGuardLocked.value = true
+        if (_isPocketGuardEnabled.value) {
+            _isPocketGuardLocked.value = true
+        }
     }
 
     fun setPocketGuardLocked(locked: Boolean) {
-        _isPocketGuardLocked.value = locked
+        _isPocketGuardLocked.value = locked && _isPocketGuardEnabled.value
+    }
+
+    fun setPocketGuardEnabled(enabled: Boolean) {
+        _isPocketGuardEnabled.value = enabled
+        if (!enabled) {
+            _isPocketGuardLocked.value = false
+        }
+    }
+
+    fun togglePocketGuardEnabled(): Boolean {
+        _isPocketGuardEnabled.value = !_isPocketGuardEnabled.value
+        if (!_isPocketGuardEnabled.value) {
+            _isPocketGuardLocked.value = false
+        }
+        return _isPocketGuardEnabled.value
+    }
+
+    fun setCombatNarrationEnabled(enabled: Boolean) {
+        _isCombatNarrationEnabled.value = enabled
+    }
+
+    fun toggleCombatNarrationEnabled(): Boolean {
+        _isCombatNarrationEnabled.value = !_isCombatNarrationEnabled.value
+        return _isCombatNarrationEnabled.value
     }
 
     internal fun setPocketGuardLockedForTesting(locked: Boolean) {
@@ -624,8 +658,14 @@ class CombatNarrator(
     /**
      * Speaks text aloud if eyes-free mode is active, or if force is true (e.g. for status queries).
      */
-    fun speak(text: String, force: Boolean = false, preserveVoice: Boolean = false, onDone: (() -> Unit)? = null) {
-        if (!force && !_isEyesFreeMode.value) {
+    fun speak(
+        text: String,
+        force: Boolean = false,
+        preserveVoice: Boolean = false,
+        onDone: (() -> Unit)? = null
+    ) {
+        // If narration is suppressed and eyes-free is off, drop speech unless forced
+        if (!force && !_isEyesFreeMode.value && !_isCombatNarrationEnabled.value) {
             onDone?.invoke()
             return
         }
@@ -680,7 +720,7 @@ class CombatNarrator(
         preserveVoice: Boolean = false,
         timeoutMs: Long = 8000L
     ) {
-        if (!force && !_isEyesFreeMode.value) return
+        if (!force && !_isEyesFreeMode.value && !_isCombatNarrationEnabled.value) return
         if (tts == null || !isTtsInitialized) return
         withTimeoutOrNull(timeoutMs) {
             suspendCancellableCoroutine<Unit> { cont ->
@@ -711,7 +751,7 @@ class CombatNarrator(
     // =========================================================================
 
     fun narratePlayerTurn(hero: PartyMember, enemies: List<Enemy>, onDone: () -> Unit) {
-        if (!_isEyesFreeMode.value) {
+        if (!_isEyesFreeMode.value && !_isCombatNarrationEnabled.value) {
             onDone()
             return
         }
@@ -727,7 +767,7 @@ class CombatNarrator(
     }
 
     suspend fun narratePlayerTurnSuspend(hero: PartyMember, enemies: List<Enemy>, timeoutMs: Long = 8000L) {
-        if (!_isEyesFreeMode.value) return
+        if (!_isEyesFreeMode.value && !_isCombatNarrationEnabled.value) return
         if (tts == null || !isTtsInitialized) return
         withTimeoutOrNull(timeoutMs) {
             suspendCancellableCoroutine<Unit> { cont ->
@@ -749,7 +789,7 @@ class CombatNarrator(
         effectNote: String? = null,
         onDone: (() -> Unit)? = null
     ) {
-        if (!_isEyesFreeMode.value) {
+        if (!_isEyesFreeMode.value && !_isCombatNarrationEnabled.value) {
             onDone?.invoke()
             return
         }
@@ -783,7 +823,7 @@ class CombatNarrator(
         effectNote: String? = null,
         timeoutMs: Long = 8000L
     ) {
-        if (!_isEyesFreeMode.value) return
+        if (!_isEyesFreeMode.value && !_isCombatNarrationEnabled.value) return
         if (tts == null || !isTtsInitialized) return
         withTimeoutOrNull(timeoutMs) {
             suspendCancellableCoroutine<Unit> { cont ->
@@ -803,7 +843,7 @@ class CombatNarrator(
         statusNote: String? = null,
         onDone: (() -> Unit)? = null
     ) {
-        if (!_isEyesFreeMode.value) {
+        if (!_isEyesFreeMode.value && !_isCombatNarrationEnabled.value) {
             onDone?.invoke()
             return
         }
@@ -826,7 +866,7 @@ class CombatNarrator(
         statusNote: String? = null,
         timeoutMs: Long = 8000L
     ) {
-        if (!_isEyesFreeMode.value) return
+        if (!_isEyesFreeMode.value && !_isCombatNarrationEnabled.value) return
         if (tts == null || !isTtsInitialized) return
         withTimeoutOrNull(timeoutMs) {
             suspendCancellableCoroutine<Unit> { cont ->
@@ -838,7 +878,7 @@ class CombatNarrator(
     }
 
     fun narrateReinforcements(count: Int, enemyNames: List<String>, onDone: (() -> Unit)? = null) {
-        if (!_isEyesFreeMode.value) {
+        if (!_isEyesFreeMode.value && !_isCombatNarrationEnabled.value) {
             onDone?.invoke()
             return
         }
@@ -851,7 +891,7 @@ class CombatNarrator(
     }
 
     suspend fun narrateReinforcementsSuspend(count: Int, enemyNames: List<String>, timeoutMs: Long = 8000L) {
-        if (!_isEyesFreeMode.value) return
+        if (!_isEyesFreeMode.value && !_isCombatNarrationEnabled.value) return
         if (tts == null || !isTtsInitialized) return
         withTimeoutOrNull(timeoutMs) {
             suspendCancellableCoroutine<Unit> { cont ->
@@ -897,7 +937,7 @@ class CombatNarrator(
     }
 
     fun narrateConclusion(isVictory: Boolean, onDone: (() -> Unit)? = null) {
-        if (!_isEyesFreeMode.value) {
+        if (!_isEyesFreeMode.value && !_isCombatNarrationEnabled.value) {
             onDone?.invoke()
             return
         }
@@ -910,7 +950,7 @@ class CombatNarrator(
     }
 
     suspend fun narrateConclusionSuspend(isVictory: Boolean, timeoutMs: Long = 8000L) {
-        if (!_isEyesFreeMode.value) return
+        if (!_isEyesFreeMode.value && !_isCombatNarrationEnabled.value) return
         if (tts == null || !isTtsInitialized) return
         withTimeoutOrNull(timeoutMs) {
             suspendCancellableCoroutine<Unit> { cont ->

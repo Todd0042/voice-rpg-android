@@ -138,6 +138,8 @@ class MainActivity : ComponentActivity() {
 
             val isEyesFreeMode by combatNarrator.isEyesFreeMode.collectAsState()
             val isPocketGuardLocked by combatNarrator.isPocketGuardLocked.collectAsState()
+            val isPocketGuardEnabled by combatNarrator.isPocketGuardEnabled.collectAsState()
+            val isCombatNarrationEnabled by combatNarrator.isCombatNarrationEnabled.collectAsState()
             val speechState by speechManager.speechState.collectAsState()
             val rmsLevel by speechManager.rmsLevel.collectAsState()
             val isTtsSpeaking by combatNarrator.isSpeaking.collectAsState()
@@ -153,11 +155,11 @@ class MainActivity : ComponentActivity() {
             var showDebugWarp by remember { mutableStateOf(false) }
             val isDeveloperToolsEnabled by combatViewModel.isDeveloperToolsEnabled.collectAsState()
 
-            // Keep screen on during Pocket Mode and dim AMOLED display to save power
-            DisposableEffect(isEyesFreeMode, isPocketGuardLocked) {
+            // Keep screen on during Pocket Mode and dim AMOLED display to save power if touch guard enabled
+            DisposableEffect(isEyesFreeMode, isPocketGuardLocked, isPocketGuardEnabled) {
                 if (isEyesFreeMode) {
                     window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-                    if (isPocketGuardLocked) {
+                    if (isPocketGuardLocked && isPocketGuardEnabled) {
                         val lp = window.attributes
                         lp.screenBrightness = 0.01f
                         window.attributes = lp
@@ -308,6 +310,8 @@ class MainActivity : ComponentActivity() {
                         isOpen = combatState.isOptionsOpen,
                         isEyesFreeMode = isEyesFreeMode,
                         isNarrationEnabled = isNarrationEnabled,
+                        isCombatNarrationEnabled = isCombatNarrationEnabled,
+                        isPocketGuardEnabled = isPocketGuardEnabled,
                         isReadChoicesEnabled = isReadChoicesEnabled,
                         isCharacterPitchEnabled = isCharacterPitchEnabled,
                         isSpeakerAttributionEnabled = isSpeakerAttributionEnabled,
@@ -323,6 +327,14 @@ class MainActivity : ComponentActivity() {
                         },
                         onToggleNarration = {
                             combatNarrator.toggleNarration()
+                            storyViewModel.persistCurrentState()
+                        },
+                        onToggleCombatNarration = {
+                            combatNarrator.toggleCombatNarrationEnabled()
+                            storyViewModel.persistCurrentState()
+                        },
+                        onTogglePocketGuard = {
+                            combatNarrator.togglePocketGuardEnabled()
                             storyViewModel.persistCurrentState()
                         },
                         onToggleReadChoices = {
@@ -442,8 +454,8 @@ class MainActivity : ComponentActivity() {
                         }
                     }
 
-                    // Floating banner when pocket mode is active but screen is temporarily unlocked
-                    if (isEyesFreeMode && !isPocketGuardLocked) {
+                    // Floating banner when pocket mode is active but screen is temporarily unlocked (and pocket guard is enabled)
+                    if (isEyesFreeMode && !isPocketGuardLocked && isPocketGuardEnabled) {
                         PocketModeUnlockedBanner(
                             onLock = {
                                 combatNarrator.lockPocketGuard()
@@ -458,8 +470,8 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
-                    // Full-screen AMOLED true-black touch guard when pocket mode is active and locked
-                    if (isEyesFreeMode && isPocketGuardLocked) {
+                    // Full-screen AMOLED true-black touch guard when pocket mode is active and locked (and pocket guard is enabled)
+                    if (isEyesFreeMode && isPocketGuardLocked && isPocketGuardEnabled) {
                         PocketModeTouchGuard(
                             party = heroVitals,
                             locationTitle = locationTitle,

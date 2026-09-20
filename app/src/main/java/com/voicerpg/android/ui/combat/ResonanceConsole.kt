@@ -202,6 +202,43 @@ fun ResonanceConsole(
             }
         }
 
+        // Normal Battle Controls: Active Character Spell Buttons
+        if (activePartyMember != null && isInputEnabled && activePartyMember.spells.isNotEmpty()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 6.dp)
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                activePartyMember.spells.forEach { spell ->
+                    val hasEnoughMp = activePartyMember.currentMp >= spell.mpCost
+                    val schoolIcon = when (spell.school) {
+                        SpellSchool.PYROMANCY -> "🔥"
+                        SpellSchool.CRYOMANCY -> "❄️"
+                        SpellSchool.ELECTROMANCY -> "⚡"
+                        SpellSchool.NATURE -> "🌿"
+                        SpellSchool.HOLY -> if (spell.isHeal) "💚" else "⚔️"
+                        SpellSchool.SHADOW -> "🗡️"
+                        SpellSchool.PHYSICAL -> "🛡️"
+                    }
+                    TacticalSpellButton(
+                        icon = schoolIcon,
+                        spellName = spell.name,
+                        mpCost = spell.mpCost,
+                        hasEnoughMp = hasEnoughMp,
+                        enabled = isInputEnabled,
+                        accentColor = spell.school.themeColor,
+                        onClick = {
+                            val rolledTier = rollWeightedResonanceTier()
+                            val preset = SpellChantPresets.getPreset(spell, rolledTier)
+                            onSubmitChant(preset.chantText, preset.acousticProfile)
+                        }
+                    )
+                }
+            }
+        }
+
         // Resonance Meter Bar
         ResonanceMeterBar(lastResonance = lastResonance)
 
@@ -657,3 +694,67 @@ fun AudioEqualizerBars(
     }
 }
 
+/**
+ * Weighted random resonance tier generator:
+ * - Basic (+10%): 50% chance
+ * - Adept (+40%): 30% chance
+ * - Master (+80%): 14% chance
+ * - Mythic (+125%): 5% chance
+ * - Transcendental (+200% MAX): 1% rare chance
+ */
+private fun rollWeightedResonanceTier(): ResonanceTier {
+    val roll = kotlin.random.Random.nextFloat()
+    return when {
+        roll < 0.50f -> ResonanceTier.BASIC
+        roll < 0.80f -> ResonanceTier.ADEPT
+        roll < 0.94f -> ResonanceTier.MASTER
+        roll < 0.99f -> ResonanceTier.MYTHIC
+        else -> ResonanceTier.TRANSCENDENTAL
+    }
+}
+
+@Composable
+private fun TacticalSpellButton(
+    icon: String,
+    spellName: String,
+    mpCost: Int,
+    hasEnoughMp: Boolean,
+    enabled: Boolean,
+    accentColor: Color,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(6.dp))
+            .background(if (enabled && hasEnoughMp) Color(0xFF1E2638) else Color(0xFF181822))
+            .border(
+                width = 1.dp,
+                color = if (enabled && hasEnoughMp) accentColor.copy(alpha = 0.85f) else Color(0xFF373752),
+                shape = RoundedCornerShape(6.dp)
+            )
+            .clickable(enabled = enabled) { onClick() }
+            .padding(horizontal = 8.dp, vertical = 5.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text(
+                text = "$icon $spellName",
+                color = if (enabled && hasEnoughMp) Color.White else Color.Gray,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = FontFamily.Monospace
+            )
+            if (mpCost > 0) {
+                Text(
+                    text = "${mpCost}MP",
+                    color = if (!hasEnoughMp) Color(0xFFFF5252) else if (enabled) FrostCyan else Color.DarkGray,
+                    fontSize = 8.5.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    fontFamily = FontFamily.Monospace
+                )
+            }
+        }
+    }
+}

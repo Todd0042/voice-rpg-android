@@ -44,6 +44,8 @@ fun OptionsDialog(
     isOpen: Boolean,
     isEyesFreeMode: Boolean,
     isNarrationEnabled: Boolean,
+    isCombatNarrationEnabled: Boolean = true,
+    isPocketGuardEnabled: Boolean = true,
     isReadChoicesEnabled: Boolean,
     isCharacterPitchEnabled: Boolean,
     isSpeakerAttributionEnabled: Boolean,
@@ -55,6 +57,8 @@ fun OptionsDialog(
     musicVolume: Float = 0.55f,
     onToggleEyesFreeMode: () -> Unit,
     onToggleNarration: () -> Unit,
+    onToggleCombatNarration: () -> Unit = {},
+    onTogglePocketGuard: () -> Unit = {},
     onToggleReadChoices: () -> Unit,
     onToggleCharacterPitch: () -> Unit,
     onSpeechRateChange: (Float) -> Unit,
@@ -151,6 +155,18 @@ fun OptionsDialog(
                     checked = isNarrationEnabled,
                     activeColor = Color(0xFFFFD54F),
                     onCheckedChange = { onToggleNarration() }
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Toggle: Read Combat Actions Aloud
+                OptionToggleRow(
+                    title = "⚔️ Read Combat Actions Aloud",
+                    subtitle = "Phone speaks player turns, spell damage, and enemy attacks aloud (screen on or off).",
+                    voiceHint = "Voice command: \"Combat narration\" or \"Read combat\"",
+                    checked = isCombatNarrationEnabled,
+                    activeColor = Color(0xFFFF7043),
+                    onCheckedChange = { onToggleCombatNarration() }
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -503,11 +519,23 @@ fun OptionsDialog(
                 // Toggle: Screenless / Pocket Mode
                 OptionToggleRow(
                     title = "🎧 Screenless Pocket Mode",
-                    subtitle = "Hands-free & eyes-free play: AMOLED true-black touch guard prevents pocket taps, keeps display awake, spoken combat narration, and autoplays dialogue.",
+                    subtitle = "Hands-free audio play: automatically speaks choices, advances dialogue, and opens mic without touching the screen.",
                     voiceHint = "Voice command: \"Pocket mode\" or \"Eyes free\"",
                     checked = isEyesFreeMode,
                     activeColor = Color(0xFF64B5F6),
                     onCheckedChange = { onToggleEyesFreeMode() }
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Toggle: AMOLED Pocket Touch Guard (Screen Blanking & Lock)
+                OptionToggleRow(
+                    title = "🔒 AMOLED Screen Guard / Lock",
+                    subtitle = "When Pocket Mode is active, blanks display with true-black touch guard to prevent pocket taps. Turn OFF to keep screen visible while audio plays.",
+                    voiceHint = "Voice command: \"Screen guard\" or \"Touch lock\"",
+                    checked = isPocketGuardEnabled,
+                    activeColor = Color(0xFF81D4FA),
+                    onCheckedChange = { onTogglePocketGuard() }
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))

@@ -634,5 +634,50 @@ class NarrationAndOptionsTest {
         freshVm.resetGame()
         assertEquals(GameScreen.TITLE, freshVm.state.value.gameScreen)
     }
+
+    @Test
+    fun testCombatNarrationAndPocketGuardDecoupling() {
+        // Default states
+        assertTrue(narrator.isCombatNarrationEnabled.value)
+        assertTrue(narrator.isPocketGuardEnabled.value)
+
+        // Turn off combat narration
+        narrator.setCombatNarrationEnabled(false)
+        assertFalse(narrator.isCombatNarrationEnabled.value)
+
+        // Turn off pocket touch guard
+        narrator.setPocketGuardEnabled(false)
+        assertFalse(narrator.isPocketGuardEnabled.value)
+        assertFalse(narrator.isPocketGuardLocked.value)
+
+        // Enabling eyes-free mode when pocket guard is disabled does not lock the screen guard
+        narrator.setEyesFreeMode(true)
+        assertTrue(narrator.isEyesFreeMode.value)
+        assertFalse(narrator.isPocketGuardLocked.value)
+
+        // Enabling pocket guard and locking locks the guard
+        narrator.setPocketGuardEnabled(true)
+        narrator.lockPocketGuard()
+        assertTrue(narrator.isPocketGuardLocked.value)
+
+        // Verify persistence via StoryViewModel
+        storyViewModel.persistCurrentState()
+        val save = saveManager.load()
+        assertNotNull(save)
+        assertTrue(save!!.isPocketGuardEnabled)
+        assertFalse(save.isCombatNarrationEnabled)
+
+        // Test restoring from save
+        val freshNarrator = CombatNarrator(context = null)
+        val freshVm = StoryViewModel(
+            speechManager = speechManager,
+            combatNarrator = freshNarrator,
+            saveManager = saveManager,
+            scopeOverride = CoroutineScope(Dispatchers.Default)
+        )
+        assertFalse(freshNarrator.isCombatNarrationEnabled.value)
+        assertTrue(freshNarrator.isPocketGuardEnabled.value)
+    }
 }
+
 

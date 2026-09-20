@@ -207,6 +207,8 @@ class StoryViewModel(
                 dialogueHistory = restoredHistory
             )
             combatNarrator.setEyesFreeMode(existingSave.isEyesFreeMode, lockGuard = false)
+            combatNarrator.setPocketGuardEnabled(existingSave.isPocketGuardEnabled)
+            combatNarrator.setCombatNarrationEnabled(existingSave.isCombatNarrationEnabled)
             combatNarrator.setNarrationEnabled(existingSave.isNarrationEnabled)
             combatNarrator.setReadChoicesEnabled(existingSave.isReadChoicesEnabled)
             combatNarrator.setSpeechRate(existingSave.speechRate)
@@ -277,6 +279,8 @@ class StoryViewModel(
             dialogueHistory = restoredHistory
         )
         combatNarrator.setEyesFreeMode(existingSave.isEyesFreeMode, lockGuard = false)
+        combatNarrator.setPocketGuardEnabled(existingSave.isPocketGuardEnabled)
+        combatNarrator.setCombatNarrationEnabled(existingSave.isCombatNarrationEnabled)
         combatNarrator.setNarrationEnabled(existingSave.isNarrationEnabled)
         combatNarrator.setReadChoicesEnabled(existingSave.isReadChoicesEnabled)
         combatNarrator.setSpeechRate(existingSave.speechRate)
@@ -954,6 +958,8 @@ class StoryViewModel(
             achievements = s.achievements,
             recentDialogueLog = s.dialogueHistory.takeLast(60),
             isEyesFreeMode = combatNarrator.isEyesFreeMode.value,
+            isPocketGuardEnabled = combatNarrator.isPocketGuardEnabled.value,
+            isCombatNarrationEnabled = combatNarrator.isCombatNarrationEnabled.value,
             isAutoListen = speechManager.isAutoListen.value,
             isChimeMuted = speechManager.isChimeMuted.value,
             isNarrationEnabled = combatNarrator.isNarrationEnabled.value,

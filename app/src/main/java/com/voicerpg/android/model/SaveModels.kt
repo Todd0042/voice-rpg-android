@@ -151,6 +151,8 @@ data class GameSaveData(
     val isAutoListen: Boolean = false,
     val isChimeMuted: Boolean = true,
     val isNarrationEnabled: Boolean = true,
+    val isCombatNarrationEnabled: Boolean = true,
+    val isPocketGuardEnabled: Boolean = true,
     val isReadChoicesEnabled: Boolean = true,
     val speechRate: Float = 1.05f,
     val isCharacterPitchEnabled: Boolean = true,
