@@ -77,6 +77,9 @@ object DamageResolver {
         return max(1, amount.toInt())
     }
 
+    /** Global enemy damage tuning factor: minor increment to make combat threats sharper. */
+    const val ENEMY_DAMAGE_TUNING = 1.15f
+
     /** Enemy attack vs party member: affinity-immune mitigation (guard), shallow variance. */
     fun resolveEnemyStrike(
         enemyAttack: Int,
@@ -86,7 +89,7 @@ object DamageResolver {
         random: Random = Random.Default
     ): Int {
         val variance = VARIANCE_MIN + random.nextFloat() * (VARIANCE_MAX - VARIANCE_MIN)
-        var dmg = enemyAttack * movePowerMult * variance * defenderStatusMitigation.coerceIn(0.5f, 1.5f)
+        var dmg = enemyAttack * movePowerMult * variance * defenderStatusMitigation.coerceIn(0.5f, 1.5f) * ENEMY_DAMAGE_TUNING
         if (defenderGuarding) dmg *= GUARD_MULTIPLIER
         return max(1, dmg.toInt())
     }

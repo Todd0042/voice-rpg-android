@@ -114,8 +114,9 @@ class CombatViewModel(
         internal set
     var isZephyrRecruitedMidBattle: Boolean = false
         internal set
-    var isPhase3Triggered: Boolean = false
+    var isMalakorUltimateCast: Boolean = false
         internal set
+    val isPhase3Triggered: Boolean get() = isMalakorUltimateCast
 
     var onContinueStory: (() -> Unit)? = null
 
@@ -212,6 +213,10 @@ class CombatViewModel(
         )
     }
 
+    fun setPartyForTesting(party: List<PartyMember>) {
+        _state.value = _state.value.copy(party = party)
+    }
+
     private var atbJob: Job? = null
     private var lastActedHeroId: String? = null
     var lastActedFaction: CombatantFaction = CombatantFaction.NONE
@@ -289,7 +294,7 @@ class CombatViewModel(
                 },
                 enemies = prev.enemies.map { enemy ->
                     if (enemy.isAlive) {
-                        val advance = (enemy.speed / 100f) * 0.035f * enemyPartyScale * StatusSystem.speedMult(enemy.statuses)
+                        val advance = (enemy.speed / 100f) * 0.035f * enemyPartyScale * StatusSystem.speedMult(enemy.statuses) * ENEMY_SPEED_PACING_MULT
                         enemy.copy(atbGauge = (enemy.atbGauge + advance).coerceAtMost(1.0f))
                     } else {
                         enemy.copy(atbGauge = 0f)
@@ -572,6 +577,25 @@ class CombatViewModel(
                 else -> listOf(aliveHeroes.random())
             }
 
+            val isBossUltimate = enemy.isBoss && move.powerMult >= 2.0f
+            if (isBossUltimate) {
+                triggerScreenShake(20f)
+                combatNarrator.speak("${enemy.name} unleashes their ultimate: ${move.name}!", force = true)
+                val (ex, ey) = enemyFloatSlot(enemy.id)
+                val ultFct = FloatingCombatText(
+                    text = "BOSS ULTIMATE: ${move.name.uppercase()}",
+                    color = Color(0xFFFF5252),
+                    startX = ex - 40f,
+                    startY = ey - 30f,
+                    isCrit = true
+                )
+                _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts + ultFct)
+                activeScope.launch {
+                    delay(1800)
+                    _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts.filterNot { it.id == ultFct.id })
+                }
+            }
+
             val weakenedMult = StatusSystem.attackDebuffMult(refreshedSelf.statuses)
             val moveSchool = runCatching { SpellSchool.valueOf(move.school) }.getOrDefault(SpellSchool.PHYSICAL)
             val (enemyCasterX, enemyCasterY) = enemyFloatSlot(enemy.id)
@@ -621,8 +645,11 @@ class CombatViewModel(
                 )
             }
 
-            delay(350)
+            delay(if (isBossUltimate) 550 else 350)
             sfxManager.playHitImpact()
+            if (isBossUltimate) {
+                triggerScreenShake(18f)
+            }
 
             val moveStatusId = StatusId.fromNameOrNull(move.applyStatus)
             val newFloats = mutableListOf<FloatingCombatText>()
@@ -847,10 +874,10 @@ class CombatViewModel(
         val currentParty = _state.value.party
         val currentEnemies = _state.value.enemies
 
-        // Phase 3 Death of Voice in Chapter 16 against Grand Inquisitor Malakor
+        // Phase threshold: Cords of Severance in Chapter 16 against Grand Inquisitor Malakor
         val malakor = currentEnemies.firstOrNull { it.id == "malakor" && it.isAlive }
-        if (currentEncounterId == "ch16_malakor_finale" && malakor != null && malakor.currentHp <= 450 && !isPhase3Triggered) {
-            triggerPhase3DeathOfVoice()
+        if (currentEncounterId == "ch16_malakor_finale" && malakor != null && malakor.currentHp <= 450 && !isMalakorUltimateCast) {
+            triggerMalakorCordsOfSeverance()
             if (combatNarrator.isEyesFreeMode.value) {
                 activeScope.launch {
                     val waitStart = System.currentTimeMillis()
@@ -858,7 +885,7 @@ class CombatViewModel(
                         delay(50)
                     }
                     delay(200)
-                    proceedAfterTurnCheck(currentParty, currentEnemies)
+                    proceedAfterTurnCheck(_state.value.party, _state.value.enemies)
                 }
                 return
             }
@@ -948,31 +975,73 @@ class CombatViewModel(
         }
     }
 
-    fun triggerPhase3DeathOfVoice() {
-        if (isPhase3Triggered) return
-        isPhase3Triggered = true
-        sfxManager.mute(true)
-        triggerScreenShake(20f)
-        val fct = FloatingCombatText(
-            text = "THE DEATH OF VOICE — Total Silence",
-            color = Color(0xFFEF5350),
-            startX = 400f,
-            startY = 350f,
+    fun triggerMalakorCordsOfSeverance() {
+        if (isMalakorUltimateCast) return
+        isMalakorUltimateCast = true
+
+        triggerScreenShake(28f)
+        sfxManager.playHitImpact()
+
+        val fctBanner = FloatingCombatText(
+            text = "CORDS OF SEVERANCE — Cataclysmic Severance",
+            color = Color(0xFFFF1744),
+            startX = 380f,
+            startY = 320f,
             isCrit = true
         )
+
         combatNarrator.speak(
-            "The Death of Voice! Malakor severs the cords of creation. The world plunges into total, deafening silence. All music and echoes cease. Speak the Primordial Incantation in unison to shatter the void!",
+            "Malakor unleashes Cords of Severance! A devastating cataclysm tears through the party, severing their life force!",
             force = true
         )
+
+        val newFloats = mutableListOf<FloatingCombatText>(fctBanner)
+        val updatedParty = _state.value.party.map { hero ->
+            if (hero.isAlive) {
+                val hpRatio = hero.currentHp.toFloat() / hero.maxHp
+                val (newHp, dmg) = if (hpRatio < 0.30f) {
+                    0 to hero.currentHp
+                } else {
+                    val remainingRatio = 0.05f + Random.nextFloat() * 0.05f // 5% to 10%
+                    val targetHp = (hero.maxHp * remainingRatio).roundToInt().coerceIn(1, (hero.maxHp * 0.10f).roundToInt().coerceAtLeast(1))
+                    val damageDealt = (hero.currentHp - targetHp).coerceAtLeast(1)
+                    targetHp to damageDealt
+                }
+                val (hx, hy) = partyFloatSlot(hero.id)
+                newFloats += FloatingCombatText(
+                    text = "-$dmg",
+                    color = Color(0xFFFF1744),
+                    startX = hx,
+                    startY = hy,
+                    isCrit = true
+                )
+                val isFallen = newHp <= 0
+                hero.copy(
+                    currentHp = newHp,
+                    currentMp = if (isFallen) 0 else hero.currentMp,
+                    atbGauge = if (isFallen) 0f else hero.atbGauge,
+                    stance = if (isFallen) CharacterStance.DEAD else CharacterStance.DAMAGED,
+                    isGuarding = false
+                )
+            } else hero
+        }
+
         _state.value = _state.value.copy(
-            floatingTexts = _state.value.floatingTexts + fct
+            party = updatedParty,
+            floatingTexts = _state.value.floatingTexts + newFloats
         )
+
         activeScope.launch {
-            delay(2000)
+            delay(2200)
             _state.value = _state.value.copy(
-                floatingTexts = _state.value.floatingTexts.filter { it.id != fct.id }
+                floatingTexts = _state.value.floatingTexts.filterNot { ft -> newFloats.any { it.id == ft.id } }
             )
         }
+    }
+
+    /** Compatibility alias for legacy callers/tests. */
+    fun triggerPhase3DeathOfVoice() {
+        triggerMalakorCordsOfSeverance()
     }
 
     fun selectEnemy(enemy: Enemy) {
@@ -1515,11 +1584,10 @@ class CombatViewModel(
         }
 
         // 3. Strict Turn Enforcement: Only the active hero whose ATB turn is ready may act!
-        val isPhase3Unison = isPhase3Triggered && lower.contains("primordial")
         val otherHeroes = aliveParty.filter { it.id != activeHero.id }
 
         // Check if an inactive hero is explicitly invoked to take an action
-        val invokedOtherHero = if (isPhase3Unison) null else otherHeroes.firstOrNull { member ->
+        val invokedOtherHero = otherHeroes.firstOrNull { member ->
             val matchesCustomName = member.name.isNotBlank() && lower.contains(member.name.lowercase())
             val matchesClassTitle = member.loreClass.isNotBlank() && lower.contains(member.loreClass.lowercase())
             matchesCustomName || matchesClassTitle || when (member.id) {
@@ -1553,7 +1621,7 @@ class CombatViewModel(
         }
 
         // Check if another hero owns a spell that matches this utterance
-        val otherHeroWithSpell = if (isBreathUtterance || activeHeroSpellMatch || isPhase3Unison) null else otherHeroes.firstOrNull { member ->
+        val otherHeroWithSpell = if (isBreathUtterance || activeHeroSpellMatch) null else otherHeroes.firstOrNull { member ->
             member.spells.any { spell ->
                 spell.manaRestorePct == 0f && (
                     lower.contains(spell.name.lowercase()) ||
@@ -1564,7 +1632,7 @@ class CombatViewModel(
         }
 
         // Check if utterance invokes an exclusive school of another hero that the active hero does not possess
-        val otherHeroBySchool = if (isBreathUtterance || activeHeroSpellMatch || otherHeroWithSpell != null || isPhase3Unison) null else otherHeroes.firstOrNull { member ->
+        val otherHeroBySchool = if (isBreathUtterance || activeHeroSpellMatch || otherHeroWithSpell != null) null else otherHeroes.firstOrNull { member ->
             val matchesSchool = when (member.id) {
                 "hero" -> lower.contains("fire") || lower.contains("frost") || lower.contains("ice") || lower.contains("lightning") || lower.contains("tempest") || lower.contains("blaze") || lower.contains("cinder") || lower.contains("inferno")
                 "cedric" -> lower.contains("smite") || lower.contains("aegis") || lower.contains("shield wall") || lower.contains("dawn") || lower.contains("morning star") || lower.contains("seraph")
@@ -1669,23 +1737,12 @@ class CombatViewModel(
             )
 
             val acoustic = forcedAcoustic ?: speechManager.getLatestAcousticProfile()
-            val rawResonance = resonanceEngine.evaluate(
+            val resonance = resonanceEngine.evaluate(
                 utterance = utterance,
                 school = parsed.spell.school,
                 acousticProfile = acoustic,
                 ignoreNoveltyDecay = forcedAcoustic != null
             )
-            val resonance = if (isPhase3Triggered) {
-                sfxManager.mute(false)
-                rawResonance.copy(
-                    bonusPercent = 200,
-                    damageMultiplier = 3.0f,
-                    tier = ResonanceTier.TRANSCENDENTAL,
-                    particleCount = 120
-                )
-            } else {
-                rawResonance
-            }
 
             val isSuperLogos = resonance.bonusPercent >= 100
             val isTranscendental = resonance.tier == ResonanceTier.TRANSCENDENTAL
@@ -2297,7 +2354,7 @@ class CombatViewModel(
     fun startEncounter(encounter: EncounterDefinition) {
         currentEncounterId = encounter.id
         isZephyrRecruitedMidBattle = false
-        isPhase3Triggered = false
+        isMalakorUltimateCast = false
         _combatantPositions.clear()
         sfxManager.mute(false)
         musicManager?.playCombatMusic()
@@ -2423,5 +2480,10 @@ class CombatViewModel(
     override fun onCleared() {
         super.onCleared()
         cleanup()
+    }
+
+    companion object {
+        /** Global enemy speed pacing multiplier: minor increment to grant enemies more turns. */
+        const val ENEMY_SPEED_PACING_MULT = 1.15f
     }
 }

@@ -611,10 +611,10 @@ object StoryEncounters {
             subtitle = subtitle,
             currentHp = hp,
             maxHp = hp,
-            baseAttack = 16,
+            baseAttack = 18,
             isTargeted = false,
             spriteTint = Color(0xFF80CBC4),
-            speed = 50,
+            speed = 55,
             atbGauge = 0f
         )
     }

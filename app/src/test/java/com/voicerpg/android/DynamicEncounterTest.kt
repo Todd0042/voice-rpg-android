@@ -326,31 +326,40 @@ class DynamicEncounterTest {
     }
 
     @Test
-    fun testFinalBossPhase3DeathOfVoiceAndPrimordialSyllable() {
+    fun testFinalBossMalakorCordsOfSeveranceLargeAoe() {
         viewModel.startEncounter(StoryEncounters.CH16_MALAKOR_FINALE)
         assertEquals("ch16_malakor_finale", viewModel.currentEncounterId)
-        assertFalse(viewModel.isPhase3Triggered)
+        assertFalse(viewModel.isMalakorUltimateCast)
 
-        // Phase 3 trigger: Malakor suppresses all sound
-        viewModel.triggerPhase3DeathOfVoice()
-        assertTrue(viewModel.isPhase3Triggered)
-        assertTrue(viewModel.sfxManager.isMuted)
+        // Setup party: Aethel at full HP (240/240 >= 30%), Cedric at 100/420 (< 30% HP)
+        val initialParty = viewModel.state.value.party.map { hero ->
+            when (hero.id) {
+                "hero" -> hero.copy(currentHp = 240, maxHp = 240)
+                "cedric" -> hero.copy(currentHp = 100, maxHp = 420) // ~23.8% < 30%
+                else -> hero
+            }
+        }
+        viewModel.setPartyForTesting(initialParty)
 
-        // Set player turn ready
-        viewModel.setPlayerInputPhaseForTesting("hero")
-
-        // When the player speaks the Primordial Incantation in unison:
-        viewModel.processIncantation("Morning star cataclysm oblivion primordial syllable")
-
-        // Wait briefly for coroutine launch
-        Thread.sleep(150)
-
-        // Silence is shattered!
+        // Trigger Malakor's ultimate AoE hit
+        viewModel.triggerMalakorCordsOfSeverance()
+        assertTrue(viewModel.isMalakorUltimateCast)
+        // Ensure sound is not muted (old gimmick removed)
         assertFalse(viewModel.sfxManager.isMuted)
-        val resonance = viewModel.state.value.lastResonance
-        assertNotNull(resonance)
-        assertEquals(200, resonance?.bonusPercent)
-        assertEquals(com.voicerpg.android.model.ResonanceTier.TRANSCENDENTAL, resonance?.tier)
+
+        val updatedParty = viewModel.state.value.party
+        val aethel = updatedParty.first { it.id == "hero" }
+        val cedric = updatedParty.first { it.id == "cedric" }
+
+        // Aethel entered above 30% HP: survives reduced to 5% - 10% HP remaining
+        assertTrue(aethel.isAlive)
+        val aethelRatio = aethel.currentHp.toFloat() / aethel.maxHp
+        assertTrue("Aethel HP ratio $aethelRatio should be between 5% and 10%", aethelRatio in 0.045f..0.105f)
+
+        // Cedric entered below 30% HP: lethal hit, reduced to 0 HP and dead stance
+        assertFalse(cedric.isAlive)
+        assertEquals(0, cedric.currentHp)
+        assertEquals(com.voicerpg.android.model.CharacterStance.DEAD, cedric.stance)
     }
 
     @Test
