@@ -192,9 +192,14 @@ class MainActivity : ComponentActivity() {
 
             LaunchedEffect(storyState.activeEncounter) {
                 storyState.activeEncounter?.let { encounter ->
+                    combatViewModel.setPureStoryMode(storyState.isPureStoryMode)
                     combatViewModel.applySavedStats(storyState.partyStats)
                     combatViewModel.startEncounter(encounter)
                 }
+            }
+
+            LaunchedEffect(storyState.isPureStoryMode) {
+                combatViewModel.setPureStoryMode(storyState.isPureStoryMode)
             }
 
             LaunchedEffect(storyState.currentScene.id, storyState.gameScreen) {
@@ -229,6 +234,7 @@ class MainActivity : ComponentActivity() {
                                 onNewGameInSlot = { slot -> storyViewModel.startNewGameFlow(slot) },
                                 onAudioSetup = { storyViewModel.openAudioSetup() },
                                 onOptions = { combatViewModel.openOptions() },
+                                onPureStoryMode = { storyViewModel.startPureStoryMode() },
                                 onTutorial = {
                                     tutorialBattleViewModel.resetTutorial()
                                     storyViewModel.openTutorial()

@@ -218,14 +218,75 @@ fun StoryScreen(
             )
 
             // 2. Top Header: Chapter & Scene Location Banner on Left + Stacked Controls on Right
-            Row(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .align(Alignment.TopCenter)
-                    .padding(horizontal = 12.dp, vertical = if (isLandscape) 4.dp else 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.Top
+                    .padding(horizontal = 12.dp, vertical = if (isLandscape) 4.dp else 8.dp)
             ) {
+                if (storyState.isPureStoryMode) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 6.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color(0xFF311B92).copy(alpha = 0.95f))
+                            .border(1.dp, Color(0xFFBA68C8), RoundedCornerShape(8.dp))
+                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = if (storyState.isStoryAutoPlayPaused) "⏸ STORY MODE (PAUSED)" else "▶ STORY MODE (AUTO-PLAY)",
+                                color = Color(0xFFF3E5F5),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Black,
+                                fontFamily = FontFamily.Monospace
+                            )
+                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .background(if (storyState.isStoryAutoPlayPaused) Color(0xFF2E7D32) else Color(0xFFEF6C00))
+                                        .clickable { storyViewModel.toggleStoryAutoPlayPause() }
+                                        .padding(horizontal = 8.dp, vertical = 3.dp)
+                                ) {
+                                    Text(
+                                        text = if (storyState.isStoryAutoPlayPaused) "RESUME" else "PAUSE",
+                                        color = Color.White,
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = FontFamily.Monospace
+                                    )
+                                }
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .background(Color(0xFFC62828))
+                                        .clickable { storyViewModel.setPureStoryMode(false) }
+                                        .padding(horizontal = 8.dp, vertical = 3.dp)
+                                ) {
+                                    Text(
+                                        text = "EXIT",
+                                        color = Color.White,
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = FontFamily.Monospace
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.Top
+                ) {
                 // Title Banner Card (with set flex width and clean multi-line wrapping)
                 Box(
                     modifier = Modifier
@@ -368,6 +429,7 @@ fun StoryScreen(
                     }
                 }
             }
+        }
 
             // 3. Characters & Dialogue Presentation (Responsive Portrait vs Landscape)
             if (!isLandscape) {

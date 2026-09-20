@@ -56,7 +56,9 @@ data class StoryState(
     val isBacklogOpen: Boolean = false,
     val isFastForwarding: Boolean = false,
     val isBacklogRecapActive: Boolean = true,
-    val isNewGameFlow: Boolean = false
+    val isNewGameFlow: Boolean = false,
+    val isPureStoryMode: Boolean = false,
+    val isStoryAutoPlayPaused: Boolean = false
 )
 
 class StoryViewModel(
@@ -147,6 +149,142 @@ class StoryViewModel(
                 canAdvanceDialogue()
             ) {
                 advanceDialogue()
+            }
+        }
+    }
+
+    private var pendingStoryModeJob: Job? = null
+
+    fun cancelPendingStoryMode() {
+        pendingStoryModeJob?.cancel()
+        pendingStoryModeJob = null
+    }
+
+    fun isBossEncounter(encounterId: String): Boolean {
+        val bossIds = setOf(
+            "cave_broodmother",
+            "castle_horde",
+            "swamp_behemoth",
+            "ch7_mire_wyrm",
+            "ch8_executioner_ambush",
+            "ch9_galahault_trial",
+            "ch10_broodmother_trial",
+            "ch11_nocturne_trial",
+            "ch12_warmaster_ouros",
+            "ch13_commander_vaelor",
+            "ch14_abyssal_leviathan",
+            "ch15_trial_gold",
+            "ch15_trial_grove",
+            "ch15_trial_shadow",
+            "ch15_archon_custodians",
+            "ch16_mirror_gauntlet",
+            "ch16_malakor_finale"
+        )
+        if (encounterId in bossIds) return true
+        val enc = StoryEncounters.ALL_ENCOUNTERS.firstOrNull { it.id == encounterId }
+        return enc?.enemies?.any { it.isBoss } == true
+    }
+
+    fun pickStoryModeChoice(node: DialogueNode): DialogueChoice? {
+        val eligible = eligibleChoices(node)
+        if (eligible.isEmpty()) return null
+
+        // 1. Campfire / hub entry prompts: ALWAYS choose to sit/converse rather than skip/rush
+        val campOrHubEntry = eligible.filter { choice ->
+            choice.id.contains("sit", ignoreCase = true) ||
+            choice.id.contains("converse", ignoreCase = true) ||
+            choice.text.contains("Sit by the fire", ignoreCase = true) ||
+            choice.text.contains("converse", ignoreCase = true) ||
+            choice.text.contains("speak with", ignoreCase = true)
+        }
+        if (campOrHubEntry.isNotEmpty()) {
+            return campOrHubEntry.first()
+        }
+
+        // 2. Uncompleted sub-story choices in hubs and camps (longest exploration path)
+        val uncompleted = eligible.filter { choice ->
+            choice.completionFlag != null &&
+            _state.value.narrativeFlags[choice.completionFlag] != true &&
+            !choice.id.contains("skip", ignoreCase = true) &&
+            !choice.text.contains("Rest briefly", ignoreCase = true)
+        }
+        if (uncompleted.isNotEmpty()) {
+            return uncompleted.first()
+        }
+
+        // 3. Filter out skip choices when other exploration options exist
+        val nonSkipChoices = eligible.filter { choice ->
+            !choice.id.contains("skip", ignoreCase = true) &&
+            !choice.text.contains("Rest briefly", ignoreCase = true) &&
+            !choice.text.contains("press onwards without delay", ignoreCase = true)
+        }
+        val pool = if (nonSkipChoices.isNotEmpty()) nonSkipChoices else eligible
+        return pool.random()
+    }
+
+    fun setPureStoryMode(enabled: Boolean) {
+        _state.value = _state.value.copy(
+            isPureStoryMode = enabled,
+            isStoryAutoPlayPaused = false
+        )
+        if (enabled) {
+            combatNarrator.setNarrationEnabled(true)
+            if (_state.value.gameScreen == GameScreen.STORY_EXPLORATION && !combatNarrator.isSpeaking.value) {
+                scheduleStoryModeNextStep(_state.value.currentNode, delayMs = 600L)
+            }
+        } else {
+            cancelPendingStoryMode()
+        }
+    }
+
+    fun toggleStoryAutoPlayPause(): Boolean {
+        val newPaused = !_state.value.isStoryAutoPlayPaused
+        _state.value = _state.value.copy(isStoryAutoPlayPaused = newPaused)
+        if (newPaused) {
+            cancelPendingStoryMode()
+            combatNarrator.speak("Story mode paused.", force = true)
+        } else {
+            combatNarrator.speak("Story mode resumed.", force = true)
+            if (_state.value.gameScreen == GameScreen.STORY_EXPLORATION && !combatNarrator.isSpeaking.value) {
+                scheduleStoryModeNextStep(_state.value.currentNode, delayMs = 600L)
+            }
+        }
+        return newPaused
+    }
+
+    fun startPureStoryMode() {
+        if (_state.value.hasExistingSave) {
+            continueGame()
+        } else {
+            startNewGame(PlayerCustomization())
+        }
+        setPureStoryMode(true)
+    }
+
+    fun scheduleStoryModeNextStep(node: DialogueNode, delayMs: Long = 1400L) {
+        cancelPendingStoryMode()
+        if (!_state.value.isPureStoryMode || _state.value.isStoryAutoPlayPaused) return
+        if (_state.value.gameScreen != GameScreen.STORY_EXPLORATION) return
+
+        pendingStoryModeJob = activeScope.launch {
+            delay(delayMs)
+            if (!_state.value.isPureStoryMode || _state.value.isStoryAutoPlayPaused) return@launch
+            if (_state.value.currentNode.id != node.id || _state.value.gameScreen != GameScreen.STORY_EXPLORATION) return@launch
+
+            val current = _state.value.currentNode
+            if (current.triggerBattleEncounterId != null) {
+                triggerEncounter(current.triggerBattleEncounterId)
+                return@launch
+            }
+
+            val effective = effectiveDialogueChoices(current)
+            if (effective.isNotEmpty()) {
+                val chosen = pickStoryModeChoice(current)
+                if (chosen != null) {
+                    selectChoice(chosen)
+                }
+            } else {
+                advanceDialogueInternal(suppressNarration = false)
             }
         }
     }
@@ -504,6 +642,7 @@ class StoryViewModel(
 
     private fun advanceDialogueInternal(suppressNarration: Boolean = false) {
         cancelPendingAutoAdvance()
+        cancelPendingStoryMode()
         if (!suppressNarration) {
             combatNarrator.stop()
             speechManager.cancel()
@@ -557,6 +696,7 @@ class StoryViewModel(
             stopFastForward()
         }
         cancelPendingAutoAdvance()
+        cancelPendingStoryMode()
         if (choice.completionFlag != null && _state.value.narrativeFlags[choice.completionFlag] == true) {
             combatNarrator.speak("That objective has already been completed. Please select a remaining task.", force = true)
             return
@@ -887,6 +1027,17 @@ class StoryViewModel(
         }
         speechManager.cancel()
         combatNarrator.stop()
+
+        if (_state.value.isPureStoryMode && !isBossEncounter(encounterId)) {
+            combatNarrator.speak("The fellowship swiftly dispatches the lesser foes barring their path.", force = true) {
+                activeScope.launch {
+                    delay(1200)
+                    onCombatVictory()
+                }
+            }
+            return
+        }
+
         _state.value = _state.value.copy(
             gameScreen = GameScreen.COMBAT_ARENA,
             activeEncounter = encounter
@@ -895,6 +1046,7 @@ class StoryViewModel(
 
     fun onCombatVictory() {
         cancelPendingAutoAdvance()
+        cancelPendingStoryMode()
         val lastNode = _state.value.currentNode
         val encounterId = lastNode.triggerBattleEncounterId ?: _state.value.activeEncounter?.id ?: "unknown"
         val postBattleNodeId = when (encounterId) {
@@ -1253,11 +1405,36 @@ class StoryViewModel(
                     openTutorial()
                     return
                 }
+                lower.contains("story mode") || lower.contains("auto play") || lower.contains("pure story") -> {
+                    startPureStoryMode()
+                    return
+                }
                 lower.contains("options") || lower.contains("settings") -> {
                     onOpenOptions?.invoke()
                     return
                 }
             }
+            return
+        }
+
+        // Story Mode Pause / Resume / Toggle voice commands
+        if (lower.contains("pause story") || lower.contains("pause auto play")) {
+            if (_state.value.isPureStoryMode && !_state.value.isStoryAutoPlayPaused) {
+                toggleStoryAutoPlayPause()
+                return
+            }
+        }
+        if (lower.contains("resume story") || lower.contains("play story") || lower.contains("resume auto play")) {
+            if (_state.value.isPureStoryMode && _state.value.isStoryAutoPlayPaused) {
+                toggleStoryAutoPlayPause()
+                return
+            }
+        }
+        if (lower == "story mode" || lower == "toggle story mode" || lower == "pure story mode") {
+            val willEnable = !_state.value.isPureStoryMode
+            setPureStoryMode(willEnable)
+            val msg = if (willEnable) "Pure story mode enabled." else "Pure story mode disabled."
+            combatNarrator.speak(msg, force = true)
             return
         }
 
@@ -1475,6 +1652,7 @@ class StoryViewModel(
 
     private fun narrateCurrentNode() {
         cancelPendingAutoAdvance()
+        cancelPendingStoryMode()
         if (_state.value.gameScreen != GameScreen.STORY_EXPLORATION) return
         val node = _state.value.currentNode
         val effective = effectiveDialogueChoices(node)
@@ -1492,7 +1670,9 @@ class StoryViewModel(
             val isPocketMode = combatNarrator.isEyesFreeMode.value
             val canAuto = canAdvanceDialogue()
 
-            if (isPocketMode && canAuto) {
+            if (_state.value.isPureStoryMode && !_state.value.isStoryAutoPlayPaused) {
+                scheduleStoryModeNextStep(node, delayMs = 1200L)
+            } else if (isPocketMode && canAuto) {
                 schedulePocketModeAutoAdvance(node)
             } else if (speechManager.isAutoListen.value) {
                 activeScope.launch {
@@ -1516,5 +1696,6 @@ class StoryViewModel(
         super.onCleared()
         stopFastForward()
         cancelPendingAutoAdvance()
+        cancelPendingStoryMode()
     }
 }

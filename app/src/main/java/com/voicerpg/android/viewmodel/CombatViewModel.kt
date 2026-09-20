@@ -67,7 +67,8 @@ data class CombatState(
     val screenShakeOffsetY: Float = 0f,
     val currentEnvironment: BattleEnvironment = BattleEnvironment.DUNGEON,
     val isEyesFreeMode: Boolean = false,
-    val isOptionsOpen: Boolean = false
+    val isOptionsOpen: Boolean = false,
+    val isPureStoryMode: Boolean = false
 ) {
     val activePartyMember: PartyMember?
         get() = party.firstOrNull { it.id == activePartyMemberId }
@@ -351,7 +352,14 @@ class CombatViewModel(
                 }
             )
             combatNarrator.narratePlayerTurn(readyHero, freshEnemies) {
-                if (speechManager.isAutoListen.value) {
+                if (_state.value.isPureStoryMode) {
+                    activeScope.launch {
+                        delay(700)
+                        if (_state.value.phase == CombatPhase.PLAYER_INPUT && _state.value.isPureStoryMode) {
+                            triggerAutoHeroAction(readyHero)
+                        }
+                    }
+                } else if (speechManager.isAutoListen.value) {
                     activeScope.launch {
                         delay(100)
                         startVoiceListening()
@@ -378,7 +386,8 @@ class CombatViewModel(
         var fell = false
 
         if (dot > 0) {
-            val newHp = (member.currentHp - dot).coerceAtLeast(0)
+            val minHp = if (_state.value.isPureStoryMode) 1 else 0
+            val newHp = (member.currentHp - dot).coerceAtLeast(minHp)
             fell = newHp <= 0
             val (sx, sy) = partyFloatSlot(heroId)
             val fct = FloatingCombatText(text = "-$dot", color = Color(0xFF9CCC65), startX = sx, startY = sy)
@@ -671,7 +680,10 @@ class CombatViewModel(
                         defenderStatusMitigation = blessMitigation.coerceIn(0.5f, 1.25f)
                     )
                     totalDamage += damage
-                    anyFallen = anyFallen || (hero.currentHp - damage) <= 0
+                    val minHp = if (_state.value.isPureStoryMode) 1 else 0
+                    val newHp = (hero.currentHp - damage).coerceAtLeast(minHp)
+                    val isFallen = newHp <= 0
+                    anyFallen = anyFallen || isFallen
                     struckHeroName = hero.name
                     val landedStatus = if (moveStatusId != null) {
                         if (move.targetRule == "PARTY_AOE" && (moveStatusId == StatusId.OVERLOAD || moveStatusId == StatusId.FREEZE)) {
@@ -684,8 +696,6 @@ class CombatViewModel(
                     } else null
                     val (hx, hy) = partyFloatSlot(hero.id)
                     newFloats += FloatingCombatText(text = "-$damage", color = Color(0xFFFF1744), startX = hx, startY = hy)
-                    val newHp = (hero.currentHp - damage).coerceAtLeast(0)
-                    val isFallen = newHp <= 0
                     hero.copy(
                         currentHp = newHp,
                         currentMp = if (isFallen) 0 else hero.currentMp,
@@ -798,7 +808,12 @@ class CombatViewModel(
         _state.value = _state.value.copy(phase = CombatPhase.BATTLE_WON)
         awardVictoryXp()
         combatNarrator.narrateConclusion(isVictory = true) {
-            if (speechManager.isAutoListen.value) {
+            if (_state.value.isPureStoryMode) {
+                activeScope.launch {
+                    delay(1500)
+                    onContinueStory?.invoke()
+                }
+            } else if (speechManager.isAutoListen.value) {
                 activeScope.launch {
                     delay(150)
                     startVoiceListening()
@@ -1213,6 +1228,30 @@ class CombatViewModel(
     fun setEyesFreeMode(enabled: Boolean) {
         combatNarrator.setEyesFreeMode(enabled)
         _state.value = _state.value.copy(isEyesFreeMode = enabled)
+    }
+
+    fun setPureStoryMode(enabled: Boolean) {
+        _state.value = _state.value.copy(isPureStoryMode = enabled)
+    }
+
+    fun triggerAutoHeroAction(hero: PartyMember) {
+        if (_state.value.phase != CombatPhase.PLAYER_INPUT) return
+        val affordableSpells = hero.spells.filter { it.mpCost <= hero.currentMp }
+        val chosenSpell = if (affordableSpells.isNotEmpty()) {
+            val lowestAlly = _state.value.party.filter { it.isAlive }.minByOrNull { it.currentHp.toFloat() / it.maxHp }
+            val healSpell = affordableSpells.firstOrNull { it.isHeal }
+            if (lowestAlly != null && (lowestAlly.currentHp.toFloat() / lowestAlly.maxHp) < 0.5f && healSpell != null) {
+                healSpell
+            } else {
+                affordableSpells.filter { !it.isHeal }.maxByOrNull { it.basePower } ?: affordableSpells.random()
+            }
+        } else {
+            hero.spells.firstOrNull { it.mpCost == 0 } ?: hero.spells.firstOrNull()
+        }
+
+        if (chosenSpell != null) {
+            submitTypedChant(chosenSpell.exampleChant)
+        }
     }
 
     fun openOptions() {
@@ -2138,7 +2177,12 @@ class CombatViewModel(
                     attackerWeakened = weakenedCaster
                 )
             )
-            HitOutcome(enemy, strike.damage, strike.affinity, statusId?.let { StatusSystem.apply(it, resonance.tier.name, familyOf(enemy), strike.damage.toFloat()) })
+            val effectiveDamage = if (_state.value.isPureStoryMode) {
+                (strike.damage * 2.5f).toInt().coerceAtLeast(100)
+            } else {
+                strike.damage
+            }
+            HitOutcome(enemy, effectiveDamage, strike.affinity, statusId?.let { StatusSystem.apply(it, resonance.tier.name, familyOf(enemy), effectiveDamage.toFloat()) })
         }
         val totalDamage = hits.sumOf { it.damage }
 

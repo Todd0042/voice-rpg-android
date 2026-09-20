@@ -1256,5 +1256,33 @@ class StoryDialogueTest {
         storyViewModel.advanceDialogue()
         assertEquals("ch5_intro", storyViewModel.state.value.currentNode.id)
     }
+
+    @Test
+    fun testPureStoryModeFlow() {
+        storyViewModel.setPureStoryMode(true)
+        assertTrue(storyViewModel.state.value.isPureStoryMode)
+        assertFalse(storyViewModel.state.value.isStoryAutoPlayPaused)
+
+        // 1. Choice Picker prefers camp entrance over skip
+        val belfryIntro = StoryScript.ALL_NODES["camp_belfry_intro"]!!
+        val pickedEntrance = storyViewModel.pickStoryModeChoice(belfryIntro)
+        assertNotNull(pickedEntrance)
+        assertEquals("camp_belfry_sit", pickedEntrance?.id)
+
+        // 2. Choice Picker inside hub prefers uncompleted completionFlag choices
+        val belfryHub = StoryScript.ALL_NODES["camp_belfry_hub"]!!
+        val pickedHubChoice = storyViewModel.pickStoryModeChoice(belfryHub)
+        assertNotNull(pickedHubChoice)
+        assertTrue(pickedHubChoice?.completionFlag != null)
+
+        // 3. Trash mob encounter bypass: does NOT enter COMBAT_ARENA
+        storyViewModel.triggerEncounter("forest_ambush")
+        assertFalse(storyViewModel.state.value.gameScreen == GameScreen.COMBAT_ARENA)
+
+        // 4. Boss encounter: enters COMBAT_ARENA
+        storyViewModel.triggerEncounter("cave_broodmother")
+        assertEquals(GameScreen.COMBAT_ARENA, storyViewModel.state.value.gameScreen)
+        assertEquals("cave_broodmother", storyViewModel.state.value.activeEncounter?.id)
+    }
 }
 

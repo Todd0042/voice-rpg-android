@@ -99,6 +99,7 @@ fun TitleScreen(
     onAudioSetup: () -> Unit,
     onOptions: () -> Unit,
     onTutorial: () -> Unit,
+    onPureStoryMode: () -> Unit = {},
     onStartListening: () -> Unit,
     onStopListening: () -> Unit,
     modifier: Modifier = Modifier
@@ -374,6 +375,38 @@ fun TitleScreen(
                             text = if (hasSave) "START NEW JOURNEY" else "BEGIN JOURNEY",
                             color = if (!hasSave) HolyYellow else Color.White,
                             fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    }
+                }
+
+                // Pure Story Mode (Auto-Play) Button
+                Button(
+                    onClick = onPureStoryMode,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(1.dp, Color(0xFFBA68C8), RoundedCornerShape(8.dp)),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF311B92).copy(alpha = 0.88f)
+                    ),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.PlayArrow,
+                            contentDescription = null,
+                            tint = Color(0xFFE1BEE7),
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "PURE STORY MODE (AUTO-PLAY)",
+                            color = Color(0xFFF3E5F5),
+                            fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             fontFamily = FontFamily.Monospace
                         )
