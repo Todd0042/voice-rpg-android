@@ -142,12 +142,18 @@ data class DialogueSpeaker(
 
     /**
      * The Chronicle occasionally breaks the fourth wall with a rare alternate portrait.
-     * Roughly 1 in every 500 narrator displays picks the easter-egg art; otherwise the
+     * Roughly 1 in every 100 narrator displays picks the easter-egg art; otherwise the
      * standard chronicle portrait is used. Non-narrator speakers always use their fixed art.
      */
-    fun effectivePortraitAsset(): String? {
+    fun effectivePortraitAsset(seed: Any? = null): String? {
         if (this != NARRATOR || portraitAsset == null) return portraitAsset
-        return if (Random.nextInt(500) == 0) "portraits/narrator1.jpg" else portraitAsset
+        val roll = if (seed != null) {
+            val h = (seed.hashCode() xor 0x5deece66d.toInt())
+            (h and 0x7fffffff) % 100
+        } else {
+            Random.nextInt(100)
+        }
+        return if (roll == 0) "portraits/narrator1.jpg" else portraitAsset
     }
 }
 

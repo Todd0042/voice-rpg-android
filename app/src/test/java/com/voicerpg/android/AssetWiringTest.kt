@@ -3,6 +3,7 @@ package com.voicerpg.android
 import com.voicerpg.android.engine.StoryScript
 import com.voicerpg.android.model.DialogueSpeaker
 import java.io.File
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
@@ -127,9 +128,23 @@ class AssetWiringTest {
     @Test
     fun narratorEffectivePortraitChoosesOnlyValidArt() {
         val valid = setOf("portraits/narrator.jpg", "portraits/narrator1.jpg")
-        repeat(5000) {
+        var alternateCount = 0
+        val trials = 10000
+        repeat(trials) {
             val picked = DialogueSpeaker.NARRATOR.effectivePortraitAsset()
             assertTrue("Narrator picked invalid asset $picked", picked in valid)
+            if (picked == "portraits/narrator1.jpg") {
+                alternateCount++
+            }
         }
+        // At 1 in 100 chance, 10,000 trials should see ~100 hits (safe bounds: 40 to 180)
+        assertTrue("Expected ~1% easter-egg frequency, got $alternateCount out of $trials", alternateCount in 40..180)
+    }
+
+    @Test
+    fun narratorEffectivePortraitIsDeterministicWithSeed() {
+        val asset1 = DialogueSpeaker.NARRATOR.effectivePortraitAsset("scene_node_42")
+        val asset2 = DialogueSpeaker.NARRATOR.effectivePortraitAsset("scene_node_42")
+        assertEquals(asset1, asset2)
     }
 }

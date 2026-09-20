@@ -98,11 +98,25 @@ fun StoryScreen(
     }
 
     val currentNode = storyState.currentNode
-    val isAethelSpeaking = (currentNode.speaker == DialogueSpeaker.AETHEL || currentNode.side == SpeakerSide.LEFT)
+    val isNarratorSpeaking = (currentNode.speaker == DialogueSpeaker.NARRATOR)
+
+    val narratorAsset = remember(currentNode.id) {
+        DialogueSpeaker.NARRATOR.effectivePortraitAsset(currentNode.id)
+    }
+    val narratorBitmap = remember(narratorAsset) {
+        narratorAsset?.let { StoryAssetLoader.loadBitmap(context, it) }
+    }
+
+    val leftSpeaker = if (isNarratorSpeaking) DialogueSpeaker.NARRATOR else DialogueSpeaker.AETHEL
+    val leftBitmap = if (isNarratorSpeaking) narratorBitmap else aethelBitmap
+    val isLeftSpeaking = if (isNarratorSpeaking) true else (currentNode.speaker == DialogueSpeaker.AETHEL || currentNode.side == SpeakerSide.LEFT)
 
     val rightSpeaker: DialogueSpeaker? = remember(currentNode.id, currentNode.speaker.id, storyState.currentScene.name) {
         when {
-            currentNode.speaker != DialogueSpeaker.AETHEL && currentNode.speaker != DialogueSpeaker.NARRATOR -> {
+            currentNode.speaker == DialogueSpeaker.NARRATOR -> {
+                null
+            }
+            currentNode.speaker != DialogueSpeaker.AETHEL -> {
                 currentNode.speaker
             }
             storyState.currentScene.chapterTitle.contains("Prologue", ignoreCase = true) ||
@@ -134,7 +148,7 @@ fun StoryScreen(
     }
 
     val rightSpeakerAsset = remember(rightSpeaker?.id) {
-        rightSpeaker?.effectivePortraitAsset()
+        rightSpeaker?.effectivePortraitAsset(currentNode.id)
     }
     val rightBitmap = remember(rightSpeakerAsset) {
         rightSpeakerAsset?.let { StoryAssetLoader.loadBitmap(context, it) }
@@ -373,13 +387,13 @@ fun StoryScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.Bottom
                     ) {
-                        // Left Character (Aethel)
+                        // Left Character (Aethel or Narrator)
                         CharacterPortraitBust(
-                            bitmap = aethelBitmap,
-                            speaker = DialogueSpeaker.AETHEL,
-                            isSpeaking = isAethelSpeaking,
+                            bitmap = leftBitmap,
+                            speaker = leftSpeaker,
+                            isSpeaking = isLeftSpeaking,
                             sizeDp = 84.dp,
-                            modifier = Modifier.offset(y = (if (isAethelSpeaking) floatY else 0f).dp)
+                            modifier = Modifier.offset(y = (if (isLeftSpeaking) floatY else 0f).dp)
                         )
 
                         // Right Character (Companion / NPC)
@@ -472,16 +486,16 @@ fun StoryScreen(
                 }
             } else {
                 // ==================== LANDSCAPE ORIENTATION (Full Widescreen JRPG Layout) ====================
-                // Left Flank: Protagonist Bust standing proudly on the left
+                // Left Flank: Protagonist or Narrator Bust standing proudly on the left
                 CharacterPortraitBust(
-                    bitmap = aethelBitmap,
-                    speaker = DialogueSpeaker.AETHEL,
-                    isSpeaking = isAethelSpeaking,
+                    bitmap = leftBitmap,
+                    speaker = leftSpeaker,
+                    isSpeaking = isLeftSpeaking,
                     sizeDp = 110.dp,
                     modifier = Modifier
                         .align(Alignment.BottomStart)
                         .padding(start = 14.dp, bottom = 8.dp)
-                        .offset(y = (if (isAethelSpeaking) floatY else 0f).dp)
+                        .offset(y = (if (isLeftSpeaking) floatY else 0f).dp)
                 )
 
                 // Right Flank: Companion / NPC Bust standing on the right
@@ -809,7 +823,7 @@ private fun RetroSpeechBubble(
 ) {
     val speakerColor = node.speaker.themeColor
     val context = LocalContext.current
-    val speakerAsset = remember(node.id) { node.speaker.effectivePortraitAsset() }
+    val speakerAsset = remember(node.id) { node.speaker.effectivePortraitAsset(node.id) }
     val speakerBitmap = remember(speakerAsset) {
         speakerAsset?.let { StoryAssetLoader.loadBitmap(context, it) }
     }
