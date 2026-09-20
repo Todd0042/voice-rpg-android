@@ -73,7 +73,8 @@ fun OptionsDialog(
     onOpenVoiceSettings: (() -> Unit)? = null,
     onOpenVoiceAssignment: (() -> Unit)? = null,
     onApplyPreset: (PlaystylePreset) -> Unit = {},
-    isDebugWarpEnabled: Boolean = false,
+    onTriggerCheaterDialogue: () -> Unit = {},
+    isDebugWarpEnabled: Boolean = true,
     onOpenDebugWarp: (() -> Unit)? = null,
     onReturnToTitle: (() -> Unit)? = null,
     onClose: () -> Unit
@@ -88,6 +89,7 @@ fun OptionsDialog(
     }
 
     var isAdvancedOpen by remember { mutableStateOf(false) }
+    var showCheaterDialog by remember { mutableStateOf(false) }
 
     Dialog(onDismissRequest = onClose) {
         Box(
@@ -472,40 +474,6 @@ fun OptionsDialog(
                     }
                 }
 
-                if (isDebugWarpEnabled && onOpenDebugWarp != null) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(RetroBlack.copy(alpha = 0.6f))
-                            .border(1.dp, Color(0xFFAB47BC), RoundedCornerShape(8.dp))
-                            .clickable { onOpenDebugWarp() }
-                            .padding(10.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "up up down down left right left right b a start",
-                                color = Color(0xFFCE93D8),
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                fontFamily = FontFamily.Monospace
-                            )
-                            Text(
-                                text = "➔",
-                                color = Color(0xFFCE93D8),
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                fontFamily = FontFamily.Monospace
-                            )
-                        }
-                    }
-                }
-
                 Spacer(modifier = Modifier.height(14.dp))
 
                 // =============================================================
@@ -752,6 +720,142 @@ fun OptionsDialog(
                             fontFamily = FontFamily.Monospace,
                             fontSize = 12.sp
                         )
+                    }
+                }
+
+                // =============================================================
+                // Universal Cheat Code: up up down down left right left right b a start
+                // =============================================================
+                if (onOpenDebugWarp != null) {
+                    Spacer(modifier = Modifier.height(14.dp))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color(0xFF160E1E))
+                            .border(1.dp, Color(0xFFAB47BC).copy(alpha = 0.75f), RoundedCornerShape(8.dp))
+                            .clickable {
+                                showCheaterDialog = true
+                                onTriggerCheaterDialogue()
+                            }
+                            .padding(horizontal = 12.dp, vertical = 9.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "🎮 up up down down left right left right b a start",
+                                color = Color(0xFFE1BEE7),
+                                fontSize = 9.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = FontFamily.Monospace
+                            )
+                            Text(
+                                text = "➔",
+                                color = Color(0xFFCE93D8),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Read-aloud Cheater Acknowledgment Modal Dialog
+    if (showCheaterDialog) {
+        Dialog(onDismissRequest = { showCheaterDialog = false }) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(RetroBlack.copy(alpha = 0.98f))
+                    .border(2.dp, Color(0xFFE040FB), RoundedCornerShape(12.dp))
+                    .padding(18.dp)
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = "🚨 CHEATER DETECTED 🚨",
+                        color = Color(0xFFE040FB),
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Black,
+                        fontFamily = FontFamily.Monospace
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Text(
+                        text = "The Narrator catches you red-handed...",
+                        color = Color.LightGray,
+                        fontSize = 10.sp,
+                        fontFamily = FontFamily.Monospace
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color(0xFF1E1428))
+                            .border(1.dp, Color(0xFF7B1FA2), RoundedCornerShape(8.dp))
+                            .padding(12.dp)
+                    ) {
+                        Text(
+                            text = "\"Cheater detected! You have invoked the ancient Konami incantation to bend time, space, and narrative destiny. Do you boldly embrace your dishonor and enter the Debug Sanctum?\"",
+                            color = Color(0xFFF3E5F5),
+                            fontSize = 11.sp,
+                            lineHeight = 15.sp,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Button(
+                            onClick = { showCheaterDialog = false },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF263238),
+                                contentColor = Color.LightGray
+                            ),
+                            shape = RoundedCornerShape(6.dp),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(
+                                text = "REPENT",
+                                fontFamily = FontFamily.Monospace,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 11.sp
+                            )
+                        }
+
+                        Button(
+                            onClick = {
+                                showCheaterDialog = false
+                                onOpenDebugWarp?.invoke()
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF8E24AA),
+                                contentColor = Color.White
+                            ),
+                            shape = RoundedCornerShape(6.dp),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(
+                                text = "WARP ➔",
+                                fontFamily = FontFamily.Monospace,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 11.sp
+                            )
+                        }
                     }
                 }
             }

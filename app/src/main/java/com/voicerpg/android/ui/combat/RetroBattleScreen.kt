@@ -71,8 +71,7 @@ fun RetroBattleScreen(
     val isChimeMuted by viewModel.speechManager.isChimeMuted.collectAsState()
     val isAutoListen by viewModel.speechManager.isAutoListen.collectAsState()
     val rmsLevel by viewModel.speechManager.rmsLevel.collectAsState()
-    val developerToolsEnabled by viewModel.isDeveloperToolsEnabled.collectAsState()
-    val showDeveloperTools = BuildConfig.DEBUG_WARP_MENU && developerToolsEnabled
+    val showDeveloperTools by viewModel.isDeveloperToolsEnabled.collectAsState()
 
     Scaffold(
         modifier = modifier.fillMaxSize(),

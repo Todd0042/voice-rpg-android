@@ -412,7 +412,12 @@ class MainActivity : ComponentActivity() {
                             combatViewModel.closeOptions()
                             storyViewModel.openAudioSetup()
                         },
-                        isDebugWarpEnabled = BuildConfig.DEBUG_WARP_MENU,
+                        onTriggerCheaterDialogue = {
+                            combatNarrator.speak(
+                                "Cheater detected! You have invoked the ancient Konami incantation to bend time and space. Do you boldly embrace your dishonor?",
+                                force = true
+                            )
+                        },
                         onOpenDebugWarp = { showDebugWarp = true },
                         onReturnToTitle = {
                             combatViewModel.closeOptions()
@@ -421,11 +426,11 @@ class MainActivity : ComponentActivity() {
                         onClose = { combatViewModel.closeOptions() }
                     )
 
-                    // Debug-only chapter warp & developer tools dialog (never shown in release builds)
+                    // Universal chapter warp & developer tools dialog
                     DebugWarpDialog(
                         isOpen = showDebugWarp,
                         targets = StoryViewModel.DEBUG_CHAPTER_TARGETS,
-                        developerToolsEnabled = BuildConfig.DEBUG_WARP_MENU && isDeveloperToolsEnabled,
+                        developerToolsEnabled = isDeveloperToolsEnabled,
                         onToggleDeveloperTools = { combatViewModel.toggleDeveloperTools() },
                         onWarpTo = { nodeId ->
                             showDebugWarp = false
