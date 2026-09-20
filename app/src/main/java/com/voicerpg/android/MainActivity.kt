@@ -1,12 +1,16 @@
 package com.voicerpg.android
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
+import android.provider.Settings
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -34,6 +38,7 @@ import com.voicerpg.android.ui.pocket.PocketHeroVitals
 import com.voicerpg.android.ui.pocket.PocketModeTouchGuard
 import com.voicerpg.android.ui.pocket.PocketModeUnlockedBanner
 import com.voicerpg.android.ui.setup.AudioSetupScreen
+import com.voicerpg.android.ui.setup.MicPermissionRationaleDialog
 import com.voicerpg.android.ui.story.StoryScreen
 import com.voicerpg.android.ui.theme.VoiceRPGTheme
 import com.voicerpg.android.ui.title.TitleScreen
@@ -52,11 +57,20 @@ class MainActivity : ComponentActivity() {
     private lateinit var storyViewModel: StoryViewModel
     private lateinit var tutorialBattleViewModel: TutorialBattleViewModel
 
+    private val isPermanentlyDeniedState = mutableStateOf(false)
+
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
-        if (isGranted && combatViewModel.speechManager.isAutoListen.value) {
-            combatViewModel.startVoiceListening()
+        if (isGranted) {
+            if (combatViewModel.speechManager.isAutoListen.value) {
+                combatViewModel.startVoiceListening()
+            }
+        } else {
+            val shouldShow = ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.RECORD_AUDIO)
+            if (!shouldShow) {
+                isPermanentlyDeniedState.value = true
+            }
         }
     }
 
@@ -113,11 +127,14 @@ class MainActivity : ComponentActivity() {
             storyViewModel.onCombatVictory()
         }
 
-        checkAudioPermission()
-
         setContent {
             val storyState by storyViewModel.state.collectAsState()
             val combatState by combatViewModel.state.collectAsState()
+
+            var showMicRationale by remember {
+                mutableStateOf(ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED)
+            }
+            val isPermanentlyDenied by isPermanentlyDeniedState
 
             val isEyesFreeMode by combatNarrator.isEyesFreeMode.collectAsState()
             val isPocketGuardLocked by combatNarrator.isPocketGuardLocked.collectAsState()
@@ -197,10 +214,16 @@ class MainActivity : ComponentActivity() {
                             TitleScreen(
                                 hasSave = storyState.hasExistingSave,
                                 saveSummary = storyState.saveSummary,
+                                saveSlots = storyState.saveSlots,
+                                currentSlot = storyState.currentSlot,
                                 speechState = speechState,
                                 isAutoListen = isAutoListen,
                                 onContinue = { storyViewModel.continueGame() },
                                 onNewGame = { storyViewModel.startNewGameFlow() },
+                                onSelectSlot = { slot -> storyViewModel.selectSlot(slot) },
+                                onDeleteSlot = { slot -> storyViewModel.deleteSlot(slot) },
+                                onContinueSlot = { slot -> storyViewModel.continueGame(slot) },
+                                onNewGameInSlot = { slot -> storyViewModel.startNewGameFlow(slot) },
                                 onAudioSetup = { storyViewModel.openAudioSetup() },
                                 onOptions = { combatViewModel.openOptions() },
                                 onTutorial = {
@@ -250,13 +273,13 @@ class MainActivity : ComponentActivity() {
                                 combatNarrator = combatNarrator,
                                 onBack = {
                                     if (storyState.isNewGameFlow) {
-                                        storyViewModel.startNewGameFlow()
+                                        storyViewModel.startNewGameFlow(storyState.currentSlot)
                                     } else {
                                         storyViewModel.returnToTitle()
                                     }
                                 },
                                 onConfirmCharacter = { customization ->
-                                    storyViewModel.startNewGame(customization)
+                                    storyViewModel.startNewGame(customization, storyState.currentSlot)
                                     combatViewModel.applyPlayerCustomization(customization)
                                 }
                             )
@@ -454,14 +477,37 @@ class MainActivity : ComponentActivity() {
                             }
                         )
                     }
+
+                    // Educational Pre-Permission Rationale Modal Dialog
+                    if (showMicRationale) {
+                        MicPermissionRationaleDialog(
+                            isPermanentlyDenied = isPermanentlyDenied,
+                            onRequestPermission = {
+                                val shouldShow = ActivityCompat.shouldShowRequestPermissionRationale(this@MainActivity, Manifest.permission.RECORD_AUDIO)
+                                if (!shouldShow && isPermanentlyDenied) {
+                                    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                        data = Uri.fromParts("package", packageName, null)
+                                    }
+                                    startActivity(intent)
+                                } else {
+                                    requestPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                                }
+                                showMicRationale = false
+                            },
+                            onOpenSettings = {
+                                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                    data = Uri.fromParts("package", packageName, null)
+                                }
+                                startActivity(intent)
+                                showMicRationale = false
+                            },
+                            onDismiss = {
+                                showMicRationale = false
+                            }
+                        )
+                    }
                 }
             }
-        }
-    }
-
-    private fun checkAudioPermission() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
         }
     }
 

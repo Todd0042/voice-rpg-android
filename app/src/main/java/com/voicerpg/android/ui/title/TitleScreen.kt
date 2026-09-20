@@ -27,6 +27,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Mic
@@ -60,6 +64,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.voicerpg.android.audio.SpeechState
+import com.voicerpg.android.model.SaveSlotInfo
 import com.voicerpg.android.model.SaveSummary
 import com.voicerpg.android.ui.story.StoryAssetLoader
 import com.voicerpg.android.ui.theme.FrostCyan
@@ -81,10 +86,16 @@ import com.voicerpg.android.ui.theme.RetroPanel
 fun TitleScreen(
     hasSave: Boolean,
     saveSummary: SaveSummary?,
+    saveSlots: List<SaveSlotInfo> = emptyList(),
+    currentSlot: Int = 1,
     speechState: SpeechState,
     isAutoListen: Boolean,
-    onContinue: () -> Unit,
-    onNewGame: () -> Unit,
+    onContinue: () -> Unit = {},
+    onNewGame: () -> Unit = {},
+    onSelectSlot: (Int) -> Unit = {},
+    onDeleteSlot: (Int) -> Unit = {},
+    onContinueSlot: (Int) -> Unit = { onContinue() },
+    onNewGameInSlot: (Int) -> Unit = { onNewGame() },
     onAudioSetup: () -> Unit,
     onOptions: () -> Unit,
     onTutorial: () -> Unit,
@@ -94,6 +105,8 @@ fun TitleScreen(
 ) {
     val context = LocalContext.current
     var showOverwriteDialog by remember { mutableStateOf(false) }
+    var showSlotArchivesDialog by remember { mutableStateOf(false) }
+    var slotDialogIsNewGameMode by remember { mutableStateOf(false) }
 
     val backgroundBitmap = remember {
         StoryAssetLoader.loadBitmap(context, "backgrounds/bg_summit.jpg")
@@ -212,7 +225,7 @@ fun TitleScreen(
                 // 1. Continue Button (with Save Preview)
                 if (hasSave && saveSummary != null) {
                     Button(
-                        onClick = onContinue,
+                        onClick = { onContinueSlot(currentSlot) },
                         modifier = Modifier
                             .fillMaxWidth()
                             .border(2.dp, RetroBorderGold, RoundedCornerShape(10.dp)),
@@ -241,7 +254,7 @@ fun TitleScreen(
                                     )
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Text(
-                                        text = "CONTINUE CHRONICLE",
+                                        text = "CONTINUE [SLOT $currentSlot]",
                                         color = LogosGold,
                                         fontSize = 14.sp,
                                         fontWeight = FontWeight.Black,
@@ -288,13 +301,50 @@ fun TitleScreen(
                     }
                 }
 
-                // 2. New Game Button
+                // 2. Chronicle Archives / Multi-Slot Management Button
                 Button(
                     onClick = {
-                        if (hasSave) {
-                            showOverwriteDialog = true
+                        slotDialogIsNewGameMode = false
+                        showSlotArchivesDialog = true
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(1.dp, RetroBorderGold.copy(alpha = 0.7f), RoundedCornerShape(8.dp)),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = RetroDeepSlate.copy(alpha = 0.85f)
+                    ),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Bookmark,
+                            contentDescription = null,
+                            tint = LogosGold,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "CHRONICLE ARCHIVES (3 SLOTS)",
+                            color = LogosGold,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    }
+                }
+
+                // 3. New Game Button
+                Button(
+                    onClick = {
+                        val hasAnySave = saveSlots.any { !it.isEmpty } || hasSave
+                        if (hasAnySave) {
+                            slotDialogIsNewGameMode = true
+                            showSlotArchivesDialog = true
                         } else {
-                            onNewGame()
+                            onNewGameInSlot(currentSlot)
                         }
                     },
                     modifier = Modifier
@@ -543,6 +593,477 @@ fun TitleScreen(
                                     fontFamily = FontFamily.Monospace
                                 )
                             }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Multi-Slot Campaign Archives Modal Dialog
+        if (showSlotArchivesDialog) {
+            SaveSlotDialog(
+                slots = saveSlots,
+                currentSlot = currentSlot,
+                isNewGameMode = slotDialogIsNewGameMode,
+                onSelectAndLoad = { slot ->
+                    showSlotArchivesDialog = false
+                    onContinueSlot(slot)
+                },
+                onSelectAndNewGame = { slot ->
+                    showSlotArchivesDialog = false
+                    onNewGameInSlot(slot)
+                },
+                onDeleteSlot = { slot ->
+                    onDeleteSlot(slot)
+                },
+                onDismiss = {
+                    showSlotArchivesDialog = false
+                }
+            )
+        }
+    }
+}
+
+/**
+ * Multi-Slot Chronicle Manager Dialog supporting up to 3 independent campaign slots.
+ * Allows instant slot switching, new campaign creation in an empty slot, and safe slot deletion.
+ */
+@Composable
+fun SaveSlotDialog(
+    slots: List<SaveSlotInfo>,
+    currentSlot: Int,
+    isNewGameMode: Boolean,
+    onSelectAndLoad: (Int) -> Unit,
+    onSelectAndNewGame: (Int) -> Unit,
+    onDeleteSlot: (Int) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var slotPendingDelete by remember { mutableStateOf<Int?>(null) }
+    var slotPendingOverwrite by remember { mutableStateOf<Int?>(null) }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .border(2.dp, RetroBorderGold, RoundedCornerShape(16.dp)),
+            color = RetroBlack.copy(alpha = 0.98f)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(18.dp)
+                    .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Header
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = if (isNewGameMode) "SELECT CHRONICLE SLOT" else "CHRONICLE ARCHIVES",
+                            color = LogosGold,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Black,
+                            fontFamily = FontFamily.Monospace,
+                            letterSpacing = 1.sp
+                        )
+                        Text(
+                            text = if (isNewGameMode) "Choose where your new journey shall be written" else "Manage your active fellowship campaigns",
+                            color = Color.LightGray.copy(alpha = 0.8f),
+                            fontSize = 10.sp,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    }
+                    Button(
+                        onClick = onDismiss,
+                        modifier = Modifier.size(32.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Close",
+                            tint = Color.LightGray,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // Slots (1, 2, 3)
+                val allSlots = (1..3).map { index ->
+                    slots.firstOrNull { it.slotIndex == index } ?: SaveSlotInfo(index, null)
+                }
+
+                allSlots.forEach { slotInfo ->
+                    val isActive = slotInfo.slotIndex == currentSlot
+                    val summary = slotInfo.summary
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 5.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(RetroPanel.copy(alpha = 0.9f))
+                            .border(
+                                width = if (isActive) 2.dp else 1.dp,
+                                color = if (isActive) RetroBorderGold else RetroBorder,
+                                shape = RoundedCornerShape(10.dp)
+                            )
+                            .padding(12.dp)
+                    ) {
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = "SLOT ${slotInfo.slotIndex}",
+                                        color = if (isActive) HolyYellow else LogosGold,
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = FontFamily.Monospace
+                                    )
+                                    if (isActive) {
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Box(
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(4.dp))
+                                                .background(LogosGold.copy(alpha = 0.2f))
+                                                .border(1.dp, LogosGold, RoundedCornerShape(4.dp))
+                                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                                        ) {
+                                            Text(
+                                                text = "ACTIVE",
+                                                color = LogosGold,
+                                                fontSize = 9.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                fontFamily = FontFamily.Monospace
+                                            )
+                                        }
+                                    }
+                                }
+
+                                if (summary != null && summary.timestamp > 0) {
+                                    val relative = DateUtils.getRelativeTimeSpanString(
+                                        summary.timestamp,
+                                        System.currentTimeMillis(),
+                                        DateUtils.MINUTE_IN_MILLIS
+                                    ).toString()
+                                    Text(
+                                        text = relative,
+                                        color = Color.LightGray.copy(alpha = 0.65f),
+                                        fontSize = 9.sp,
+                                        fontFamily = FontFamily.Monospace
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(6.dp))
+
+                            if (summary != null) {
+                                Text(
+                                    text = "⚔️ ${summary.heroName} • ${summary.heroClassTitle}  |  👥 ${summary.partySize}",
+                                    color = FrostCyan,
+                                    fontSize = 11.sp,
+                                    fontFamily = FontFamily.Monospace,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "📜 ${summary.chapterTitle} • ${summary.sceneName}",
+                                    color = Color.White.copy(alpha = 0.85f),
+                                    fontSize = 10.sp,
+                                    fontFamily = FontFamily.Monospace,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+
+                                Spacer(modifier = Modifier.height(10.dp))
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    if (isNewGameMode) {
+                                        Button(
+                                            onClick = { slotPendingOverwrite = slotInfo.slotIndex },
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .border(1.dp, Color(0xFFEF5350), RoundedCornerShape(6.dp)),
+                                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7F1D1D)),
+                                            shape = RoundedCornerShape(6.dp)
+                                        ) {
+                                            Text(
+                                                text = "OVERWRITE",
+                                                color = Color.White,
+                                                fontSize = 10.sp,
+                                                fontFamily = FontFamily.Monospace,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                        }
+                                    } else {
+                                        Button(
+                                            onClick = { onSelectAndLoad(slotInfo.slotIndex) },
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .border(1.dp, RetroBorderGold, RoundedCornerShape(6.dp)),
+                                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1B3B2B)),
+                                            shape = RoundedCornerShape(6.dp)
+                                        ) {
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Icon(
+                                                    imageVector = Icons.Default.PlayArrow,
+                                                    contentDescription = null,
+                                                    tint = HolyYellow,
+                                                    modifier = Modifier.size(14.dp)
+                                                )
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text(
+                                                    text = "RESUME",
+                                                    color = HolyYellow,
+                                                    fontSize = 11.sp,
+                                                    fontFamily = FontFamily.Monospace,
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                            }
+                                        }
+
+                                        Button(
+                                            onClick = { slotPendingDelete = slotInfo.slotIndex },
+                                            modifier = Modifier
+                                                .border(1.dp, Color(0xFF7F1D1D), RoundedCornerShape(6.dp)),
+                                            colors = ButtonDefaults.buttonColors(containerColor = RetroDeepSlate),
+                                            shape = RoundedCornerShape(6.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Delete,
+                                                contentDescription = "Delete",
+                                                tint = Color(0xFFEF5350),
+                                                modifier = Modifier.size(14.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                            } else {
+                                Text(
+                                    text = "✨ Empty Chronicle Archive",
+                                    color = Color.Gray,
+                                    fontSize = 11.sp,
+                                    fontFamily = FontFamily.Monospace
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Button(
+                                    onClick = { onSelectAndNewGame(slotInfo.slotIndex) },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .border(1.dp, RetroBorderGold, RoundedCornerShape(6.dp)),
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1B3B2B)),
+                                    shape = RoundedCornerShape(6.dp)
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(
+                                            imageVector = Icons.Default.Add,
+                                            contentDescription = null,
+                                            tint = HolyYellow,
+                                            modifier = Modifier.size(14.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            text = "START NEW JOURNEY HERE",
+                                            color = HolyYellow,
+                                            fontSize = 10.sp,
+                                            fontFamily = FontFamily.Monospace,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Button(
+                    onClick = onDismiss,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(1.dp, RetroBorder, RoundedCornerShape(8.dp)),
+                    colors = ButtonDefaults.buttonColors(containerColor = RetroDeepSlate),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text(
+                        text = "RETURN",
+                        color = Color.White,
+                        fontSize = 11.sp,
+                        fontFamily = FontFamily.Monospace
+                    )
+                }
+            }
+        }
+    }
+
+    // Sub-dialog: Confirm Delete
+    slotPendingDelete?.let { slotNum ->
+        Dialog(onDismissRequest = { slotPendingDelete = null }) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(RetroBlack.copy(alpha = 0.98f))
+                    .border(2.dp, Color(0xFFD32F2F), RoundedCornerShape(12.dp))
+                    .padding(20.dp)
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    Text(
+                        text = "⚠️ DELETE SAVE SLOT $slotNum?",
+                        color = Color(0xFFEF5350),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Black,
+                        fontFamily = FontFamily.Monospace,
+                        textAlign = TextAlign.Center
+                    )
+
+                    Text(
+                        text = "This will permanently erase all campaign progress, party stats, and story decisions recorded in Slot $slotNum.\n\nThis action cannot be undone.",
+                        color = Color.LightGray,
+                        fontSize = 11.sp,
+                        fontFamily = FontFamily.Monospace,
+                        textAlign = TextAlign.Center,
+                        lineHeight = 16.sp
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Button(
+                            onClick = { slotPendingDelete = null },
+                            modifier = Modifier
+                                .weight(1f)
+                                .border(1.dp, RetroBorder, RoundedCornerShape(6.dp)),
+                            colors = ButtonDefaults.buttonColors(containerColor = RetroDeepSlate),
+                            shape = RoundedCornerShape(6.dp)
+                        ) {
+                            Text(
+                                text = "CANCEL",
+                                color = Color.White,
+                                fontSize = 11.sp,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+
+                        Button(
+                            onClick = {
+                                onDeleteSlot(slotNum)
+                                slotPendingDelete = null
+                            },
+                            modifier = Modifier
+                                .weight(1f)
+                                .border(1.dp, Color(0xFFEF5350), RoundedCornerShape(6.dp)),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFB71C1C)),
+                            shape = RoundedCornerShape(6.dp)
+                        ) {
+                            Text(
+                                text = "DELETE FOREVER",
+                                color = Color.White,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Sub-dialog: Confirm Overwrite
+    slotPendingOverwrite?.let { slotNum ->
+        Dialog(onDismissRequest = { slotPendingOverwrite = null }) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(RetroBlack.copy(alpha = 0.98f))
+                    .border(2.dp, Color(0xFFD32F2F), RoundedCornerShape(12.dp))
+                    .padding(20.dp)
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    Text(
+                        text = "⚠️ OVERWRITE SAVE SLOT $slotNum?",
+                        color = Color(0xFFEF5350),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Black,
+                        fontFamily = FontFamily.Monospace,
+                        textAlign = TextAlign.Center
+                    )
+
+                    Text(
+                        text = "Beginning a new chronicle in Slot $slotNum will erase its previous save data.\n\nAre you sure you wish to proceed?",
+                        color = Color.LightGray,
+                        fontSize = 11.sp,
+                        fontFamily = FontFamily.Monospace,
+                        textAlign = TextAlign.Center,
+                        lineHeight = 16.sp
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Button(
+                            onClick = { slotPendingOverwrite = null },
+                            modifier = Modifier
+                                .weight(1f)
+                                .border(1.dp, RetroBorder, RoundedCornerShape(6.dp)),
+                            colors = ButtonDefaults.buttonColors(containerColor = RetroDeepSlate),
+                            shape = RoundedCornerShape(6.dp)
+                        ) {
+                            Text(
+                                text = "CANCEL",
+                                color = Color.White,
+                                fontSize = 11.sp,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+
+                        Button(
+                            onClick = {
+                                val s = slotNum
+                                slotPendingOverwrite = null
+                                onDismiss()
+                                onSelectAndNewGame(s)
+                            },
+                            modifier = Modifier
+                                .weight(1f)
+                                .border(1.dp, Color(0xFFEF5350), RoundedCornerShape(6.dp)),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFB71C1C)),
+                            shape = RoundedCornerShape(6.dp)
+                        ) {
+                            Text(
+                                text = "OVERWRITE",
+                                color = Color.White,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = FontFamily.Monospace
+                            )
                         }
                     }
                 }

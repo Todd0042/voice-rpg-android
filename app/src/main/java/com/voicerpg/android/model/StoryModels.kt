@@ -191,6 +191,7 @@ enum class GameScreen {
 }
 
 data class SaveSummary(
+    val slotIndex: Int = 1,
     val heroName: String,
     val heroClassTitle: String,
     val chapterTitle: String,
@@ -198,6 +199,13 @@ data class SaveSummary(
     val partySize: Int,
     val timestamp: Long
 )
+
+data class SaveSlotInfo(
+    val slotIndex: Int,
+    val summary: SaveSummary?
+) {
+    val isEmpty: Boolean get() = summary == null
+}
 
 data class DialogueLogEntry(
     val speakerId: String,

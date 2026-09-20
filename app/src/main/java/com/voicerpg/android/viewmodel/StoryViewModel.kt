@@ -22,6 +22,7 @@ import com.voicerpg.android.model.GameScreen
 import com.voicerpg.android.model.MetaCommand
 import com.voicerpg.android.model.PartyMember
 import com.voicerpg.android.model.PlayerCustomization
+import com.voicerpg.android.model.SaveSlotInfo
 import com.voicerpg.android.model.SaveSummary
 import com.voicerpg.android.model.SavedCharacterStats
 import com.voicerpg.android.model.StoryScene
@@ -49,6 +50,8 @@ data class StoryState(
     val isTypingComplete: Boolean = true,
     val hasExistingSave: Boolean = false,
     val saveSummary: SaveSummary? = null,
+    val currentSlot: Int = 1,
+    val saveSlots: List<SaveSlotInfo> = emptyList(),
     val dialogueHistory: List<DialogueLogEntry> = emptyList(),
     val isBacklogOpen: Boolean = false,
     val isFastForwarding: Boolean = false,
@@ -160,21 +163,17 @@ class StoryViewModel(
             }
         }
 
-        // Load persistent game save on boot
-        val existingSave = saveManager.load()
+        // Load persistent game save on boot with multi-slot support
+        val allSlots = saveManager.getAllSlotInfos()
+        val initialSlot = allSlots.firstOrNull { !it.isEmpty }?.slotIndex ?: SaveManager.DEFAULT_SLOT
+        saveManager.currentSlot = initialSlot
+        val existingSave = saveManager.load(initialSlot)
         if (existingSave != null) {
             val restoredScene = StoryScript.ALL_SCENES[existingSave.currentSceneId] ?: StoryScript.SCENE_COTTAGE
             val rawRestoredNode = StoryScript.ALL_NODES[existingSave.currentNodeId] ?: StoryScript.ALL_NODES["cottage_intro"]!!
             val restoredNode = resolveEffectiveHubNode(rawRestoredNode, existingSave.narrativeFlags)
 
-            val summary = SaveSummary(
-                heroName = existingSave.player.name,
-                heroClassTitle = existingSave.player.heroClass.title,
-                chapterTitle = restoredScene.chapterTitle,
-                sceneName = restoredScene.name,
-                partySize = existingSave.partyStats.size.coerceAtLeast(1),
-                timestamp = existingSave.saveTimestamp
-            )
+            val summary = saveManager.getSlotSummary(initialSlot)
 
             val restoredHistory = if (existingSave.recentDialogueLog.isNotEmpty()) {
                 existingSave.recentDialogueLog
@@ -203,6 +202,8 @@ class StoryViewModel(
                 partyStats = existingSave.partyStats,
                 hasExistingSave = true,
                 saveSummary = summary,
+                currentSlot = initialSlot,
+                saveSlots = allSlots,
                 dialogueHistory = restoredHistory
             )
             combatNarrator.setEyesFreeMode(existingSave.isEyesFreeMode, lockGuard = false)
@@ -223,16 +224,20 @@ class StoryViewModel(
             _state.value = StoryState(
                 gameScreen = GameScreen.TITLE,
                 hasExistingSave = false,
-                saveSummary = null
+                saveSummary = null,
+                currentSlot = initialSlot,
+                saveSlots = allSlots
             )
         }
     }
 
     /**
-     * Resumes the active game save from the Title Screen.
+     * Resumes a game save from the Title Screen. Defaults to the active slot.
      */
-    fun continueGame() {
-        val existingSave = saveManager.load() ?: return
+    fun continueGame(slot: Int? = null) {
+        val targetSlot = (slot ?: _state.value.currentSlot).coerceIn(1, SaveManager.MAX_SLOTS)
+        saveManager.currentSlot = targetSlot
+        val existingSave = saveManager.load(targetSlot) ?: return
         val restoredScene = StoryScript.ALL_SCENES[existingSave.currentSceneId] ?: StoryScript.SCENE_COTTAGE
         val rawRestoredNode = StoryScript.ALL_NODES[existingSave.currentNodeId] ?: StoryScript.ALL_NODES["cottage_intro"]!!
         val restoredNode = resolveEffectiveHubNode(rawRestoredNode, existingSave.narrativeFlags)
@@ -265,16 +270,79 @@ class StoryViewModel(
             defeatedEncounters = existingSave.defeatedEncounters,
             achievements = existingSave.achievements,
             partyStats = existingSave.partyStats,
+            currentSlot = targetSlot,
+            hasExistingSave = true,
+            saveSummary = saveManager.getSlotSummary(targetSlot),
+            saveSlots = saveManager.getAllSlotInfos(),
             dialogueHistory = restoredHistory
         )
+        combatNarrator.setEyesFreeMode(existingSave.isEyesFreeMode, lockGuard = false)
+        combatNarrator.setNarrationEnabled(existingSave.isNarrationEnabled)
+        combatNarrator.setReadChoicesEnabled(existingSave.isReadChoicesEnabled)
+        combatNarrator.setSpeechRate(existingSave.speechRate)
+        combatNarrator.setCharacterPitchEnabled(existingSave.isCharacterPitchEnabled)
+        combatNarrator.setSpeakerAttributionEnabled(existingSave.isSpeakerAttributionEnabled)
+        combatNarrator.setVoiceAssignments(existingSave.voiceAssignments)
+        speechManager.setAutoListen(existingSave.isAutoListen)
+        speechManager.setChimeMuted(existingSave.isChimeMuted)
+        musicManager?.setMusicEnabled(existingSave.isMusicEnabled)
+        musicManager?.setVolume(existingSave.musicVolume)
         musicManager?.playTrack(restoredScene.musicAsset)
         narrateCurrentNode()
     }
 
     /**
-     * Starts the new game wizard flow from the Title Screen.
+     * Selects an active save slot and refreshes the preview summary.
      */
-    fun startNewGameFlow() {
+    fun selectSlot(slot: Int) {
+        val validSlot = slot.coerceIn(1, SaveManager.MAX_SLOTS)
+        saveManager.currentSlot = validSlot
+        val summary = saveManager.getSlotSummary(validSlot)
+        _state.value = _state.value.copy(
+            currentSlot = validSlot,
+            hasExistingSave = summary != null,
+            saveSummary = summary,
+            saveSlots = saveManager.getAllSlotInfos()
+        )
+    }
+
+    /**
+     * Deletes the specified save slot and updates slot listings.
+     */
+    fun deleteSlot(slot: Int) {
+        val validSlot = slot.coerceIn(1, SaveManager.MAX_SLOTS)
+        saveManager.deleteSave(validSlot)
+        val allSlots = saveManager.getAllSlotInfos()
+        val activeSlot = _state.value.currentSlot
+        val summary = saveManager.getSlotSummary(activeSlot)
+        _state.value = _state.value.copy(
+            saveSlots = allSlots,
+            hasExistingSave = summary != null,
+            saveSummary = summary
+        )
+    }
+
+    /**
+     * Refreshes save slots metadata from disk.
+     */
+    fun refreshSaveSlots() {
+        val allSlots = saveManager.getAllSlotInfos()
+        val activeSlot = _state.value.currentSlot
+        val summary = saveManager.getSlotSummary(activeSlot)
+        _state.value = _state.value.copy(
+            saveSlots = allSlots,
+            hasExistingSave = summary != null,
+            saveSummary = summary
+        )
+    }
+
+    /**
+     * Starts the new game wizard flow from the Title Screen, optionally targeting a slot.
+     */
+    fun startNewGameFlow(slot: Int? = null) {
+        if (slot != null) {
+            selectSlot(slot)
+        }
         cancelPendingAutoAdvance()
         combatNarrator.stop()
         speechManager.cancel()
@@ -293,23 +361,16 @@ class StoryViewModel(
         combatNarrator.stop()
         speechManager.cancel()
         persistCurrentState()
-        val latestSave = saveManager.load()
-        val summary = latestSave?.let { save ->
-            val scene = StoryScript.ALL_SCENES[save.currentSceneId] ?: StoryScript.SCENE_COTTAGE
-            SaveSummary(
-                heroName = save.player.name,
-                heroClassTitle = save.player.heroClass.title,
-                chapterTitle = scene.chapterTitle,
-                sceneName = scene.name,
-                partySize = save.partyStats.size.coerceAtLeast(1),
-                timestamp = save.saveTimestamp
-            )
-        }
+        val activeSlot = _state.value.currentSlot
+        val latestSave = saveManager.load(activeSlot)
+        val summary = saveManager.getSlotSummary(activeSlot)
+        val allSlots = saveManager.getAllSlotInfos()
         _state.value = _state.value.copy(
             gameScreen = GameScreen.TITLE,
             previousScreen = null,
             hasExistingSave = latestSave != null,
-            saveSummary = summary
+            saveSummary = summary,
+            saveSlots = allSlots
         )
         musicManager?.playTrack(com.voicerpg.android.audio.MusicManager.TRACK_ACT1_FOREST)
     }
@@ -327,9 +388,11 @@ class StoryViewModel(
     /**
      * Initializes a fresh game from Character Creation.
      */
-    fun startNewGame(customization: PlayerCustomization) {
+    fun startNewGame(customization: PlayerCustomization, slot: Int? = null) {
         cancelPendingAutoAdvance()
-        val initialSave = saveManager.createInitialSave(customization)
+        val targetSlot = (slot ?: _state.value.currentSlot).coerceIn(1, SaveManager.MAX_SLOTS)
+        saveManager.currentSlot = targetSlot
+        val initialSave = saveManager.createInitialSave(customization, targetSlot)
         val initialNode = StoryScript.ALL_NODES["cottage_intro"]!!
         val initialScene = StoryScript.SCENE_COTTAGE
         val initialEntry = DialogueLogEntry(
@@ -351,6 +414,9 @@ class StoryViewModel(
             achievements = initialSave.achievements,
             partyStats = initialSave.partyStats,
             hasExistingSave = true,
+            saveSummary = saveManager.getSlotSummary(targetSlot),
+            currentSlot = targetSlot,
+            saveSlots = saveManager.getAllSlotInfos(),
             dialogueHistory = listOf(initialEntry)
         )
         musicManager?.playTrack(StoryScript.SCENE_COTTAGE.musicAsset)
@@ -358,13 +424,17 @@ class StoryViewModel(
         narrateCurrentNode()
     }
 
-    fun resetGame() {
+    fun resetGame(slot: Int? = null) {
         cancelPendingAutoAdvance()
-        saveManager.deleteSave()
-        _state.value = StoryState(
+        val targetSlot = (slot ?: _state.value.currentSlot).coerceIn(1, SaveManager.MAX_SLOTS)
+        saveManager.deleteSave(targetSlot)
+        val allSlots = saveManager.getAllSlotInfos()
+        val summary = saveManager.getSlotSummary(targetSlot)
+        _state.value = _state.value.copy(
             gameScreen = GameScreen.TITLE,
-            hasExistingSave = false,
-            saveSummary = null
+            hasExistingSave = summary != null,
+            saveSummary = summary,
+            saveSlots = allSlots
         )
     }
 
@@ -871,7 +941,8 @@ class StoryViewModel(
 
     fun persistCurrentState() {
         val s = _state.value
-        val currentSave = saveManager.load() ?: GameSaveData()
+        val slot = s.currentSlot
+        val currentSave = saveManager.load(slot) ?: GameSaveData()
         val updatedSave = currentSave.copy(
             player = s.player,
             currentSceneId = s.currentScene.id,
@@ -894,7 +965,7 @@ class StoryViewModel(
             musicVolume = musicManager?.musicVolume?.value ?: currentSave.musicVolume,
             voiceAssignments = combatNarrator.getVoiceAssignments()
         )
-        saveManager.save(updatedSave)
+        saveManager.save(updatedSave, slot)
     }
 
     fun switchToCombat() {
@@ -1108,6 +1179,27 @@ class StoryViewModel(
         // Handle voice navigation on Title Screen
         if (_state.value.gameScreen == GameScreen.TITLE) {
             when {
+                lower.contains("slot 1") || lower.contains("slot one") -> {
+                    selectSlot(1)
+                    if (lower.contains("load") || lower.contains("continue") || lower.contains("resume") || lower.contains("play")) {
+                        if (_state.value.hasExistingSave) continueGame(1)
+                    }
+                    return
+                }
+                lower.contains("slot 2") || lower.contains("slot two") -> {
+                    selectSlot(2)
+                    if (lower.contains("load") || lower.contains("continue") || lower.contains("resume") || lower.contains("play")) {
+                        if (_state.value.hasExistingSave) continueGame(2)
+                    }
+                    return
+                }
+                lower.contains("slot 3") || lower.contains("slot three") -> {
+                    selectSlot(3)
+                    if (lower.contains("load") || lower.contains("continue") || lower.contains("resume") || lower.contains("play")) {
+                        if (_state.value.hasExistingSave) continueGame(3)
+                    }
+                    return
+                }
                 lower.contains("continue") || lower.contains("resume") || lower.contains("load") -> {
                     if (_state.value.hasExistingSave) {
                         continueGame()

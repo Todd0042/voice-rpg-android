@@ -376,4 +376,102 @@ class SaveSystemTest {
         assertEquals("flame_strike", parsed.spell.id)
         assertEquals("orc", parsed.targetEnemyId)
     }
+
+    @Test
+    fun testMultiSlotIndependentSaveAndLoad() {
+        val hero1 = PlayerCustomization(name = "Aethel", heroClass = HeroClass.ELEMENTALIST)
+        val hero2 = PlayerCustomization(name = "Cedric", heroClass = HeroClass.BATTLEMAGE)
+        val hero3 = PlayerCustomization(name = "Lyra", heroClass = HeroClass.CHANTER)
+
+        saveManager.createInitialSave(hero1, slot = 1)
+        saveManager.createInitialSave(hero2, slot = 2)
+        saveManager.createInitialSave(hero3, slot = 3)
+
+        assertTrue(saveManager.hasSave(1))
+        assertTrue(saveManager.hasSave(2))
+        assertTrue(saveManager.hasSave(3))
+
+        val loaded1 = saveManager.load(1)
+        val loaded2 = saveManager.load(2)
+        val loaded3 = saveManager.load(3)
+
+        assertNotNull(loaded1)
+        assertNotNull(loaded2)
+        assertNotNull(loaded3)
+
+        assertEquals("Aethel", loaded1!!.player.name)
+        assertEquals(HeroClass.ELEMENTALIST, loaded1.player.heroClass)
+
+        assertEquals("Cedric", loaded2!!.player.name)
+        assertEquals(HeroClass.BATTLEMAGE, loaded2.player.heroClass)
+
+        assertEquals("Lyra", loaded3!!.player.name)
+        assertEquals(HeroClass.CHANTER, loaded3.player.heroClass)
+    }
+
+    @Test
+    fun testMultiSlotDeletionAndSummary() {
+        val hero1 = PlayerCustomization(name = "Sol", heroClass = HeroClass.BATTLEMAGE)
+        val hero2 = PlayerCustomization(name = "Luna", heroClass = HeroClass.SHADOWWEAVER)
+
+        saveManager.createInitialSave(hero1, slot = 1)
+        saveManager.createInitialSave(hero2, slot = 2)
+
+        val slotsBefore = saveManager.getAllSlotInfos()
+        assertEquals(3, slotsBefore.size)
+        assertFalse(slotsBefore[0].isEmpty)
+        assertFalse(slotsBefore[1].isEmpty)
+        assertTrue(slotsBefore[2].isEmpty)
+
+        // Delete Slot 2
+        assertTrue(saveManager.deleteSave(slot = 2))
+        assertFalse(saveManager.hasSave(2))
+        assertTrue(saveManager.hasSave(1))
+
+        val slotsAfter = saveManager.getAllSlotInfos()
+        assertEquals(3, slotsAfter.size)
+        assertFalse(slotsAfter[0].isEmpty)
+        assertTrue(slotsAfter[1].isEmpty)
+        assertTrue(slotsAfter[2].isEmpty)
+    }
+
+    @Test
+    fun testStoryViewModelMultiSlotFlow() {
+        val testScope = CoroutineScope(Dispatchers.Default)
+        val storyVm = StoryViewModel(
+            speechManager = speechManager,
+            combatNarrator = combatNarrator,
+            saveManager = saveManager,
+            scopeOverride = testScope
+        )
+
+        // Start in Slot 2
+        val heroCustom = PlayerCustomization(name = "Kael", heroClass = HeroClass.ELEMENTALIST)
+        storyVm.startNewGame(heroCustom, slot = 2)
+
+        assertEquals(2, storyVm.state.value.currentSlot)
+        assertEquals("Kael", storyVm.state.value.player.name)
+        assertTrue(storyVm.state.value.hasExistingSave)
+
+        // Switch to Slot 1 (which is empty)
+        storyVm.selectSlot(1)
+        assertEquals(1, storyVm.state.value.currentSlot)
+        assertFalse(storyVm.state.value.hasExistingSave)
+        assertNull(storyVm.state.value.saveSummary)
+
+        // Switch back to Slot 2 (which has Kael)
+        storyVm.selectSlot(2)
+        assertEquals(2, storyVm.state.value.currentSlot)
+        assertTrue(storyVm.state.value.hasExistingSave)
+        assertEquals("Kael", storyVm.state.value.saveSummary?.heroName)
+    }
+
+    @Test
+    fun testSlotBoundaryClamping() {
+        saveManager.currentSlot = 0
+        assertEquals(1, saveManager.currentSlot)
+
+        saveManager.currentSlot = 99
+        assertEquals(SaveManager.MAX_SLOTS, saveManager.currentSlot)
+    }
 }
