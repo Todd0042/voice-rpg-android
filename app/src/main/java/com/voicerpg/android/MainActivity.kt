@@ -40,6 +40,7 @@ import com.voicerpg.android.ui.title.TitleScreen
 import com.voicerpg.android.ui.title.TutorialScreen
 import com.voicerpg.android.viewmodel.CombatViewModel
 import com.voicerpg.android.viewmodel.StoryViewModel
+import com.voicerpg.android.viewmodel.TutorialViewModel
 
 class MainActivity : ComponentActivity() {
 
@@ -49,6 +50,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var saveManager: SaveManager
     private lateinit var combatViewModel: CombatViewModel
     private lateinit var storyViewModel: StoryViewModel
+    private lateinit var tutorialViewModel: TutorialViewModel
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -76,6 +78,10 @@ class MainActivity : ComponentActivity() {
             combatNarrator = combatNarrator,
             saveManager = saveManager,
             musicManager = musicManager
+        )
+        tutorialViewModel = TutorialViewModel(
+            speechManager = speechManager,
+            combatNarrator = combatNarrator
         )
 
         // Connect automatic speech ducking: BGM ducks during narration, smoothly restoring after
@@ -207,7 +213,9 @@ class MainActivity : ComponentActivity() {
                         }
                         GameScreen.TUTORIAL -> {
                             TutorialScreen(
-                                onBack = { storyViewModel.returnFromTutorial() }
+                                viewModel = tutorialViewModel,
+                                onBack = { storyViewModel.returnFromTutorial() },
+                                onStartNewGame = { storyViewModel.startNewGameFlow() }
                             )
                         }
                         GameScreen.AUDIO_SETUP -> {
