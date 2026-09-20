@@ -23,6 +23,10 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -68,12 +72,22 @@ fun OptionsDialog(
     onMusicVolumeChange: (Float) -> Unit = {},
     onOpenVoiceSettings: (() -> Unit)? = null,
     onOpenVoiceAssignment: (() -> Unit)? = null,
+    onApplyPreset: (PlaystylePreset) -> Unit = {},
     isDebugWarpEnabled: Boolean = false,
     onOpenDebugWarp: (() -> Unit)? = null,
     onReturnToTitle: (() -> Unit)? = null,
     onClose: () -> Unit
 ) {
     if (!isOpen) return
+
+    val activePreset = when {
+        isEyesFreeMode && isPocketGuardEnabled && isCombatNarrationEnabled && isAutoListen -> PlaystylePreset.POCKET_WALK
+        isEyesFreeMode && !isPocketGuardEnabled && isCombatNarrationEnabled && isAutoListen -> PlaystylePreset.STORYBOOK
+        !isEyesFreeMode && !isCombatNarrationEnabled && !isAutoListen -> PlaystylePreset.CLASSIC_TACTICAL
+        else -> PlaystylePreset.CUSTOM
+    }
+
+    var isAdvancedOpen by remember { mutableStateOf(false) }
 
     Dialog(onDismissRequest = onClose) {
         Box(
@@ -134,18 +148,109 @@ fun OptionsDialog(
                 Spacer(modifier = Modifier.height(14.dp))
 
                 // =============================================================
-                // Section 1: Story & Dialogue Narration
+                // Playstyle Presets (1-Tap Profiles)
                 // =============================================================
                 Text(
-                    text = "📖 STORY & DIALOGUE NARRATION",
-                    color = LogosGlow,
+                    text = "🎯 CHOOSE YOUR PLAYSTYLE",
+                    color = LogosGold,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     fontFamily = FontFamily.Monospace,
                     modifier = Modifier.align(Alignment.Start)
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(6.dp))
+
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    listOf(
+                        PlaystylePreset.POCKET_WALK to Color(0xFF64B5F6),
+                        PlaystylePreset.STORYBOOK to Color(0xFFFFD54F),
+                        PlaystylePreset.CLASSIC_TACTICAL to Color(0xFF81C784)
+                    ).forEach { (preset, accent) ->
+                        val isSelected = activePreset == preset
+                        PlaystylePresetCard(
+                            preset = preset,
+                            isSelected = isSelected,
+                            accentColor = accent,
+                            onClick = { onApplyPreset(preset) }
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // =============================================================
+                // Collapsible Advanced Settings Accordion
+                // =============================================================
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color(0xFF141923))
+                        .border(1.dp, if (isAdvancedOpen) LogosGold else RetroBorder, RoundedCornerShape(8.dp))
+                        .clickable { isAdvancedOpen = !isAdvancedOpen }
+                        .padding(horizontal = 12.dp, vertical = 9.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "⚙️ DETAILED SETTINGS",
+                                color = if (isAdvancedOpen) LogosGold else Color.White,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = FontFamily.Monospace
+                            )
+                            if (activePreset == PlaystylePreset.CUSTOM) {
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(3.dp))
+                                        .background(Color(0xFFFFB74D))
+                                        .padding(horizontal = 4.dp, vertical = 1.dp)
+                                ) {
+                                    Text(
+                                        text = "CUSTOMIZED",
+                                        color = RetroBlack,
+                                        fontSize = 7.5.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = FontFamily.Monospace
+                                    )
+                                }
+                            }
+                        }
+                        Text(
+                            text = if (isAdvancedOpen) "▲ HIDE" else "▼ EXPAND",
+                            color = if (isAdvancedOpen) LogosGold else Color.Gray,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    }
+                }
+
+                if (isAdvancedOpen) {
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // =============================================================
+                    // Section 1: Story & Dialogue Narration
+                    // =============================================================
+                    Text(
+                        text = "📖 STORY & DIALOGUE NARRATION",
+                        color = LogosGlow,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.Monospace,
+                        modifier = Modifier.align(Alignment.Start)
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
 
                 // Toggle: Read Dialogue Aloud
                 OptionToggleRow(
@@ -603,6 +708,7 @@ fun OptionsDialog(
                         VoiceCommandItem(command = "❓ \"Help\"", desc = "Spoken audio overview of voice commands")
                     }
                 }
+                } // End if (isAdvancedOpen)
 
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -744,5 +850,88 @@ private fun VoiceCommandItem(
             fontSize = 9.sp,
             fontFamily = FontFamily.Monospace
         )
+    }
+}
+
+enum class PlaystylePreset(val title: String, val badge: String, val description: String) {
+    POCKET_WALK(
+        "🎧 POCKET WALK",
+        "SCREENLESS",
+        "Phone in pocket: AMOLED screen locked & dark, auto-listen mic, full combat & story narration aloud."
+    ),
+    STORYBOOK(
+        "📖 STORYBOOK",
+        "AUDIO DRAMA",
+        "Hands-free listening: screen stays on & visible, reads all dialogue & combat events aloud, auto-advances."
+    ),
+    CLASSIC_TACTICAL(
+        "🎮 CLASSIC TACTICAL",
+        "VISUAL PLAY",
+        "Traditional RPG: screen visible, visual combat text, manual tap-to-talk mic, zero battle voice clutter."
+    ),
+    CUSTOM(
+        "⚙️ CUSTOM",
+        "CUSTOM",
+        "Fine-tuned custom balance of narration, speech speed, and accessibility controls."
+    )
+}
+
+@Composable
+private fun PlaystylePresetCard(
+    preset: PlaystylePreset,
+    isSelected: Boolean,
+    accentColor: Color,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .background(if (isSelected) accentColor.copy(alpha = 0.15f) else RetroPanel.copy(alpha = 0.8f))
+            .border(
+                width = if (isSelected) 2.dp else 1.dp,
+                color = if (isSelected) accentColor else RetroBorder,
+                shape = RoundedCornerShape(8.dp)
+            )
+            .clickable { onClick() }
+            .padding(10.dp)
+    ) {
+        Column {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = preset.title,
+                    color = if (isSelected) accentColor else Color.White,
+                    fontSize = 11.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Monospace
+                )
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(if (isSelected) accentColor else Color(0xFF263238))
+                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                ) {
+                    Text(
+                        text = if (isSelected) "✓ ACTIVE" else preset.badge,
+                        color = if (isSelected) RetroBlack else Color.LightGray,
+                        fontSize = 8.sp,
+                        fontWeight = FontWeight.Black,
+                        fontFamily = FontFamily.Monospace
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(3.dp))
+            Text(
+                text = preset.description,
+                color = Color.LightGray,
+                fontSize = 9.5.sp,
+                lineHeight = 12.5.sp,
+                fontFamily = FontFamily.Monospace
+            )
+        }
     }
 }

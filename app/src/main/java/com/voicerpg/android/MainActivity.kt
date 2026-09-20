@@ -32,6 +32,7 @@ import kotlinx.coroutines.launch
 import com.voicerpg.android.model.GameScreen
 import com.voicerpg.android.ui.combat.DebugWarpDialog
 import com.voicerpg.android.ui.combat.OptionsDialog
+import com.voicerpg.android.ui.combat.PlaystylePreset
 import com.voicerpg.android.ui.combat.RetroBattleScreen
 import com.voicerpg.android.ui.creation.CharacterCreationScreen
 import com.voicerpg.android.ui.pocket.PocketHeroVitals
@@ -335,6 +336,39 @@ class MainActivity : ComponentActivity() {
                         },
                         onTogglePocketGuard = {
                             combatNarrator.togglePocketGuardEnabled()
+                            storyViewModel.persistCurrentState()
+                        },
+                        onApplyPreset = { preset ->
+                            when (preset) {
+                                PlaystylePreset.POCKET_WALK -> {
+                                    combatNarrator.setPocketGuardEnabled(true)
+                                    combatNarrator.setCombatNarrationEnabled(true)
+                                    combatNarrator.setNarrationEnabled(true)
+                                    combatNarrator.setReadChoicesEnabled(true)
+                                    combatNarrator.setEyesFreeMode(true, lockGuard = true)
+                                    speechManager.setAutoListen(true)
+                                    speechManager.setChimeMuted(true)
+                                }
+                                PlaystylePreset.STORYBOOK -> {
+                                    combatNarrator.setPocketGuardEnabled(false)
+                                    combatNarrator.setCombatNarrationEnabled(true)
+                                    combatNarrator.setNarrationEnabled(true)
+                                    combatNarrator.setReadChoicesEnabled(true)
+                                    combatNarrator.setEyesFreeMode(true, lockGuard = false)
+                                    speechManager.setAutoListen(true)
+                                    speechManager.setChimeMuted(false)
+                                }
+                                PlaystylePreset.CLASSIC_TACTICAL -> {
+                                    combatNarrator.setPocketGuardEnabled(false)
+                                    combatNarrator.setCombatNarrationEnabled(false)
+                                    combatNarrator.setNarrationEnabled(true)
+                                    combatNarrator.setReadChoicesEnabled(false)
+                                    combatNarrator.setEyesFreeMode(false, lockGuard = false)
+                                    speechManager.setAutoListen(false)
+                                    speechManager.setChimeMuted(false)
+                                }
+                                PlaystylePreset.CUSTOM -> {}
+                            }
                             storyViewModel.persistCurrentState()
                         },
                         onToggleReadChoices = {
