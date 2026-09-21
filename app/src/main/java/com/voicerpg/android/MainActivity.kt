@@ -234,7 +234,8 @@ class MainActivity : ComponentActivity() {
                                 onNewGameInSlot = { slot -> storyViewModel.startNewGameFlow(slot) },
                                 onAudioSetup = { storyViewModel.openAudioSetup() },
                                 onOptions = { combatViewModel.openOptions() },
-                                onPureStoryMode = { storyViewModel.startPureStoryMode() },
+                                storyModeSummary = storyViewModel.getStoryModeSaveSummary(),
+                                onPureStoryMode = { fresh -> storyViewModel.startPureStoryMode(fresh) },
                                 onTutorial = {
                                     tutorialBattleViewModel.resetTutorial()
                                     storyViewModel.openTutorial()

@@ -99,7 +99,8 @@ fun TitleScreen(
     onAudioSetup: () -> Unit,
     onOptions: () -> Unit,
     onTutorial: () -> Unit,
-    onPureStoryMode: () -> Unit = {},
+    storyModeSummary: SaveSummary? = null,
+    onPureStoryMode: (fresh: Boolean) -> Unit = {},
     onStartListening: () -> Unit,
     onStopListening: () -> Unit,
     modifier: Modifier = Modifier
@@ -107,6 +108,7 @@ fun TitleScreen(
     val context = LocalContext.current
     var showOverwriteDialog by remember { mutableStateOf(false) }
     var showSlotArchivesDialog by remember { mutableStateOf(false) }
+    var showStoryModePromptDialog by remember { mutableStateOf(false) }
     var slotDialogIsNewGameMode by remember { mutableStateOf(false) }
 
     val backgroundBitmap = remember {
@@ -383,7 +385,13 @@ fun TitleScreen(
 
                 // Pure Story Mode (Auto-Play) Button
                 Button(
-                    onClick = onPureStoryMode,
+                    onClick = {
+                        if (storyModeSummary != null) {
+                            showStoryModePromptDialog = true
+                        } else {
+                            onPureStoryMode(true)
+                        }
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .border(1.dp, Color(0xFFBA68C8), RoundedCornerShape(8.dp)),
@@ -626,6 +634,101 @@ fun TitleScreen(
                                     fontFamily = FontFamily.Monospace
                                 )
                             }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Story Mode Resume / Start Over Prompt Dialog
+        if (showStoryModePromptDialog && storyModeSummary != null) {
+            Dialog(onDismissRequest = { showStoryModePromptDialog = false }) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(RetroBlack.copy(alpha = 0.98f))
+                        .border(2.dp, Color(0xFFBA68C8), RoundedCornerShape(12.dp))
+                        .padding(20.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(14.dp)
+                    ) {
+                        Text(
+                            text = "📖 PURE STORY MODE",
+                            color = Color(0xFFE1BEE7),
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Black,
+                            fontFamily = FontFamily.Monospace,
+                            textAlign = TextAlign.Center
+                        )
+
+                        Text(
+                            text = "Previous Story Mode progress found:\n📍 ${storyModeSummary.chapterTitle} • ${storyModeSummary.sceneName}\n\nWould you like to resume your story or start fresh from the beginning?\n\n(Your 3 main campaign save slots are safe and unaffected.)",
+                            color = Color.LightGray,
+                            fontSize = 11.sp,
+                            fontFamily = FontFamily.Monospace,
+                            textAlign = TextAlign.Center,
+                            lineHeight = 17.sp
+                        )
+
+                        Button(
+                            onClick = {
+                                showStoryModePromptDialog = false
+                                onPureStoryMode(false)
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .border(1.dp, Color(0xFF4CAF50), RoundedCornerShape(8.dp)),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1B5E20)),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text(
+                                text = "▶ RESUME STORY PROGRESS",
+                                color = Color.White,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+
+                        Button(
+                            onClick = {
+                                showStoryModePromptDialog = false
+                                onPureStoryMode(true)
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .border(1.dp, Color(0xFFFFB300), RoundedCornerShape(8.dp)),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE65100)),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text(
+                                text = "🔄 START FROM THE BEGINNING",
+                                color = Color.White,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+
+                        Button(
+                            onClick = { showStoryModePromptDialog = false },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .border(1.dp, RetroBorder, RoundedCornerShape(8.dp)),
+                            colors = ButtonDefaults.buttonColors(containerColor = RetroDeepSlate),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text(
+                                text = "CANCEL",
+                                color = Color.LightGray,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = FontFamily.Monospace
+                            )
                         }
                     }
                 }

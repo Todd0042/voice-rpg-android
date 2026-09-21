@@ -23,15 +23,18 @@ class SaveManager(private val context: Context? = null) {
     companion object {
         const val MAX_SLOTS = 3
         const val DEFAULT_SLOT = 1
+        const val STORY_MODE_SLOT = 0
         private const val LEGACY_SAVE_FILE = "save_game_v1.json"
-        fun getSlotFileName(slot: Int): String = "save_slot_$slot.json"
+        fun getSlotFileName(slot: Int): String = if (slot == STORY_MODE_SLOT) "save_story_mode.json" else "save_slot_$slot.json"
     }
+
+    fun sanitizeSlot(slot: Int): Int = if (slot == STORY_MODE_SLOT) STORY_MODE_SLOT else slot.coerceIn(1, MAX_SLOTS)
 
     private val gson: Gson = GsonBuilder().setPrettyPrinting().create()
 
     var currentSlot: Int = DEFAULT_SLOT
         set(value) {
-            field = value.coerceIn(1, MAX_SLOTS)
+            field = sanitizeSlot(value)
         }
 
     // In-memory slot storage for unit tests and headless JVM environments
@@ -42,7 +45,7 @@ class SaveManager(private val context: Context? = null) {
     }
 
     private fun getSaveFile(slot: Int): File? {
-        val validSlot = slot.coerceIn(1, MAX_SLOTS)
+        val validSlot = sanitizeSlot(slot)
         return context?.let { File(it.filesDir, getSlotFileName(validSlot)) }
     }
 
@@ -93,7 +96,7 @@ class SaveManager(private val context: Context? = null) {
     }
 
     fun hasSave(slot: Int = currentSlot): Boolean {
-        val validSlot = slot.coerceIn(1, MAX_SLOTS)
+        val validSlot = sanitizeSlot(slot)
         val file = getSaveFile(validSlot)
         return if (file != null) {
             file.exists() && file.length() > 0
@@ -102,10 +105,10 @@ class SaveManager(private val context: Context? = null) {
         }
     }
 
-    fun save(data: GameSaveData, slot: Int = currentSlot): Boolean {
-        val validSlot = slot.coerceIn(1, MAX_SLOTS)
+    fun save(data: GameSaveData, slot: Int = currentSlot, updateTimestamp: Boolean = true): Boolean {
+        val validSlot = sanitizeSlot(slot)
         return try {
-            val updated = data.copy(saveTimestamp = System.currentTimeMillis())
+            val updated = if (updateTimestamp) data.copy(saveTimestamp = System.currentTimeMillis()) else data
             val json = gson.toJson(updated)
             val file = getSaveFile(validSlot)
             if (file != null) {
@@ -121,7 +124,7 @@ class SaveManager(private val context: Context? = null) {
     }
 
     fun load(slot: Int = currentSlot): GameSaveData? {
-        val validSlot = slot.coerceIn(1, MAX_SLOTS)
+        val validSlot = sanitizeSlot(slot)
         return try {
             val file = getSaveFile(validSlot)
             val json = if (file != null) {
@@ -139,7 +142,7 @@ class SaveManager(private val context: Context? = null) {
     }
 
     fun deleteSave(slot: Int = currentSlot): Boolean {
-        val validSlot = slot.coerceIn(1, MAX_SLOTS)
+        val validSlot = sanitizeSlot(slot)
         inMemorySlots.remove(validSlot)
         val file = getSaveFile(validSlot)
         return if (file != null) {
@@ -175,7 +178,7 @@ class SaveManager(private val context: Context? = null) {
     }
 
     fun createInitialSave(customization: PlayerCustomization, slot: Int = currentSlot): GameSaveData {
-        val validSlot = slot.coerceIn(1, MAX_SLOTS)
+        val validSlot = sanitizeSlot(slot)
         val heroClass = customization.heroClass
         val starterSpells = ClassSpellLibrary.getSpellsForClass(heroClass)
 

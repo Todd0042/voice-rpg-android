@@ -266,7 +266,7 @@ fun StoryScreen(
                                     modifier = Modifier
                                         .clip(RoundedCornerShape(4.dp))
                                         .background(Color(0xFFC62828))
-                                        .clickable { storyViewModel.setPureStoryMode(false) }
+                                        .clickable { storyViewModel.returnToTitle() }
                                         .padding(horizontal = 8.dp, vertical = 3.dp)
                                 ) {
                                     Text(

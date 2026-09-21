@@ -468,10 +468,102 @@ class SaveSystemTest {
 
     @Test
     fun testSlotBoundaryClamping() {
-        saveManager.currentSlot = 0
+        // Slot 0 is reserved for Pure Story Mode
+        saveManager.currentSlot = SaveManager.STORY_MODE_SLOT
+        assertEquals(SaveManager.STORY_MODE_SLOT, saveManager.currentSlot)
+
+        // Negative numbers clamp to slot 1
+        saveManager.currentSlot = -1
         assertEquals(1, saveManager.currentSlot)
 
+        // Numbers exceeding MAX_SLOTS clamp to MAX_SLOTS
         saveManager.currentSlot = 99
         assertEquals(SaveManager.MAX_SLOTS, saveManager.currentSlot)
+    }
+
+    @Test
+    fun testPureStoryModeDedicatedSlotIsolation() {
+        val testScope = CoroutineScope(Dispatchers.Default)
+
+        // Setup campaign saves in slot 1 and 2
+        val custom1 = PlayerCustomization(name = "CampaignHero1", heroClass = HeroClass.ELEMENTALIST)
+        val custom2 = PlayerCustomization(name = "CampaignHero2", heroClass = HeroClass.BATTLEMAGE)
+        val save1 = saveManager.createInitialSave(custom1, slot = 1).copy(saveTimestamp = 1000L)
+        saveManager.save(save1, slot = 1, updateTimestamp = false)
+        val save2 = saveManager.createInitialSave(custom2, slot = 2).copy(saveTimestamp = 2000L)
+        saveManager.save(save2, slot = 2, updateTimestamp = false)
+
+        val storyVm = StoryViewModel(
+            speechManager = speechManager,
+            combatNarrator = combatNarrator,
+            saveManager = saveManager,
+            scopeOverride = testScope
+        )
+
+        // Slot 2 has a newer timestamp, so it should be the active campaign slot initially
+        assertEquals(2, storyVm.state.value.currentSlot)
+        assertEquals("CampaignHero2", storyVm.state.value.saveSummary?.heroName)
+
+        // Start Pure Story Mode
+        storyVm.startPureStoryMode(fresh = true)
+        assertTrue(storyVm.state.value.isPureStoryMode)
+        assertEquals(SaveManager.STORY_MODE_SLOT, storyVm.state.value.currentSlot)
+        assertTrue(saveManager.hasSave(SaveManager.STORY_MODE_SLOT))
+
+        // Ensure campaign saves in slot 1 and slot 2 are pristine
+        val slot1Data = saveManager.load(1)
+        val slot2Data = saveManager.load(2)
+        assertNotNull(slot1Data)
+        assertNotNull(slot2Data)
+        assertEquals("CampaignHero1", slot1Data?.player?.name)
+        assertEquals("CampaignHero2", slot2Data?.player?.name)
+
+        // Check Story Mode summary
+        val storySummary = storyVm.getStoryModeSaveSummary()
+        assertNotNull(storySummary)
+        assertEquals(SaveManager.STORY_MODE_SLOT, storySummary?.slotIndex)
+
+        // Return to title screen
+        storyVm.returnToTitle()
+        assertFalse(storyVm.state.value.isPureStoryMode)
+        // Should have restored back to the most recently saved campaign slot (slot 2)
+        assertEquals(2, storyVm.state.value.currentSlot)
+        assertEquals("CampaignHero2", storyVm.state.value.saveSummary?.heroName)
+
+        // Archives list must only contain slots 1..3, never slot 0
+        val archives = saveManager.getAllSlotInfos()
+        assertEquals(3, archives.size)
+        assertEquals(listOf(1, 2, 3), archives.map { it.slotIndex })
+    }
+
+    @Test
+    fun testAutoSelectsMostRecentlySavedCampaignSlot() {
+        val testScope = CoroutineScope(Dispatchers.Default)
+
+        // Create save 1 earlier
+        val save1 = saveManager.createInitialSave(
+            PlayerCustomization(name = "OldHero"),
+            slot = 1
+        ).copy(saveTimestamp = 1000L)
+        saveManager.save(save1, slot = 1, updateTimestamp = false)
+
+        // Create save 3 later
+        val save3 = saveManager.createInitialSave(
+            PlayerCustomization(name = "RecentHero"),
+            slot = 3
+        ).copy(saveTimestamp = 5000L)
+        saveManager.save(save3, slot = 3, updateTimestamp = false)
+
+        // Boot StoryViewModel
+        val storyVm = StoryViewModel(
+            speechManager = speechManager,
+            combatNarrator = combatNarrator,
+            saveManager = saveManager,
+            scopeOverride = testScope
+        )
+
+        // Should automatically choose slot 3 because its timestamp is newer
+        assertEquals(3, storyVm.state.value.currentSlot)
+        assertEquals("RecentHero", storyVm.state.value.saveSummary?.heroName)
     }
 }
