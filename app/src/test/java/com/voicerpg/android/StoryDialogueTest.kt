@@ -1284,5 +1284,30 @@ class StoryDialogueTest {
         assertEquals(GameScreen.COMBAT_ARENA, storyViewModel.state.value.gameScreen)
         assertEquals("cave_broodmother", storyViewModel.state.value.activeEncounter?.id)
     }
+
+    @Test
+    fun testPureStoryModeAutoSelectsChoiceOnCottageIntroWithoutPausing() {
+        // Start fresh Pure Story Mode
+        storyViewModel.startPureStoryMode(fresh = true)
+
+        // Verify it starts immediately in Pure Story Mode and is NOT paused
+        assertTrue(storyViewModel.state.value.isPureStoryMode)
+        assertFalse(storyViewModel.state.value.isStoryAutoPlayPaused)
+        assertEquals("cottage_intro", storyViewModel.state.value.currentNode.id)
+        assertEquals(3, storyViewModel.state.value.currentNode.choices.size)
+
+        // Verify pickStoryModeChoice returns one of the 3 eligible cottage choices
+        val chosen = storyViewModel.pickStoryModeChoice(storyViewModel.state.value.currentNode)
+        assertNotNull(chosen)
+        val validChoiceIds = listOf("c1_look", "c1_window", "c1_speak")
+        assertTrue(chosen?.id in validChoiceIds)
+
+        // Selecting the choice advances the story cleanly without pausing
+        storyViewModel.selectChoice(chosen!!)
+        assertTrue(storyViewModel.state.value.isPureStoryMode)
+        assertFalse(storyViewModel.state.value.isStoryAutoPlayPaused)
+        val nextNodeId = storyViewModel.state.value.currentNode.id
+        assertTrue(nextNodeId in listOf("cottage_fireplace", "cottage_window", "cottage_voice"))
+    }
 }
 

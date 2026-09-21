@@ -178,7 +178,9 @@ fun StoryScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
                 .then(
-                    if (storyState.isFastForwarding) {
+                    if (storyState.isPureStoryMode) {
+                        Modifier
+                    } else if (storyState.isFastForwarding) {
                         Modifier.clickable { storyViewModel.stopFastForward() }
                     } else if (speechState is com.voicerpg.android.audio.SpeechState.Standby) {
                         Modifier.clickable { storyViewModel.resumeVoiceListening() }
@@ -246,33 +248,33 @@ fun StoryScreen(
                                 fontWeight = FontWeight.Black,
                                 fontFamily = FontFamily.Monospace
                             )
-                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                                 Box(
                                     modifier = Modifier
-                                        .clip(RoundedCornerShape(4.dp))
-                                        .background(if (storyState.isStoryAutoPlayPaused) Color(0xFF2E7D32) else Color(0xFFEF6C00))
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(if (storyState.isStoryAutoPlayPaused) Color(0xFF2E7D32) else Color(0xFFE65100))
                                         .clickable { storyViewModel.toggleStoryAutoPlayPause() }
-                                        .padding(horizontal = 8.dp, vertical = 3.dp)
+                                        .padding(horizontal = 10.dp, vertical = 5.dp)
                                 ) {
                                     Text(
                                         text = if (storyState.isStoryAutoPlayPaused) "RESUME" else "PAUSE",
                                         color = Color.White,
-                                        fontSize = 9.sp,
+                                        fontSize = 10.sp,
                                         fontWeight = FontWeight.Bold,
                                         fontFamily = FontFamily.Monospace
                                     )
                                 }
                                 Box(
                                     modifier = Modifier
-                                        .clip(RoundedCornerShape(4.dp))
+                                        .clip(RoundedCornerShape(6.dp))
                                         .background(Color(0xFFC62828))
                                         .clickable { storyViewModel.returnToTitle() }
-                                        .padding(horizontal = 8.dp, vertical = 3.dp)
+                                        .padding(horizontal = 10.dp, vertical = 5.dp)
                                 ) {
                                     Text(
                                         text = "EXIT",
                                         color = Color.White,
-                                        fontSize = 9.sp,
+                                        fontSize = 10.sp,
                                         fontWeight = FontWeight.Bold,
                                         fontFamily = FontFamily.Monospace
                                     )

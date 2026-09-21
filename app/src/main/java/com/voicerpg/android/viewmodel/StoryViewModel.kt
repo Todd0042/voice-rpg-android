@@ -253,11 +253,23 @@ class StoryViewModel(
     }
 
     fun startPureStoryMode(fresh: Boolean = false) {
+        cancelPendingAutoAdvance()
+        cancelPendingStoryMode()
+        speechManager.cancel()
+        speechManager.stopListening()
+        combatNarrator.stop()
+        combatNarrator.setNarrationEnabled(true)
+
         val storySlot = SaveManager.STORY_MODE_SLOT
         val hasStorySave = saveManager.hasSave(storySlot)
         val existingStorySave = if (hasStorySave) saveManager.load(storySlot) else null
         val isCompleted = existingStorySave?.narrativeFlags?.get("game_completed") == true ||
                 existingStorySave?.currentNodeId == "epilogue_credits"
+
+        _state.value = _state.value.copy(
+            isPureStoryMode = true,
+            isStoryAutoPlayPaused = false
+        )
 
         if (!fresh && hasStorySave && existingStorySave != null && !isCompleted) {
             continueGame(storySlot)
@@ -265,15 +277,25 @@ class StoryViewModel(
             saveManager.deleteSave(storySlot)
             startNewGame(PlayerCustomization(), storySlot)
         }
-        setPureStoryMode(true)
+
+        _state.value = _state.value.copy(
+            isPureStoryMode = true,
+            isStoryAutoPlayPaused = false
+        )
+        scheduleStoryModeNextStep(_state.value.currentNode, delayMs = 1200L)
     }
 
-    fun scheduleStoryModeNextStep(node: DialogueNode, delayMs: Long = 1400L) {
+    fun scheduleStoryModeNextStep(node: DialogueNode, delayMs: Long = 1200L) {
         cancelPendingStoryMode()
         if (!_state.value.isPureStoryMode || _state.value.isStoryAutoPlayPaused) return
         if (_state.value.gameScreen != GameScreen.STORY_EXPLORATION) return
 
         pendingStoryModeJob = activeScope.launch {
+            // Wait for active narration to complete before advancing, with a safety timeout
+            val startWait = System.currentTimeMillis()
+            while (combatNarrator.isSpeaking.value && (System.currentTimeMillis() - startWait) < 30000L) {
+                delay(200L)
+            }
             delay(delayMs)
             if (!_state.value.isPureStoryMode || _state.value.isStoryAutoPlayPaused) return@launch
             if (_state.value.currentNode.id != node.id || _state.value.gameScreen != GameScreen.STORY_EXPLORATION) return@launch
@@ -409,6 +431,7 @@ class StoryViewModel(
             )
         }
 
+        val isStoryMode = targetSlot == SaveManager.STORY_MODE_SLOT || _state.value.isPureStoryMode
         _state.value = _state.value.copy(
             currentScene = restoredScene,
             currentNode = restoredNode,
@@ -424,7 +447,9 @@ class StoryViewModel(
             hasExistingSave = true,
             saveSummary = saveManager.getSlotSummary(targetSlot),
             saveSlots = saveManager.getAllSlotInfos(),
-            dialogueHistory = restoredHistory
+            dialogueHistory = restoredHistory,
+            isPureStoryMode = isStoryMode,
+            isStoryAutoPlayPaused = false
         )
         combatNarrator.setEyesFreeMode(existingSave.isEyesFreeMode, lockGuard = false)
         combatNarrator.setPocketGuardEnabled(existingSave.isPocketGuardEnabled)
@@ -572,6 +597,7 @@ class StoryViewModel(
             sceneName = initialScene.name,
             isNarrator = initialNode.speaker == DialogueSpeaker.NARRATOR
         )
+        val isStoryMode = targetSlot == SaveManager.STORY_MODE_SLOT || _state.value.isPureStoryMode
         _state.value = StoryState(
             currentScene = initialScene,
             currentNode = initialNode,
@@ -586,7 +612,9 @@ class StoryViewModel(
             saveSummary = saveManager.getSlotSummary(targetSlot),
             currentSlot = targetSlot,
             saveSlots = saveManager.getAllSlotInfos(),
-            dialogueHistory = listOf(initialEntry)
+            dialogueHistory = listOf(initialEntry),
+            isPureStoryMode = isStoryMode,
+            isStoryAutoPlayPaused = false
         )
         musicManager?.playTrack(StoryScript.SCENE_COTTAGE.musicAsset)
         persistCurrentState()
@@ -1689,16 +1717,22 @@ class StoryViewModel(
         } else {
             node.text
         }
+        val isStoryMode = _state.value.isPureStoryMode
+        val isPaused = _state.value.isStoryAutoPlayPaused
+
+        // In Pure Story Mode, do not read choices aloud with "What is your command?" — let narrator speak the story
+        val choicesToRead = if (isStoryMode) emptyList() else effective
+
         combatNarrator.narrateDialogue(
             speaker = node.speaker,
             text = narrationText,
-            choices = effective
+            choices = choicesToRead
         ) {
             val isPocketMode = combatNarrator.isEyesFreeMode.value
             val canAuto = canAdvanceDialogue()
 
             if (_state.value.isPureStoryMode && !_state.value.isStoryAutoPlayPaused) {
-                scheduleStoryModeNextStep(node, delayMs = 1200L)
+                scheduleStoryModeNextStep(node, delayMs = 1000L)
             } else if (isPocketMode && canAuto) {
                 schedulePocketModeAutoAdvance(node)
             } else if (speechManager.isAutoListen.value) {
@@ -1716,6 +1750,11 @@ class StoryViewModel(
                     )
                 }
             }
+        }
+
+        // Safety watchdog: ensure Pure Story Mode auto-advance is scheduled even if TTS onDone is delayed
+        if (isStoryMode && !isPaused) {
+            scheduleStoryModeNextStep(node, delayMs = 1000L)
         }
     }
 
