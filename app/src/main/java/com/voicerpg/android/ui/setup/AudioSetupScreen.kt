@@ -654,63 +654,75 @@ fun AudioSetupScreen(
                     .padding(10.dp)
             ) {
                 Column {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "⚡ Speech Speed",
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 12.sp,
-                            fontFamily = FontFamily.Monospace
-                        )
-                        Text(
-                            text = "%.2fx".format(speechRate),
-                            color = LogosGold,
-                            fontWeight = FontWeight.Black,
-                            fontSize = 11.sp,
-                            fontFamily = FontFamily.Monospace
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        listOf(
-                            0.90f to "0.9x Relaxed",
-                            1.05f to "1.05x Normal",
-                            1.25f to "1.25x Fast"
-                        ).forEach { (rate, label) ->
-                            val isSelected = kotlin.math.abs(speechRate - rate) < 0.08f
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .background(if (isSelected) LogosGold else RetroBlack)
-                                    .border(
-                                        1.dp,
-                                        if (isSelected) LogosGold else RetroBorder,
-                                        RoundedCornerShape(6.dp)
-                                    )
-                                    .clickable { combatNarrator.setSpeechRate(rate) }
-                                    .padding(vertical = 6.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = label,
-                                    color = if (isSelected) RetroBlack else Color.LightGray,
-                                    fontSize = 10.sp,
+                                    text = "🎙️ Narration Playback Speed (TTS)",
+                                    color = LogosGold,
                                     fontWeight = FontWeight.Bold,
+                                    fontSize = 12.sp,
+                                    fontFamily = FontFamily.Monospace
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "Pace for story reading, character dialogue, & battle announcements.",
+                                    color = Color.LightGray,
+                                    fontSize = 9.5.sp,
+                                    lineHeight = 12.sp,
                                     fontFamily = FontFamily.Monospace
                                 )
                             }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "%.2fx".format(speechRate),
+                                color = LogosGold,
+                                fontWeight = FontWeight.Black,
+                                fontSize = 12.sp,
+                                fontFamily = FontFamily.Monospace
+                            )
                         }
-                    }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            listOf(
+                                0.85f to "0.85x Slow",
+                                1.05f to "1.05x Normal",
+                                1.25f to "1.25x Fast",
+                                1.50f to "1.50x Rapid"
+                            ).forEach { (rate, label) ->
+                                val isSelected = kotlin.math.abs(speechRate - rate) < 0.08f
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(if (isSelected) LogosGold else RetroBlack)
+                                        .border(
+                                            1.dp,
+                                            if (isSelected) LogosGold else RetroBorder,
+                                            RoundedCornerShape(6.dp)
+                                        )
+                                        .clickable { combatNarrator.setSpeechRate(rate) }
+                                        .padding(vertical = 6.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = label,
+                                        color = if (isSelected) RetroBlack else Color.LightGray,
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = FontFamily.Monospace
+                                    )
+                                }
+                            }
+                        }
                 }
             }
 

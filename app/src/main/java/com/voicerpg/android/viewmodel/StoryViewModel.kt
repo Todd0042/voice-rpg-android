@@ -1606,7 +1606,37 @@ class StoryViewModel(
                 return
             }
             MetaCommand.HELP -> {
-                combatNarrator.speak("Say 'Next' to advance dialogue. Say a choice keyword to select it. Say 'Recap' to hear your quest summary. Say 'Log' or 'History' for dialogue history. Say 'Skip' to fast-forward. Say 'Options' for settings.", force = true)
+                combatNarrator.speak("Say 'Next' to advance dialogue. Say a choice keyword to select it. Say 'Faster narration' or 'Slower narration' to change speech speed. Say 'Recap' to hear your quest summary. Say 'Log' or 'History' for dialogue history. Say 'Skip' to fast-forward. Say 'Options' for settings.", force = true)
+                return
+            }
+            MetaCommand.SPEED_UP_NARRATION -> {
+                val current = combatNarrator.speechRate.value
+                val next = when {
+                    current < 0.95f -> 1.05f
+                    current < 1.15f -> 1.25f
+                    else -> 1.50f
+                }
+                combatNarrator.setSpeechRate(next)
+                persistCurrentState()
+                combatNarrator.speak("Narration speed increased to %.2fx.".format(next), force = true)
+                return
+            }
+            MetaCommand.SLOW_DOWN_NARRATION -> {
+                val current = combatNarrator.speechRate.value
+                val next = when {
+                    current > 1.35f -> 1.25f
+                    current > 1.15f -> 1.05f
+                    else -> 0.85f
+                }
+                combatNarrator.setSpeechRate(next)
+                persistCurrentState()
+                combatNarrator.speak("Narration speed decreased to %.2fx.".format(next), force = true)
+                return
+            }
+            MetaCommand.RESET_NARRATION_SPEED -> {
+                combatNarrator.setSpeechRate(1.05f)
+                persistCurrentState()
+                combatNarrator.speak("Narration speed reset to normal 1.05x.", force = true)
                 return
             }
             else -> Unit

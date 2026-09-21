@@ -129,7 +129,10 @@ enum class MetaCommand {
     FAST_FORWARD,
     STOP_FAST_FORWARD,
     STORY_RECAP,
-    HELP
+    HELP,
+    SPEED_UP_NARRATION,
+    SLOW_DOWN_NARRATION,
+    RESET_NARRATION_SPEED
 }
 
 data class ParsedIntent(

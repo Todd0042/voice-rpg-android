@@ -201,30 +201,41 @@ fun OptionsDialog(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = "⚙️ DETAILED SETTINGS",
-                                color = if (isAdvancedOpen) LogosGold else Color.White,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                fontFamily = FontFamily.Monospace
-                            )
-                            if (activePreset == PlaystylePreset.CUSTOM) {
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Box(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(3.dp))
-                                        .background(Color(0xFFFFB74D))
-                                        .padding(horizontal = 4.dp, vertical = 1.dp)
-                                ) {
-                                    Text(
-                                        text = "CUSTOMIZED",
-                                        color = RetroBlack,
-                                        fontSize = 7.5.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        fontFamily = FontFamily.Monospace
-                                    )
+                        Column {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = "⚙️ DETAILED SETTINGS",
+                                    color = if (isAdvancedOpen) LogosGold else Color.White,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = FontFamily.Monospace
+                                )
+                                if (activePreset == PlaystylePreset.CUSTOM) {
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(3.dp))
+                                            .background(Color(0xFFFFB74D))
+                                            .padding(horizontal = 4.dp, vertical = 1.dp)
+                                    ) {
+                                        Text(
+                                            text = "CUSTOMIZED",
+                                            color = RetroBlack,
+                                            fontSize = 7.5.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            fontFamily = FontFamily.Monospace
+                                        )
+                                    }
                                 }
+                            }
+                            if (!isAdvancedOpen) {
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "Narration speed, voice pitch, volumes, & companion voices",
+                                    color = Color.Gray,
+                                    fontSize = 8.5.sp,
+                                    fontFamily = FontFamily.Monospace
+                                )
                             }
                         }
                         Text(
@@ -314,13 +325,13 @@ fun OptionsDialog(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Speech Speed Selector
+                // Narration Playback Speed (TTS) Selector
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(8.dp))
                         .background(RetroPanel.copy(alpha = 0.8f))
-                        .border(1.dp, RetroBorder, RoundedCornerShape(8.dp))
+                        .border(1.dp, RetroBorderGold.copy(alpha = 0.6f), RoundedCornerShape(8.dp))
                         .padding(10.dp)
                 ) {
                     Column {
@@ -329,18 +340,29 @@ fun OptionsDialog(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                text = "⚡ Speech Speed",
-                                color = Color.White,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 12.sp,
-                                fontFamily = FontFamily.Monospace
-                            )
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "🎙️ Narration Playback Speed (TTS)",
+                                    color = LogosGold,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 12.sp,
+                                    fontFamily = FontFamily.Monospace
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "Pace for story reading, character dialogue, & battle announcements.",
+                                    color = Color.LightGray,
+                                    fontSize = 9.5.sp,
+                                    lineHeight = 12.sp,
+                                    fontFamily = FontFamily.Monospace
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = "%.2fx".format(speechRate),
                                 color = LogosGold,
                                 fontWeight = FontWeight.Black,
-                                fontSize = 11.sp,
+                                fontSize = 12.sp,
                                 fontFamily = FontFamily.Monospace
                             )
                         }
@@ -349,12 +371,13 @@ fun OptionsDialog(
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             listOf(
-                                0.90f to "0.9x Relaxed",
+                                0.85f to "0.85x Slow",
                                 1.05f to "1.05x Normal",
-                                1.25f to "1.25x Fast"
+                                1.25f to "1.25x Fast",
+                                1.50f to "1.50x Rapid"
                             ).forEach { (rate, label) ->
                                 val isSelected = kotlin.math.abs(speechRate - rate) < 0.08f
                                 Box(
@@ -374,7 +397,7 @@ fun OptionsDialog(
                                     Text(
                                         text = label,
                                         color = if (isSelected) RetroBlack else Color.LightGray,
-                                        fontSize = 10.sp,
+                                        fontSize = 9.sp,
                                         fontWeight = FontWeight.Bold,
                                         fontFamily = FontFamily.Monospace
                                     )

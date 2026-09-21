@@ -678,6 +678,48 @@ class NarrationAndOptionsTest {
         assertFalse(freshNarrator.isCombatNarrationEnabled.value)
         assertTrue(freshNarrator.isPocketGuardEnabled.value)
     }
+
+    @Test
+    fun testNarrationSpeedVoiceCommandsParsing() {
+        assertEquals(MetaCommand.SPEED_UP_NARRATION, IntentParser.parse("faster narration").metaCommand)
+        assertEquals(MetaCommand.SPEED_UP_NARRATION, IntentParser.parse("speed up narration").metaCommand)
+        assertEquals(MetaCommand.SPEED_UP_NARRATION, IntentParser.parse("speak faster").metaCommand)
+
+        assertEquals(MetaCommand.SLOW_DOWN_NARRATION, IntentParser.parse("slower narration").metaCommand)
+        assertEquals(MetaCommand.SLOW_DOWN_NARRATION, IntentParser.parse("slow down narration").metaCommand)
+        assertEquals(MetaCommand.SLOW_DOWN_NARRATION, IntentParser.parse("speak slower").metaCommand)
+
+        assertEquals(MetaCommand.RESET_NARRATION_SPEED, IntentParser.parse("normal narration").metaCommand)
+        assertEquals(MetaCommand.RESET_NARRATION_SPEED, IntentParser.parse("normal speed").metaCommand)
+        assertEquals(MetaCommand.RESET_NARRATION_SPEED, IntentParser.parse("reset narration speed").metaCommand)
+    }
+
+    @Test
+    fun testNarrationSpeedPresetsAndVoiceStepping() {
+        narrator.setSpeechRate(1.05f)
+        assertEquals(1.05f, narrator.speechRate.value, 0.01f)
+
+        // Step up
+        storyViewModel.handleStoryVoiceInput("faster narration")
+        assertEquals(1.25f, narrator.speechRate.value, 0.01f)
+
+        storyViewModel.handleStoryVoiceInput("faster narration")
+        assertEquals(1.50f, narrator.speechRate.value, 0.01f)
+
+        // Step down
+        storyViewModel.handleStoryVoiceInput("slower narration")
+        assertEquals(1.25f, narrator.speechRate.value, 0.01f)
+
+        storyViewModel.handleStoryVoiceInput("slower narration")
+        assertEquals(1.05f, narrator.speechRate.value, 0.01f)
+
+        storyViewModel.handleStoryVoiceInput("slower narration")
+        assertEquals(0.85f, narrator.speechRate.value, 0.01f)
+
+        // Reset
+        storyViewModel.handleStoryVoiceInput("normal narration")
+        assertEquals(1.05f, narrator.speechRate.value, 0.01f)
+    }
 }
 
 

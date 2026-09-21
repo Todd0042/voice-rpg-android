@@ -89,6 +89,18 @@ object IntentParser {
             lower == "help" || lower.contains("what can i say") || lower == "commands" ||
                     lower == "voice commands" || lower == "help commands" -> MetaCommand.HELP
 
+            lower.contains("faster narration") || lower.contains("speed up narration") ||
+                    lower.contains("faster speech") || lower.contains("faster voice") ||
+                    lower == "faster" || lower.contains("speak faster") -> MetaCommand.SPEED_UP_NARRATION
+
+            lower.contains("slower narration") || lower.contains("slow down narration") ||
+                    lower.contains("slower speech") || lower.contains("slower voice") ||
+                    lower == "slower" || lower.contains("speak slower") -> MetaCommand.SLOW_DOWN_NARRATION
+
+            lower.contains("normal narration") || lower.contains("reset speech speed") ||
+                    lower.contains("normal speech speed") || lower.contains("reset narration speed") ||
+                    lower.contains("normal speed") || lower.contains("normal voice") -> MetaCommand.RESET_NARRATION_SPEED
+
             else -> MetaCommand.NONE
         }
 
