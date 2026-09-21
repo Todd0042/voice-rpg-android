@@ -710,4 +710,42 @@ class DynamicEncounterTest {
         // Should succeed because Cedric is turn ready
         assertEquals("cedric", viewModel.state.value.activePartyMemberId)
     }
+
+    @Test
+    fun testPureStoryModePreservedOnStartEncounterAndRestart() {
+        viewModel.setPureStoryMode(true)
+        assertTrue(viewModel.state.value.isPureStoryMode)
+
+        viewModel.startEncounter(StoryEncounters.FOREST_AMBUSH)
+        assertTrue("isPureStoryMode must be preserved when starting an encounter", viewModel.state.value.isPureStoryMode)
+
+        viewModel.restartBattle()
+        assertTrue("isPureStoryMode must be preserved when restarting a battle", viewModel.state.value.isPureStoryMode)
+    }
+
+    @Test
+    fun testPureStoryModeAutoHeroActionExecutesChantAndDamagesEnemies() {
+        viewModel.setPureStoryMode(true)
+        viewModel.startEncounter(StoryEncounters.FOREST_AMBUSH)
+
+        val activeHero = viewModel.state.value.party.first { it.id == "hero" }
+        val targetEnemy = viewModel.state.value.enemies.first { it.isAlive }
+        val initialEnemyHp = targetEnemy.currentHp
+
+        viewModel.setPlayerInputPhaseForTesting("hero")
+        viewModel.triggerAutoHeroAction(activeHero)
+
+        // Give coroutine time to complete VFX and damage application
+        var turnResolved = false
+        for (i in 0 until 20) {
+            Thread.sleep(100)
+            val updatedEnemy = viewModel.state.value.enemies.firstOrNull { it.id == targetEnemy.id }
+            if (updatedEnemy != null && updatedEnemy.currentHp < initialEnemyHp) {
+                turnResolved = true
+                break
+            }
+        }
+
+        assertTrue("Auto hero action in pure story mode must resolve and deal damage to enemies", turnResolved)
+    }
 }

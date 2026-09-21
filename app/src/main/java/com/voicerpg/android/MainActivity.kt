@@ -192,9 +192,9 @@ class MainActivity : ComponentActivity() {
 
             LaunchedEffect(storyState.activeEncounter) {
                 storyState.activeEncounter?.let { encounter ->
-                    combatViewModel.setPureStoryMode(storyState.isPureStoryMode)
                     combatViewModel.applySavedStats(storyState.partyStats)
                     combatViewModel.startEncounter(encounter)
+                    combatViewModel.setPureStoryMode(storyState.isPureStoryMode)
                 }
             }
 

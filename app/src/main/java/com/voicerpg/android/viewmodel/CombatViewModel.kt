@@ -351,10 +351,18 @@ class CombatViewModel(
                     if (it.id == readyHero.id) it.copy(stance = CharacterStance.READY) else it
                 }
             )
+            if (_state.value.isPureStoryMode) {
+                activeScope.launch {
+                    delay(700)
+                    if (_state.value.phase == CombatPhase.PLAYER_INPUT && _state.value.isPureStoryMode) {
+                        triggerAutoHeroAction(readyHero)
+                    }
+                }
+            }
             combatNarrator.narratePlayerTurn(readyHero, freshEnemies) {
                 if (_state.value.isPureStoryMode) {
                     activeScope.launch {
-                        delay(700)
+                        delay(200)
                         if (_state.value.phase == CombatPhase.PLAYER_INPUT && _state.value.isPureStoryMode) {
                             triggerAutoHeroAction(readyHero)
                         }
@@ -807,11 +815,21 @@ class CombatViewModel(
     private fun concludeVictory() {
         _state.value = _state.value.copy(phase = CombatPhase.BATTLE_WON)
         awardVictoryXp()
+        if (_state.value.isPureStoryMode) {
+            activeScope.launch {
+                delay(3000)
+                if (_state.value.phase == CombatPhase.BATTLE_WON && _state.value.isPureStoryMode) {
+                    onContinueStory?.invoke()
+                }
+            }
+        }
         combatNarrator.narrateConclusion(isVictory = true) {
             if (_state.value.isPureStoryMode) {
                 activeScope.launch {
-                    delay(1500)
-                    onContinueStory?.invoke()
+                    delay(1200)
+                    if (_state.value.phase == CombatPhase.BATTLE_WON && _state.value.isPureStoryMode) {
+                        onContinueStory?.invoke()
+                    }
                 }
             } else if (speechManager.isAutoListen.value) {
                 activeScope.launch {
@@ -946,8 +964,23 @@ class CombatViewModel(
                     if (it.id == nextHero.id) it.copy(stance = CharacterStance.READY) else it
                 }
             )
+            if (_state.value.isPureStoryMode) {
+                activeScope.launch {
+                    delay(700)
+                    if (_state.value.phase == CombatPhase.PLAYER_INPUT && _state.value.isPureStoryMode) {
+                        triggerAutoHeroAction(nextHero)
+                    }
+                }
+            }
             combatNarrator.narratePlayerTurn(nextHero, currentEnemies) {
-                if (speechManager.isAutoListen.value) {
+                if (_state.value.isPureStoryMode) {
+                    activeScope.launch {
+                        delay(200)
+                        if (_state.value.phase == CombatPhase.PLAYER_INPUT && _state.value.isPureStoryMode) {
+                            triggerAutoHeroAction(nextHero)
+                        }
+                    }
+                } else if (speechManager.isAutoListen.value) {
                     activeScope.launch {
                         delay(100)
                         startVoiceListening()
@@ -1250,7 +1283,18 @@ class CombatViewModel(
         }
 
         if (chosenSpell != null) {
-            submitTypedChant(chosenSpell.exampleChant)
+            val aliveEnemy = _state.value.enemies.firstOrNull { it.isAlive }
+            val chant = if (chosenSpell.manaRestorePct > 0f) {
+                "attune"
+            } else if (chosenSpell.isHeal) {
+                val lowestAlly = _state.value.party.filter { it.isAlive }.minByOrNull { it.currentHp.toFloat() / it.maxHp }
+                if (lowestAlly != null) "${chosenSpell.name} ${lowestAlly.name}" else chosenSpell.name
+            } else if (aliveEnemy != null && !chosenSpell.hitsAll) {
+                "${chosenSpell.name} ${aliveEnemy.name}"
+            } else {
+                chosenSpell.name
+            }
+            submitTypedChant(chant)
         }
     }
 
@@ -2061,9 +2105,18 @@ class CombatViewModel(
                     else listOfNotNull(currentEnemies.firstOrNull { it.isAlive })
                 }
             }
-            target == TargetSelection.ORC -> currentEnemies.filter { it.id == "orc" && it.isAlive }
-            target == TargetSelection.ARCHER -> currentEnemies.filter { it.id == "archer" && it.isAlive }
-            target == TargetSelection.SHAMAN -> currentEnemies.filter { it.id == "shaman" && it.isAlive }
+            target == TargetSelection.ORC -> {
+                val matched = currentEnemies.filter { it.id == "orc" && it.isAlive }
+                if (matched.isNotEmpty()) matched else listOfNotNull(currentEnemies.firstOrNull { it.isAlive })
+            }
+            target == TargetSelection.ARCHER -> {
+                val matched = currentEnemies.filter { it.id == "archer" && it.isAlive }
+                if (matched.isNotEmpty()) matched else listOfNotNull(currentEnemies.firstOrNull { it.isAlive })
+            }
+            target == TargetSelection.SHAMAN -> {
+                val matched = currentEnemies.filter { it.id == "shaman" && it.isAlive }
+                if (matched.isNotEmpty()) matched else listOfNotNull(currentEnemies.firstOrNull { it.isAlive })
+            }
             else -> {
                 val marked = currentEnemies.firstOrNull { it.isTargeted && it.isAlive }
                 if (marked != null) listOf(marked)
@@ -2497,7 +2550,8 @@ class CombatViewModel(
             roundNumber = 1,
             party = party,
             enemies = enemies.map { decorateEnemy(it).let { e -> e.copy(atbGauge = e.atbGauge.coerceAtLeast(0.25f)) } }.take(6),
-            currentEnvironment = environment
+            currentEnvironment = environment,
+            isPureStoryMode = _state.value.isPureStoryMode
         )
         startAtbLoop()
     }
@@ -2507,7 +2561,10 @@ class CombatViewModel(
         turnsTakenInRound = 0
         lastActedHeroId = null
         lastActedFaction = CombatantFaction.NONE
-        _state.value = createInitialState().copy(currentEnvironment = currentEnv)
+        _state.value = createInitialState().copy(
+            currentEnvironment = currentEnv,
+            isPureStoryMode = _state.value.isPureStoryMode
+        )
         _combatantPositions.clear()
         particleEmitter.clear()
         spellVfxEngine.projectiles.clear()
