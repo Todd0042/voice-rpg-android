@@ -40,8 +40,10 @@ Legend: [x] = already applied/fixed in this repo (Echoes of the Logos).
       set an `isGuarding` flag that expires next turn, support taunt/target override,
       and must NOT speed the guard's ATB up.
       → Fixed: -50% mitigation + taunt override + `isGuarding` flag implemented
-      (`commit edfb1e0`). REMAINING NUANCE: `isGuarding` never expires at the start of
-      the guard's next turn (only clears when hit) — see Remaining work.
+      (`commit edfb1e0`); `isGuarding` now also expires at the start of the guard's own
+      next turn in `beginPartyMemberTurn`, so the taunt + mitigation last at most ~one
+      round instead of persisting while un-hit (`commit` "fix(combat): guard..." this
+      session). Covered by `testGuardExpiresWhenGuardingHeroBeginsTheirNextTurn`.
 
 - [x] **6. Status spells (stun/poison/haste/slow) do nothing.** Implement a real status
       system: apply with tier-gated potency/duration, advance every turn (DoT ticks,
@@ -80,22 +82,24 @@ Legend: [x] = already applied/fixed in this repo (Echoes of the Logos).
       must use atomic `MutableStateFlow.update {}` (or equivalent CAS) — especially ATB
       ticks, summon refresh, and target updates fired from delayed coroutines.
       → Fixed: `tickAtb()` and `summonReinforcements()` use `_state.update {}`
-      (`commit 2dcb16c`). REMAINING HARDENING: a few delayed-coroutine writes (floating-
-      text removal, round increment, status DoT paths) still use plain
-      `_state.value = ...` — main-thread confined, so cosmetic.
+      (`commit 2dcb16c`); this session the residual delayed-coroutine writes (floating-
+      text removals via `removeFloatingText`/`addFloatingText` helpers, round increment
+      in `registerTurnCompleted`, status DoT paths, mid-battle recruit, enemy-strike
+      batch, heal/damage float batches) were also converted to `_state.update {}`.
 
 - [x] **13. `roundNumber` never increments.** The round counter must actually advance
       (UI was stuck on "ROUND 1").
       → Fixed: `registerTurnCompleted()` advances the round after all living combatants
       act (`commit 422711f`).
 
-- [ ] **14. Three divergent duplicate spell tables.** Consolidate to one source-of-truth
+- [x] **14. Three divergent duplicate spell tables.** Consolidate to one source-of-truth
       spell catalog loaded from data; delete the other tables (powers had drifted apart).
-      → PARTIAL: combat tables were consolidated, but the **hero** kit is still defined
-      twice in code — `StoryEncounters.aethelSpells` (used as default) and
-      `ClassSpellLibrary.*_SPELLS` (used at runtime for the customized hero) are
-      duplicate Spell literals, with `docs/combat-design/data/spells.json` as a third,
-      unloaded copy. Values currently match but can drift — see Remaining work.
+      → Fixed: the hero (Elementalist) kit is now defined ONCE in
+      `StoryEncounters.aethelSpells`; `ClassSpellLibrary.ELEMENTALIST_SPELLS` delegates to
+      it, and `CombatViewModel` builds default + customized heroes from that same list.
+      `docs/combat-design/data/spells.json` regenerated as a faithful design mirror of the
+      code catalog (no runtime JSON loading needed). Locked by
+      `SpellCatalogConsolidationTest`.
 
 - [x] **15. Enemy identity via brittle string match.** Replace `subtitle.contains(...)`
       / `id == "shaman"` sniffing with explicit enemy data (family, self-element, role,
@@ -136,16 +140,19 @@ Legend: [x] = already applied/fixed in this repo (Echoes of the Logos).
       node transition) writing `narrativeFlags`/`decisionsMade`/`defeatedEncounters`;
       `continueGame()` restores them (`commit 2323111` lineage).
 
-- [ ] **21. Choice matcher drops completed choices.** Completed choices were filtered
+- [x] **21. Choice matcher drops completed choices.** Completed choices were filtered
       out entirely, so re-speaking them silently did nothing. Keep matching them so the
       caller can give "already completed" feedback.
-      → NOT FULLY APPLIED: `StoryChoiceMatcher.matchChoice()` still drops completed
-      choices from the candidate set (when other options remain), per AGENTS Rule 2
-      (elimination). Result: re-speaking a completed option silently no-ops or can
-      mis-match a *different* choice. The "already completed" narration in
-      `StoryViewModel` is only reachable on the all-completed fallback path. Needs the
-      reconcile-fix in Remaining work (eliminated from being *selectable*, still
-      *matchable* for feedback).
+      → Fixed: `StoryChoiceMatcher.matchChoice()` now scores against the FULL choice list
+      (completed choices are never dropped) and tie-breaks toward remaining choices so an
+      ambiguous utterance never blocks on "already completed" feedback. The caller
+      (`StoryViewModel.handleStoryVoiceInput` / `selectChoice`) still excludes completed
+      branches from re-entry and speaks audible "already completed" feedback. Per AGENTS
+      Rule 2, completed choices stay eliminated from the on-screen selectable list
+      (`DialogueChoiceItem` renders them struck-through and
+      non-interactive). Covered by `testCompletedChoiceStillMatchedForFeedback…`,
+      `testUncompletedChoiceTakesPriorityOnScoreTie`, `testAllCompletedHubChoices…`, and
+      `testHubVoiceInputGivesCompletedFeedbackWithoutReentering`.
 
 - [x] **22. ATB tick / summon lost-update race.** Delayed-coroutine ATB tick + summon
       refresh path must not lose writes (same fix as #12, called out separately because
@@ -170,40 +177,22 @@ Legend: [x] = already applied/fixed in this repo (Echoes of the Logos).
 
 ## Remaining work (not yet applied — prioritized critical → cosmetic)
 
-No outright critical bugs remain; all combat-correctness and save-persistence fixes are
-in. What remains is functional-priority:
+**All 23 checklist items are now applied.** The final four were completed this session:
 
-- **[P1] #21 — Completed-choice voice feedback** (story hub UX). Make
-  `StoryChoiceMatcher` score against the FULL choice list (never drop completed ones),
-  and have the caller (`StoryViewModel.handleStoryVoiceInput` / `selectChoice` /
-  `StoryScreen`) give audible "that objective has already been completed" feedback when
-  a *completed* branch is spoken — while still excluding completed branches from the
-  on-screen list and from being re-entered (preserves AGENTS Rule 2: no endless loops).
-  Also prevents an utterance for a completed option from mis-firing a different choice.
-  Tests: extend `StoryChoiceMatcherTest` + add a hub-voice feedback test.
+- **[P1] #21 — Completed-choice voice feedback** (story hub UX). DONE: matcher scores
+  against the full choice list, tie-breaks toward remaining choices, callers give audible
+  "already completed" feedback while completed branches stay eliminated from selection
+  (AGENTS Rule 2 preserved).
+- **[P2] #5 — Guard expiry** (balance). DONE: `beginPartyMemberTurn` clears `isGuarding`
+  at the start of the guard's own next turn; delayed taunt removal itself is unchanged and
+  ATB stays a 0.35 *reset* (slowdown, not a speed-up).
+- **[P3] #14 — Single source-of-truth spell catalog** (drift risk). DONE at the code
+  level: one canonical Elementalist kit in `StoryEncounters.aethelSpells`, delegated by
+  `ClassSpellLibrary`; `spells.json` regenerated as a doc mirror. No engine-repo sync
+  required (AGENTS Rule 6 removed).
+- **[P3] #12 — Residual state-write hardening** (cosmetic). DONE: remaining delayed-
+  coroutine / status-path writes converted to `MutableStateFlow.update {}` (floating-text
+  add/remove helpers, round increment, DoT paths, mid-battle recruit).
 
-- **[P2] #5 — Guard expiry** (balance). Clear `isGuarding` when the guarding hero's next
-  turn begins (in `beginPartyMemberTurn`), so the taunt + -50% mitigation lasts at most
-  ~one round and cannot persist indefinitely while un-hit. Verify guard can never speed
-  an ATB gauge (guard turns always start at full readiness, so the 0.35 reset is a
-  slowdown; keep it) and that `DamageResolver.resolveEnemyStrike` still applies
-  `GUARD_MULTIPLIER`. Tests: extend `DoctrineIntegrationTest`.
-
-- **[P3] #14 — Single source-of-truth spell catalog** (drift risk). Consolidate the two
-  code-level hero kit definitions (`ClassSpellLibrary` inline literals + duplicated
-  `StoryEncounters.aethelSpells`/companion lists) into one shared `Spell` catalog object
-  referenced by both, and re-align `docs/combat-design/data/spells.json` with it (either
-  load the JSON at runtime with a code fallback, or treat JSON as regenerated docs).
-  Per AGENTS Rule 6, mirror the shared catalog change in
-  `/home/todd/Documents/GitHub/voice-rpg-engine` if that repo carries the duplicate
-  tables.
-
-- **[P3] #12 — Residual state-write hardening** (cosmetic). Convert the remaining
-  delayed-coroutine / status-path writes in `CombatViewModel` (floating-text removals,
-  `registerTurnCompleted` round increment, DoT updates, mid-battle recruit) to
-  `MutableStateFlow.update {}` for uniform CAS. No behavior change expected; guarded by
-  the existing unit tests.
-
-Every fix must be verified per AGENTS Rule 5 (`./gradlew test`, `assembleDebug`, tagged
-GitHub release with `app-debug.apk`, `adb install -r`), and engine-level changes synced
-to the standalone engine repo per AGENTS Rule 6.
+Every fix verified per AGENTS Rule 5 (`./gradlew test`, `assembleDebug`, tagged GitHub
+release with `app-debug.apk`, `adb install -r`).
