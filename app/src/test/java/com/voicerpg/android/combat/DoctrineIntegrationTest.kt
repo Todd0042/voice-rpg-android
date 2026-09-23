@@ -1,5 +1,6 @@
 package com.voicerpg.android.combat
 
+import com.voicerpg.android.engine.ClassSpellLibrary
 import com.voicerpg.android.engine.StoryEncounters
 import com.voicerpg.android.model.SpellSchool
 import kotlin.math.roundToInt
@@ -78,6 +79,36 @@ class EnemyBrainTest {
         allEnemyNames.distinct().forEach { name ->
             val key = EnemyCodex.movesetOf(name)
             assertTrue("'$name' must resolve to a moveset", key.isNotEmpty() && MovesetTable.movesetFor(key) != null)
+        }
+    }
+}
+
+class SpellCatalogConsolidationTest {
+
+    @Test
+    fun `hero elementalist kit is a single source of truth - class library delegates to story suite`() {
+        val storyKit = StoryEncounters.aethelSpells
+        val classKit = ClassSpellLibrary.getSpellsForClass(com.voicerpg.android.model.HeroClass.ELEMENTALIST)
+
+        assertEquals("story and class libraries must expose the identical elementalist kit", storyKit, classKit)
+        assertEquals("same list instance (delegation, not a copy)", storyKit, ClassSpellLibrary.ELEMENTALIST_SPELLS)
+        assertEquals(
+            listOf("fireball", "frost_spike", "chain_lightning", "attune"),
+            storyKit.map { it.id }
+        )
+        // Breath discipline stays breath-LAST so garbled fallbacks never pick the recovery action
+        assertEquals("attune", storyKit.last().id)
+        assertEquals(0.35f, storyKit.last().manaRestorePct, 0.0001f)
+    }
+
+    @Test
+    fun `every hero class kit is breath-last and uniquely identified`() {
+        for (heroClass in com.voicerpg.android.model.HeroClass.entries) {
+            val kit = ClassSpellLibrary.getSpellsForClass(heroClass)
+            assertTrue("kit for $heroClass must not be empty", kit.isNotEmpty())
+            assertTrue("recovery action must sit last for $heroClass", kit.last().manaRestorePct > 0f)
+            val ids = kit.map { it.id }
+            assertEquals("kit ids for $heroClass must be unique", ids.size, ids.distinct().size)
         }
     }
 }

@@ -6,13 +6,12 @@ import com.voicerpg.android.model.SpellSchool
 
 object ClassSpellLibrary {
 
-    // 1. Elementalist Spells
-    val ELEMENTALIST_SPELLS = listOf(
-        Spell("fireball", "Fireball", SpellSchool.PYROMANCY, basePower = 65, mpCost = 15, status = "BURN", description = "Roaring sphere of flame", exampleChant = "Fireball archer"),
-        Spell("frost_spike", "Frost Spike", SpellSchool.CRYOMANCY, basePower = 58, mpCost = 12, status = "CHILL", description = "Piercing icicle", exampleChant = "Glacial frost spike the orc!"),
-        Spell("chain_lightning", "Chain Lightning", SpellSchool.ELECTROMANCY, basePower = 55, mpCost = 20, hitsAll = true, status = "OVERLOAD", description = "Arcing lightning storm", exampleChant = "Tempest lightning strike all enemies!"),
-        StoryEncounters.attuneSpell
-    )
+    // Elementalist kit is delegated to StoryEncounters.aethelSpells — the canonical definition
+    // used by the story's default hero. This is the SINGLE source of truth for the kit; keeping
+    // the literals in one place (StoryEncounters) prevents the two copies from drifting.
+    // (Battlemage/Chanter/Shadowweaver kits live here because they are only reachable through
+    // character creation; the breath discipline for all classes is StoryEncounters.attuneSpell.)
+    val ELEMENTALIST_SPELLS: List<Spell> = StoryEncounters.aethelSpells
 
     // 2. Battlemage Spells
     val BATTLEMAGE_SPELLS = listOf(

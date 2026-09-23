@@ -21,6 +21,9 @@ object StoryEncounters {
         exampleChant = "Attune"
     )
 
+    // Aethel's Elementalist kit — CANONICAL. ClassSpellLibrary.ELEMENTALIST_SPELLS delegates here,
+    // and CombatViewModel builds the default/story hero from this exact list. Add or change spells
+    // for the default hero class in this one place only.
     val aethelSpells = listOf(
         Spell("fireball", "Fireball", SpellSchool.PYROMANCY, basePower = 65, mpCost = 15, status = "BURN", description = "Roaring sphere of flame", exampleChant = "Fireball archer"),
         Spell("frost_spike", "Frost Spike", SpellSchool.CRYOMANCY, basePower = 58, mpCost = 12, status = "CHILL", description = "Piercing icicle", exampleChant = "Glacial frost spike the orc!"),
