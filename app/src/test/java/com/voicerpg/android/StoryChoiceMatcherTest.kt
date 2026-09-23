@@ -82,6 +82,99 @@ class StoryChoiceMatcherTest {
     }
 
     @Test
+    fun testCompletedChoiceStillMatchedForFeedbackInsteadOfSilentNoop() {
+        val nodeChoices = listOf(
+            DialogueChoice("c1_look", "Examine the cold fireplace", listOf("fireplace", "hearth", "examine", "cold"), "cottage_fireplace", completionFlag = "cottage_fireplace"),
+            DialogueChoice("c1_window", "Look out the window", listOf("window", "look", "outside", "pines"), "cottage_window"),
+            DialogueChoice("c1_speak", "Try to speak", listOf("speak", "voice", "talk", "hello"), "cottage_voice")
+        )
+        val completed = mapOf("cottage_fireplace" to true)
+
+        // Re-speaking the completed option must STILL match it (so the caller can give
+        // "already completed" feedback) — never silently no-op, and never misfire a neighbor.
+        val matched = StoryChoiceMatcher.matchChoice(
+            "By the fading embers of the hearth, I shall inspect the cold fireplace!",
+            nodeChoices,
+            completedFlags = completed
+        )
+        assertNotNull("completed choice must remain matchable", matched)
+        assertEquals("completed choice should be returned for feedback", "c1_look", matched?.id)
+    }
+
+    @Test
+    fun testUncompletedChoiceTakesPriorityOnScoreTie() {
+        // Real ch5_hub sub-story: creek (completed) and warding stones (remaining) tie on
+        // a shared utterance; the remaining choice must win so ambiguity never blocks on feedback.
+        val hubChoices = listOf(
+            DialogueChoice("ch5_creek_choice", "Scout the poisoned creek bed for warden tracks", listOf("scout", "creek", "tracks", "warden"), "ch5_scout_creek", completionFlag = "ch5_creek_scouted"),
+            DialogueChoice("ch5_wards_choice", "Inspect the pulsing obsidian warding stones", listOf("inspect", "examine", "stones", "wards", "obsidian"), "ch5_examine_wards", completionFlag = "ch5_wards_examined")
+        )
+        val completed = mapOf("ch5_creek_scouted" to true)
+
+        val matched = StoryChoiceMatcher.matchChoice("scout inspect", hubChoices, completedFlags = completed)
+
+        assertNotNull(matched)
+        assertEquals("remaining choice must win the tie", "ch5_wards_choice", matched?.id)
+
+        // Sanity on the matching baseline: with NO completion flags both choices are equally
+        // eligible; order-stability means the first-highest (creek) wins by list order.
+        val noCompletionMatch = StoryChoiceMatcher.matchChoice("scout inspect", hubChoices)
+        assertNotNull(noCompletionMatch)
+        assertEquals("ch5_creek_choice", noCompletionMatch?.id)
+    }
+
+    @Test
+    fun testAllCompletedHubChoicesReturnBestMatchForFeedback() {
+        // When every sub-story objective is completed, speaking one must still resolve to that
+        // specific choice (for feedback) and never misfire the unflagged assault/advance choice.
+        val hubChoices = listOf(
+            DialogueChoice("ch5_creek_choice", "Scout the poisoned creek bed for warden tracks", listOf("scout", "creek", "tracks", "warden"), "ch5_scout_creek", completionFlag = "ch5_creek_scouted"),
+            DialogueChoice("ch5_wards_choice", "Inspect the pulsing obsidian warding stones", listOf("inspect", "examine", "stones", "wards", "obsidian"), "ch5_examine_wards", completionFlag = "ch5_wards_examined"),
+            DialogueChoice("ch5_assault_choice", "Charge the sunken altar and breach Lyra's Briar Cage!", listOf("charge", "assault", "breach", "cage", "rescue"), "ch5_rescue_assault")
+        )
+        val completed = mapOf("ch5_creek_scouted" to true, "ch5_wards_examined" to true)
+
+        val matched = StoryChoiceMatcher.matchChoice(
+            "Scout the poisoned creek bed for warden tracks",
+            hubChoices,
+            completedFlags = completed
+        )
+        assertNotNull(matched)
+        assertEquals("must return the completed creek choice for feedback", "ch5_creek_choice", matched?.id)
+    }
+
+    @Test
+    fun testHubVoiceInputGivesCompletedFeedbackWithoutReentering() {
+        // Full hub flow: warping to Chapter 5, completing the creek objective, then speaking it
+        // again must give "already completed" feedback WITHOUT re-entering the branch or
+        // mis-firing the remaining warding-stones objective.
+        storyViewModel.debugWarpToChapter("ch5_intro")
+        val hubNode = StoryScript.ALL_NODES["ch5_hub"] ?: error("ch5_hub missing")
+        val stateField = storyViewModel.javaClass.getDeclaredField("_state")
+        stateField.isAccessible = true
+        @Suppress("UNCHECKED_CAST")
+        val stateFlow = stateField.get(storyViewModel) as kotlinx.coroutines.flow.MutableStateFlow<com.voicerpg.android.viewmodel.StoryState>
+        stateFlow.value = stateFlow.value.copy(currentNode = hubNode)
+
+        // Complete the creek objective through the normal choice path, then advance back to the hub
+        val creekChoice = hubNode.choices.first { it.id == "ch5_creek_choice" }
+        storyViewModel.selectChoice(creekChoice)
+        storyViewModel.advanceDialogue()
+        assertEquals("ch5_hub", storyViewModel.state.value.currentNode.id)
+        assertEquals(true, storyViewModel.state.value.narrativeFlags["ch5_creek_scouted"])
+        val decisionsBefore = storyViewModel.state.value.decisionsMade.size
+
+        // Re-speaking the completed objective
+        storyViewModel.handleStoryVoiceInput("Scout the poisoned creek bed for warden tracks")
+
+        // Must remain at the hub, flag unchanged, no mis-fired wards objective, no re-entry
+        assertEquals("ch5_hub", storyViewModel.state.value.currentNode.id)
+        assertEquals(true, storyViewModel.state.value.narrativeFlags["ch5_creek_scouted"])
+        assertTrue("wards objective must not be mis-fired", storyViewModel.state.value.narrativeFlags["ch5_wards_examined"] != true)
+        assertEquals(decisionsBefore, storyViewModel.state.value.decisionsMade.size)
+    }
+
+    @Test
     fun testBattleConclusionIntentParsing() {
         // Continue Story / Commence Story variations
         assertEquals(

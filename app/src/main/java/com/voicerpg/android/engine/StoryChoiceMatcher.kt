@@ -84,12 +84,11 @@ object StoryChoiceMatcher {
             .map { it.trim() }
             .filter { it.length >= 2 && it !in STOP_WORDS }
 
-        // Filter out choices that have already been completed if there are other uncompleted choices
-        val validChoices = choices.filter { choice ->
-            choice.completionFlag == null || completedFlags[choice.completionFlag] != true
-        }.ifEmpty { choices }
-
-        val scoredChoices = validChoices.map { choice ->
+        // Score against the FULL choice list — completed choices are never dropped, so the caller
+        // can still recognize a re-spoken completed objective and give "already completed" feedback
+        // instead of silently no-oping or mis-firing a different choice. (Their elimination from the
+        // on-screen list and from re-entry is enforced by the caller, per AGENTS Rule 2.)
+        val scoredChoices = choices.map { choice ->
             var score = 0
             val choiceTextLower = choice.text.lowercase()
 
@@ -141,12 +140,18 @@ object StoryChoiceMatcher {
                 }
             }
 
-            choice to score
+            choice to (score to (choice.completionFlag != null && completedFlags[choice.completionFlag] == true))
         }
 
-        val best = scoredChoices.maxByOrNull { it.second }
+        val bestScore = scoredChoices.maxOfOrNull { it.second.first } ?: return null
+        // On a score tie, prefer a remaining (uncompleted) choice so an ambiguous utterance never
+        // blocks on "already completed" feedback when the player may have meant the in-progress one.
+        val best = scoredChoices
+            .filter { it.second.first == bestScore }
+            .maxByOrNull { if (it.second.second) 0 else 1 }
+            ?: scoredChoices.first()
         // Minimum score threshold of 25 guarantees a meaningful match while tolerating nerdy additions
-        return if (best != null && best.second >= 25) best.first else null
+        return if (bestScore >= 25) best.first else null
     }
 
     /**
