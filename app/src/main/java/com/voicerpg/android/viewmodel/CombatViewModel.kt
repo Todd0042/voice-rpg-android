@@ -233,27 +233,16 @@ class CombatViewModel(
         }
     }
 
-    init {
-        startAtbLoop()
-    }
-
     private fun createInitialState(): CombatState {
-        // Party members with Speed ratings and starting battle wear (Cedric pre-damaged)
         val initialParty = listOf(
-            PartyMember("hero", "Aethel", "Elementalist", currentHp = 240, maxHp = 240, currentMp = 140, maxMp = 140, spells = aethelSpells, avatarTint = Color(0xFF90CAF9), speed = 70, atbGauge = 0.45f),
-            PartyMember("cedric", "Sir Cedric", "Templar", currentHp = 310, maxHp = 420, currentMp = 80, maxMp = 80, spells = StoryEncounters.cedricStarterSpells, avatarTint = Color(0xFFFFD54F), speed = 55, atbGauge = 0.30f)
-        )
-
-        val initialEnemies = listOf(
-            Enemy("orc", "Blighted Orc", "Vanguard", currentHp = 340, maxHp = 340, baseAttack = 22, isTargeted = false, spriteTint = Color(0xFFEF5350), speed = 50, atbGauge = 0.35f),
-            Enemy("archer", "Corrupted Archer", "Sniper", currentHp = 240, maxHp = 240, baseAttack = 25, isTargeted = true, spriteTint = Color(0xFFAB47BC), speed = 65, atbGauge = 0.45f),
-            Enemy("shaman", "Void Shaman", "Occultist", currentHp = 280, maxHp = 280, baseAttack = 20, isTargeted = false, spriteTint = Color(0xFF5C6BC0), speed = 55, atbGauge = 0.30f)
+            PartyMember("hero", "Aethel", "Elementalist", currentHp = 240, maxHp = 240, currentMp = 140, maxMp = 140, spells = aethelSpells, avatarTint = Color(0xFF90CAF9), speed = 70, atbGauge = 0f),
+            PartyMember("cedric", "Sir Cedric", "Templar", currentHp = 310, maxHp = 420, currentMp = 80, maxMp = 80, spells = StoryEncounters.cedricStarterSpells, avatarTint = Color(0xFFFFD54F), speed = 55, atbGauge = 0f)
         )
 
         return CombatState(
-            phase = CombatPhase.ATB_WAITING,
+            phase = CombatPhase.INACTIVE,
             party = initialParty,
-            enemies = initialEnemies
+            enemies = emptyList()
         )
     }
 
@@ -273,6 +262,9 @@ class CombatViewModel(
     }
 
     internal fun tickAtb() {
+        if (_state.value.phase != CombatPhase.ATB_WAITING || _state.value.enemies.isEmpty()) {
+            return
+        }
         // 1. Advance gauges strictly for ALIVE combatants (atomic recompute-from-current:
         // mid-tick summons/attacks can never be lost to a stale snapshot write).
         // Statuses modulate ATB speed (chill slows, root nearly halts, overload crawls, bless quickens).
@@ -819,6 +811,7 @@ class CombatViewModel(
             activeScope.launch {
                 delay(3000)
                 if (_state.value.phase == CombatPhase.BATTLE_WON && _state.value.isPureStoryMode) {
+                    pauseAtb()
                     onContinueStory?.invoke()
                 }
             }
@@ -828,6 +821,7 @@ class CombatViewModel(
                 activeScope.launch {
                     delay(1200)
                     if (_state.value.phase == CombatPhase.BATTLE_WON && _state.value.isPureStoryMode) {
+                        pauseAtb()
                         onContinueStory?.invoke()
                     }
                 }
@@ -1267,35 +1261,66 @@ class CombatViewModel(
         _state.value = _state.value.copy(isPureStoryMode = enabled)
     }
 
-    fun triggerAutoHeroAction(hero: PartyMember) {
-        if (_state.value.phase != CombatPhase.PLAYER_INPUT) return
+    fun triggerAutoHeroAction(hero: PartyMember): Spell? {
+        if (_state.value.phase != CombatPhase.PLAYER_INPUT) return null
         val affordableSpells = hero.spells.filter { it.mpCost <= hero.currentMp }
+        val aliveEnemies = _state.value.enemies.filter { it.isAlive }
         val chosenSpell = if (affordableSpells.isNotEmpty()) {
             val lowestAlly = _state.value.party.filter { it.isAlive }.minByOrNull { it.currentHp.toFloat() / it.maxHp }
             val healSpell = affordableSpells.firstOrNull { it.isHeal }
             if (lowestAlly != null && (lowestAlly.currentHp.toFloat() / lowestAlly.maxHp) < 0.5f && healSpell != null) {
-                healSpell
+                val woundedCount = _state.value.party.count { it.isAlive && (it.currentHp.toFloat() / it.maxHp) < 0.7f }
+                if (woundedCount >= 2) {
+                    affordableSpells.firstOrNull { it.isHeal && it.hitsAll } ?: healSpell
+                } else {
+                    healSpell
+                }
             } else {
-                affordableSpells.filter { !it.isHeal }.maxByOrNull { it.basePower } ?: affordableSpells.random()
+                val offensiveSpells = affordableSpells.filter { !it.isHeal && it.manaRestorePct == 0f }
+                val aoeSpells = offensiveSpells.filter { it.hitsAll }
+
+                if (aliveEnemies.size >= 2 && aoeSpells.isNotEmpty()) {
+                    // Prefer casting AOE spells anytime there are 2 or more enemies alive on field
+                    aoeSpells.maxByOrNull { it.basePower } ?: aoeSpells.first()
+                } else if (offensiveSpells.isNotEmpty()) {
+                    offensiveSpells.maxByOrNull { it.basePower } ?: offensiveSpells.first()
+                } else {
+                    affordableSpells.maxByOrNull { it.basePower } ?: affordableSpells.first()
+                }
             }
         } else {
-            hero.spells.firstOrNull { it.mpCost == 0 } ?: hero.spells.firstOrNull()
+            val zeroCostAoe = hero.spells.filter { it.mpCost == 0 && it.hitsAll && !it.isHeal }
+            if (aliveEnemies.size >= 2 && zeroCostAoe.isNotEmpty()) {
+                zeroCostAoe.maxByOrNull { it.basePower } ?: zeroCostAoe.first()
+            } else {
+                hero.spells.firstOrNull { it.mpCost == 0 } ?: hero.spells.firstOrNull()
+            }
         }
 
         if (chosenSpell != null) {
-            val aliveEnemy = _state.value.enemies.firstOrNull { it.isAlive }
+            val aliveEnemy = _state.value.enemies.firstOrNull { it.isAlive && it.isTargeted }
+                ?: _state.value.enemies.firstOrNull { it.isAlive }
             val chant = if (chosenSpell.manaRestorePct > 0f) {
                 "attune"
             } else if (chosenSpell.isHeal) {
                 val lowestAlly = _state.value.party.filter { it.isAlive }.minByOrNull { it.currentHp.toFloat() / it.maxHp }
-                if (lowestAlly != null) "${chosenSpell.name} ${lowestAlly.name}" else chosenSpell.name
-            } else if (aliveEnemy != null && !chosenSpell.hitsAll) {
+                if (chosenSpell.hitsAll) {
+                    "${chosenSpell.name} party"
+                } else if (lowestAlly != null) {
+                    "${chosenSpell.name} ${lowestAlly.name}"
+                } else {
+                    chosenSpell.name
+                }
+            } else if (chosenSpell.hitsAll) {
+                "${chosenSpell.name} all"
+            } else if (aliveEnemy != null) {
                 "${chosenSpell.name} ${aliveEnemy.name}"
             } else {
                 chosenSpell.name
             }
             submitTypedChant(chant)
         }
+        return chosenSpell
     }
 
     fun openOptions() {
@@ -2446,6 +2471,8 @@ class CombatViewModel(
     fun pauseAtb() {
         atbJob?.cancel()
         atbJob = null
+        combatNarrator.setCombatActive(false)
+        _state.update { it.copy(phase = CombatPhase.INACTIVE) }
     }
 
     fun spawnEnemy(enemy: Enemy): Boolean = summonReinforcements(listOf(enemy)) > 0
@@ -2481,7 +2508,7 @@ class CombatViewModel(
             spells = spells,
             avatarTint = tint,
             speed = heroStats?.speed ?: customization.heroClass.startingSpeed,
-            atbGauge = 0.45f,
+            atbGauge = if (_state.value.phase == CombatPhase.INACTIVE) 0f else (_state.value.party.firstOrNull { it.id == "hero" }?.atbGauge ?: 0f),
             level = heroStats?.level ?: 1,
             xp = heroStats?.xp ?: 0
         )
@@ -2493,7 +2520,11 @@ class CombatViewModel(
         _state.value = _state.value.copy(party = updatedParty)
     }
 
+    var lastEncounterDefinition: EncounterDefinition? = null
+        internal set
+
     fun startEncounter(encounter: EncounterDefinition) {
+        lastEncounterDefinition = encounter
         currentEncounterId = encounter.id
         isZephyrRecruitedMidBattle = false
         isMalakorUltimateCast = false
@@ -2589,6 +2620,7 @@ class CombatViewModel(
         lastActedHeroId = null
         lastActedFaction = CombatantFaction.NONE
         musicManager?.playCombatMusic()
+        combatNarrator.setCombatActive(true)
 
         _state.value = CombatState(
             phase = CombatPhase.ATB_WAITING,
@@ -2602,18 +2634,36 @@ class CombatViewModel(
     }
 
     fun restartBattle() {
+        val lastDef = lastEncounterDefinition
+        if (lastDef != null) {
+            startEncounter(lastDef)
+            return
+        }
         val currentEnv = _state.value.currentEnvironment
         turnsTakenInRound = 0
         lastActedHeroId = null
         lastActedFaction = CombatantFaction.NONE
-        _state.value = createInitialState().copy(
-            currentEnvironment = currentEnv,
-            isPureStoryMode = _state.value.isPureStoryMode
-        )
         _combatantPositions.clear()
         particleEmitter.clear()
         spellVfxEngine.projectiles.clear()
         resonanceEngine.noveltyCache.clear()
+        val initialParty = listOf(
+            PartyMember("hero", "Aethel", "Elementalist", currentHp = 240, maxHp = 240, currentMp = 140, maxMp = 140, spells = aethelSpells, avatarTint = Color(0xFF90CAF9), speed = 70, atbGauge = 0.45f),
+            PartyMember("cedric", "Sir Cedric", "Templar", currentHp = 310, maxHp = 420, currentMp = 80, maxMp = 80, spells = StoryEncounters.cedricStarterSpells, avatarTint = Color(0xFFFFD54F), speed = 55, atbGauge = 0.30f)
+        )
+        val fallbackEnemies = listOf(
+            Enemy("orc", "Blighted Orc", "Vanguard", currentHp = 340, maxHp = 340, baseAttack = 22, isTargeted = false, spriteTint = Color(0xFFEF5350), speed = 50, atbGauge = 0.35f),
+            Enemy("archer", "Corrupted Archer", "Sniper", currentHp = 240, maxHp = 240, baseAttack = 25, isTargeted = true, spriteTint = Color(0xFFAB47BC), speed = 65, atbGauge = 0.45f),
+            Enemy("shaman", "Void Shaman", "Occultist", currentHp = 280, maxHp = 280, baseAttack = 20, isTargeted = false, spriteTint = Color(0xFF5C6BC0), speed = 55, atbGauge = 0.30f)
+        )
+        combatNarrator.setCombatActive(true)
+        _state.value = CombatState(
+            phase = CombatPhase.ATB_WAITING,
+            party = initialParty,
+            enemies = fallbackEnemies,
+            currentEnvironment = currentEnv,
+            isPureStoryMode = _state.value.isPureStoryMode
+        )
         startAtbLoop()
     }
 

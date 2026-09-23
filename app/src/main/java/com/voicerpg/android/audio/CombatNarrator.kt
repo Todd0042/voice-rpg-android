@@ -114,6 +114,13 @@ class CombatNarrator(
     private val _isSpeaking = MutableStateFlow(false)
     val isSpeaking: StateFlow<Boolean> = _isSpeaking.asStateFlow()
 
+    private val _isCombatActive = MutableStateFlow(false)
+    val isCombatActive: StateFlow<Boolean> = _isCombatActive.asStateFlow()
+
+    fun setCombatActive(active: Boolean) {
+        _isCombatActive.value = active
+    }
+
     init {
         if (context != null) {
             try {
@@ -751,7 +758,7 @@ class CombatNarrator(
     // =========================================================================
 
     fun narratePlayerTurn(hero: PartyMember, enemies: List<Enemy>, onDone: () -> Unit) {
-        if (!_isEyesFreeMode.value && !_isCombatNarrationEnabled.value) {
+        if (!_isCombatActive.value || (!_isEyesFreeMode.value && !_isCombatNarrationEnabled.value)) {
             onDone()
             return
         }
@@ -767,7 +774,7 @@ class CombatNarrator(
     }
 
     suspend fun narratePlayerTurnSuspend(hero: PartyMember, enemies: List<Enemy>, timeoutMs: Long = 8000L) {
-        if (!_isEyesFreeMode.value && !_isCombatNarrationEnabled.value) return
+        if (!_isCombatActive.value || (!_isEyesFreeMode.value && !_isCombatNarrationEnabled.value)) return
         if (tts == null || !isTtsInitialized) return
         withTimeoutOrNull(timeoutMs) {
             suspendCancellableCoroutine<Unit> { cont ->
@@ -789,7 +796,7 @@ class CombatNarrator(
         effectNote: String? = null,
         onDone: (() -> Unit)? = null
     ) {
-        if (!_isEyesFreeMode.value && !_isCombatNarrationEnabled.value) {
+        if (!_isCombatActive.value || (!_isEyesFreeMode.value && !_isCombatNarrationEnabled.value)) {
             onDone?.invoke()
             return
         }
@@ -823,7 +830,7 @@ class CombatNarrator(
         effectNote: String? = null,
         timeoutMs: Long = 8000L
     ) {
-        if (!_isEyesFreeMode.value && !_isCombatNarrationEnabled.value) return
+        if (!_isCombatActive.value || (!_isEyesFreeMode.value && !_isCombatNarrationEnabled.value)) return
         if (tts == null || !isTtsInitialized) return
         withTimeoutOrNull(timeoutMs) {
             suspendCancellableCoroutine<Unit> { cont ->
@@ -843,7 +850,7 @@ class CombatNarrator(
         statusNote: String? = null,
         onDone: (() -> Unit)? = null
     ) {
-        if (!_isEyesFreeMode.value && !_isCombatNarrationEnabled.value) {
+        if (!_isCombatActive.value || (!_isEyesFreeMode.value && !_isCombatNarrationEnabled.value)) {
             onDone?.invoke()
             return
         }
@@ -866,7 +873,7 @@ class CombatNarrator(
         statusNote: String? = null,
         timeoutMs: Long = 8000L
     ) {
-        if (!_isEyesFreeMode.value && !_isCombatNarrationEnabled.value) return
+        if (!_isCombatActive.value || (!_isEyesFreeMode.value && !_isCombatNarrationEnabled.value)) return
         if (tts == null || !isTtsInitialized) return
         withTimeoutOrNull(timeoutMs) {
             suspendCancellableCoroutine<Unit> { cont ->
@@ -878,7 +885,7 @@ class CombatNarrator(
     }
 
     fun narrateReinforcements(count: Int, enemyNames: List<String>, onDone: (() -> Unit)? = null) {
-        if (!_isEyesFreeMode.value && !_isCombatNarrationEnabled.value) {
+        if (!_isCombatActive.value || (!_isEyesFreeMode.value && !_isCombatNarrationEnabled.value)) {
             onDone?.invoke()
             return
         }
@@ -891,7 +898,7 @@ class CombatNarrator(
     }
 
     suspend fun narrateReinforcementsSuspend(count: Int, enemyNames: List<String>, timeoutMs: Long = 8000L) {
-        if (!_isEyesFreeMode.value && !_isCombatNarrationEnabled.value) return
+        if (!_isCombatActive.value || (!_isEyesFreeMode.value && !_isCombatNarrationEnabled.value)) return
         if (tts == null || !isTtsInitialized) return
         withTimeoutOrNull(timeoutMs) {
             suspendCancellableCoroutine<Unit> { cont ->
@@ -903,6 +910,10 @@ class CombatNarrator(
     }
 
     fun narrateStatus(party: List<PartyMember>, enemies: List<Enemy>, onDone: (() -> Unit)? = null) {
+        if (!_isCombatActive.value) {
+            onDone?.invoke()
+            return
+        }
         val aliveHeroes = party.filter { it.isAlive }
         val partyStatus = aliveHeroes.joinToString(", ") { "${it.name} at ${it.currentHp} HP" }
         val aliveEnemies = enemies.filter { it.isAlive }
@@ -914,6 +925,10 @@ class CombatNarrator(
     }
 
     fun narrateEnemies(enemies: List<Enemy>, onDone: (() -> Unit)? = null) {
+        if (!_isCombatActive.value) {
+            onDone?.invoke()
+            return
+        }
         val alive = enemies.filter { it.isAlive }
         val targeted = alive.firstOrNull { it.isTargeted }?.name ?: alive.firstOrNull()?.name
         val list = alive.mapIndexed { idx, e -> "Enemy ${idx + 1}, ${e.name} with ${e.currentHp} HP" }.joinToString(". ")
@@ -922,6 +937,10 @@ class CombatNarrator(
     }
 
     fun narrateParty(party: List<PartyMember>, onDone: (() -> Unit)? = null) {
+        if (!_isCombatActive.value) {
+            onDone?.invoke()
+            return
+        }
         val members = party.map {
             if (it.isAlive) "${it.name} the ${it.loreClass}, ${it.currentHp} HP" else "${it.name} has fallen"
         }.joinToString(". ")
@@ -930,6 +949,10 @@ class CombatNarrator(
     }
 
     fun narrateHelp(onDone: (() -> Unit)? = null) {
+        if (!_isCombatActive.value) {
+            onDone?.invoke()
+            return
+        }
         val text = "Voice commands. Say your spell name to cast. Say 'Status' for situation report. " +
                 "Say 'Enemies' for target scan. Say 'Pocket mode' to toggle audio guidance. " +
                 "Say 'Auto listen' to toggle hands-free mic. Say 'Options' to open settings."
@@ -937,7 +960,7 @@ class CombatNarrator(
     }
 
     fun narrateConclusion(isVictory: Boolean, onDone: (() -> Unit)? = null) {
-        if (!_isEyesFreeMode.value && !_isCombatNarrationEnabled.value) {
+        if (!_isCombatActive.value || (!_isEyesFreeMode.value && !_isCombatNarrationEnabled.value)) {
             onDone?.invoke()
             return
         }
@@ -950,7 +973,7 @@ class CombatNarrator(
     }
 
     suspend fun narrateConclusionSuspend(isVictory: Boolean, timeoutMs: Long = 8000L) {
-        if (!_isEyesFreeMode.value && !_isCombatNarrationEnabled.value) return
+        if (!_isCombatActive.value || (!_isEyesFreeMode.value && !_isCombatNarrationEnabled.value)) return
         if (tts == null || !isTtsInitialized) return
         withTimeoutOrNull(timeoutMs) {
             suspendCancellableCoroutine<Unit> { cont ->

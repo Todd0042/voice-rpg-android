@@ -202,6 +202,15 @@ class MainActivity : ComponentActivity() {
                 combatViewModel.setPureStoryMode(storyState.isPureStoryMode)
             }
 
+            LaunchedEffect(storyState.gameScreen) {
+                if (storyState.gameScreen != GameScreen.COMBAT_ARENA) {
+                    combatViewModel.pauseAtb()
+                }
+                if (storyState.gameScreen == GameScreen.TUTORIAL) {
+                    tutorialBattleViewModel.startTutorial()
+                }
+            }
+
             LaunchedEffect(storyState.currentScene.id, storyState.gameScreen) {
                 if (storyState.gameScreen == GameScreen.COMBAT_ARENA) {
                     musicManager.playCombatMusic()

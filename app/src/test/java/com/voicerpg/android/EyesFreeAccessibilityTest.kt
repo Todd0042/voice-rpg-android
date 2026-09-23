@@ -5,8 +5,13 @@ import com.voicerpg.android.audio.SpeechManager
 import com.voicerpg.android.engine.IntentParser
 import com.voicerpg.android.engine.NoveltyCache
 import com.voicerpg.android.engine.ResonanceEngine
+import com.voicerpg.android.model.BattleEnvironment
 import com.voicerpg.android.model.CombatPhase
+import com.voicerpg.android.model.Enemy
 import com.voicerpg.android.model.MetaCommand
+import com.voicerpg.android.model.PartyMember
+import com.voicerpg.android.model.Spell
+import com.voicerpg.android.model.SpellSchool
 import com.voicerpg.android.viewmodel.CombatViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -178,6 +183,7 @@ class EyesFreeAccessibilityTest {
 
     @Test
     fun testAtbLoopPausesWhenEyesFreeModeAndSpeakingActive() = runBlocking {
+        viewModel.restartBattle()
         dummyNarrator.setEyesFreeMode(true)
         dummyNarrator.setSpeakingForTesting(true)
 
@@ -202,6 +208,7 @@ class EyesFreeAccessibilityTest {
 
     @Test
     fun testAtbLoopDoesNotPauseWhenEyesFreeModeIsDisabled() = runBlocking {
+        viewModel.restartBattle()
         dummyNarrator.setEyesFreeMode(false)
         dummyNarrator.setSpeakingForTesting(true)
 
@@ -214,6 +221,93 @@ class EyesFreeAccessibilityTest {
         // In normal mode (eyes-free OFF), ATB continues fast and fluidly without pause
         val newHeroGauge = viewModel.state.value.party[0].atbGauge
         assertTrue("ATB gauges should advance when eyes-free mode is disabled", newHeroGauge > initialHeroGauge)
+    }
+
+    @Test
+    fun testCombatInactiveByDefaultAndNoMenuNarration() = runBlocking {
+        // Upon initialization, combat phase must be INACTIVE and narrator must NOT be active
+        assertEquals(CombatPhase.INACTIVE, viewModel.state.value.phase)
+        assertTrue(viewModel.state.value.enemies.isEmpty())
+        assertFalse(dummyNarrator.isCombatActive.value)
+
+        // Calling tactical narrator methods when combat is inactive should immediately no-op without speaking
+        var narrated = false
+        val hero = viewModel.state.value.party[0]
+        val enemies = listOf(Enemy("e1", "Dummy", "Minion", 100, 100, 10))
+        dummyNarrator.narratePlayerTurn(hero, enemies) {
+            narrated = true
+        }
+        assertTrue(narrated)
+        assertFalse(dummyNarrator.isSpeaking.value)
+
+        // Verify ticking ATB when INACTIVE does nothing
+        val gaugeBefore = viewModel.state.value.party[0].atbGauge
+        viewModel.tickAtb()
+        assertEquals(gaugeBefore, viewModel.state.value.party[0].atbGauge, 0.0001f)
+    }
+
+    @Test
+    fun testPureStoryModePrefersAoeWhenTwoOrMoreEnemiesAlive() {
+        val aoeSpell = Spell(
+            id = "chain_lightning",
+            name = "Chain Lightning",
+            school = SpellSchool.ELECTROMANCY,
+            basePower = 55,
+            mpCost = 25,
+            hitsAll = true,
+            description = "Strikes all foes",
+            exampleChant = "zap"
+        )
+        val singleTargetSpell = Spell(
+            id = "lightning_bolt",
+            name = "Lightning Bolt",
+            school = SpellSchool.ELECTROMANCY,
+            basePower = 85,
+            mpCost = 20,
+            hitsAll = false,
+            description = "Strikes single foe",
+            exampleChant = "bolt"
+        )
+        val testHero = PartyMember(
+            id = "hero",
+            name = "Test Hero",
+            loreClass = "Elementalist",
+            currentHp = 300,
+            maxHp = 300,
+            currentMp = 100,
+            maxMp = 100,
+            spells = listOf(singleTargetSpell, aoeSpell),
+            atbGauge = 1.0f
+        )
+        val enemy1 = Enemy("e1", "Goblin 1", "Grunt", 100, 100, 10)
+        val enemy2 = Enemy("e2", "Goblin 2", "Grunt", 100, 100, 10)
+
+        viewModel.startEncounter(
+            party = listOf(testHero),
+            enemies = listOf(enemy1, enemy2),
+            environment = BattleEnvironment.FOREST
+        )
+        viewModel.setPureStoryMode(true)
+        viewModel.pauseAtb()
+        viewModel.setPlayerInputPhaseForTesting("hero")
+
+        // When 2 or more enemies are alive, auto hero action should pick AOE spell
+        val chosenWithMultiple = viewModel.triggerAutoHeroAction(testHero)
+        assertEquals("Chain Lightning", chosenWithMultiple?.name)
+        assertTrue(chosenWithMultiple?.hitsAll == true)
+
+        // When only 1 enemy is alive, auto hero action should pick single target high power spell
+        val singleEnemy = Enemy("e1", "Goblin 1", "Grunt", 100, 100, 10)
+        viewModel.startEncounter(
+            party = listOf(testHero),
+            enemies = listOf(singleEnemy),
+            environment = BattleEnvironment.FOREST
+        )
+        viewModel.pauseAtb()
+        viewModel.setPlayerInputPhaseForTesting("hero")
+        val chosenWithSingle = viewModel.triggerAutoHeroAction(testHero)
+        assertEquals("Lightning Bolt", chosenWithSingle?.name)
+        assertFalse(chosenWithSingle?.hitsAll == true)
     }
 
     @Test

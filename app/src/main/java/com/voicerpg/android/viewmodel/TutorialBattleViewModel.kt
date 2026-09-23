@@ -108,7 +108,11 @@ class TutorialBattleViewModel(
     private var actionJob: Job? = null
 
     init {
-        applyStep(0)
+        applyStep(0, shouldNarrate = false)
+    }
+
+    fun startTutorial() {
+        applyStep(0, shouldNarrate = true)
     }
 
     private fun createInitialState(): TutorialBattleUiState {
@@ -228,7 +232,7 @@ class TutorialBattleViewModel(
         }
     }
 
-    private fun applyStep(index: Int) {
+    private fun applyStep(index: Int, shouldNarrate: Boolean = true) {
         val step = TutorialBattleContent.STEPS[index]
         when (step) {
             is TutorialBattleStep.IntroPopup -> {
@@ -243,7 +247,9 @@ class TutorialBattleViewModel(
                     modalHintChant = null,
                     modalSpellToCast = null
                 )
-                narrate(step.text, step.speaker)
+                if (shouldNarrate) {
+                    narrate(step.text, step.speaker)
+                }
             }
             is TutorialBattleStep.CharacterJoin -> {
                 // Add character to party if not present

@@ -60,6 +60,7 @@ fun InitiativeTrack(
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = when (phase) {
+                        CombatPhase.INACTIVE -> "⏸ COMBAT STANDBY"
                         CombatPhase.ATB_WAITING -> "⏳ TURN GAUGE CHARGING"
                         CombatPhase.PLAYER_INPUT -> "▶ PLAYER TURN (CHANT NOW)"
                         CombatPhase.INCANTATION_RESOLVING -> "⚡ RESOLVING LOGOS..."

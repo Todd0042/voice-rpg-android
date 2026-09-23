@@ -170,6 +170,7 @@ enum class CombatantFaction {
 }
 
 enum class CombatPhase {
+    INACTIVE,
     ATB_WAITING,
     PLAYER_INPUT,
     INCANTATION_RESOLVING,
