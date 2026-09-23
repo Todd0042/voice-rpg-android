@@ -229,8 +229,19 @@ class CombatViewModel(
         val aliveCount = _state.value.party.count { it.isAlive } + _state.value.enemies.count { it.isAlive }
         if (aliveCount > 0 && turnsTakenInRound >= aliveCount) {
             turnsTakenInRound = 0
-            _state.value = _state.value.copy(roundNumber = _state.value.roundNumber + 1)
+            _state.update { it.copy(roundNumber = it.roundNumber + 1) }
         }
+    }
+
+    // Atomic list mutation helpers: floating-text adds/removals fire from delayed coroutines where a
+    // plain `_state.value = _state.value.copy(...)` read-modify-write could otherwise lose a
+    // concurrently-added entry. All floating-text writes go through these (or an enclosing update{}).
+    private fun addFloatingText(fct: FloatingCombatText) {
+        _state.update { state -> state.copy(floatingTexts = state.floatingTexts + fct) }
+    }
+
+    private fun removeFloatingText(id: Long) {
+        _state.update { state -> state.copy(floatingTexts = state.floatingTexts.filterNot { it.id == id }) }
     }
 
     private fun createInitialState(): CombatState {
@@ -379,6 +390,17 @@ class CombatViewModel(
      */
     private fun beginPartyMemberTurn(heroId: String): Boolean {
         val member = _state.value.party.firstOrNull { it.id == heroId } ?: return false
+
+        // Guard fades the moment the guarding hero's own turn begins again: the taunt + -50%
+        // mitigation lasts at most ~one round and can never persist indefinitely while un-hit.
+        // (It still applies to every enemy strike during the interim via resolveEnemyStrike's
+        // GUARD_MULTIPLIER, and is cleared immediately on being struck.)
+        if (member.isGuarding) {
+            _state.update { state ->
+                state.copy(party = state.party.map { if (it.id == heroId) it.copy(isGuarding = false) else it })
+            }
+        }
+
         if (member.statuses.isEmpty()) return false
 
         val wasStunned = StatusSystem.isStunned(member.statuses)
@@ -391,26 +413,30 @@ class CombatViewModel(
             fell = newHp <= 0
             val (sx, sy) = partyFloatSlot(heroId)
             val fct = FloatingCombatText(text = "-$dot", color = Color(0xFF9CCC65), startX = sx, startY = sy)
-            _state.value = _state.value.copy(
-                party = _state.value.party.map {
-                    if (it.id == heroId) it.copy(
-                        currentHp = newHp,
-                        statuses = updated,
-                        stance = if (fell) CharacterStance.DEAD else it.stance,
-                        atbGauge = if (fell) 0f else it.atbGauge
-                    ) else it
-                },
-                floatingTexts = _state.value.floatingTexts + fct
-            )
+            _state.update { state ->
+                state.copy(
+                    party = state.party.map {
+                        if (it.id == heroId) it.copy(
+                            currentHp = newHp,
+                            statuses = updated,
+                            stance = if (fell) CharacterStance.DEAD else it.stance,
+                            atbGauge = if (fell) 0f else it.atbGauge
+                        ) else it
+                    },
+                    floatingTexts = state.floatingTexts + fct
+                )
+            }
             activeScope.launch {
                 delay(1200)
-                _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts.filter { it.id != fct.id })
+                removeFloatingText(fct.id)
             }
             combatNarrator.speak("${member.name} suffers $dot damage from ongoing effects.", force = false)
         } else {
-            _state.value = _state.value.copy(
-                party = _state.value.party.map { if (it.id == heroId) it.copy(statuses = updated) else it }
-            )
+            _state.update { state ->
+                state.copy(
+                    party = state.party.map { if (it.id == heroId) it.copy(statuses = updated) else it }
+                )
+            }
         }
 
         if (fell) {
@@ -418,10 +444,12 @@ class CombatViewModel(
             return true
         }
         if (wasStunned) {
-            _state.value = _state.value.copy(
-                party = _state.value.party.map { if (it.id == heroId) it.copy(atbGauge = 0f) else it },
-                activePartyMemberId = null
-            )
+            _state.update { state ->
+                state.copy(
+                    party = state.party.map { if (it.id == heroId) it.copy(atbGauge = 0f) else it },
+                    activePartyMemberId = null
+                )
+            }
             val stunStatus = member.statuses.firstOrNull { it.status == StatusId.OVERLOAD || it.status == StatusId.FREEZE }
             val stunDesc = when (stunStatus?.status) {
                 StatusId.FREEZE -> "is frozen solid"
@@ -470,21 +498,25 @@ class CombatViewModel(
                 if (dot > 0) {
                     val (sx, sy) = enemyFloatSlot(enemy.id)
                     val dotFct = FloatingCombatText(text = "-$dot", color = Color(0xFFFFAB40), startX = sx, startY = sy)
-                    _state.value = _state.value.copy(
-                        enemies = _state.value.enemies.map {
-                            if (it.id == enemy.id) it.copy(currentHp = selfNewHp, atbGauge = if (died) 0f else it.atbGauge, statuses = advanced) else it
-                        },
-                        floatingTexts = _state.value.floatingTexts + dotFct
-                    )
+                    _state.update { state ->
+                        state.copy(
+                            enemies = state.enemies.map {
+                                if (it.id == enemy.id) it.copy(currentHp = selfNewHp, atbGauge = if (died) 0f else it.atbGauge, statuses = advanced) else it
+                            },
+                            floatingTexts = state.floatingTexts + dotFct
+                        )
+                    }
                     activeScope.launch {
                         delay(1200)
-                        _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts.filterNot { f -> f.id == dotFct.id })
+                        removeFloatingText(dotFct.id)
                     }
                     combatNarrator.speak("${enemy.name} suffers $dot damage from ongoing effects.", force = false)
                 } else {
-                    _state.value = _state.value.copy(
-                        enemies = _state.value.enemies.map { if (it.id == enemy.id) it.copy(statuses = advanced) else it }
-                    )
+                    _state.update { state ->
+                        state.copy(
+                            enemies = state.enemies.map { if (it.id == enemy.id) it.copy(statuses = advanced) else it }
+                        )
+                    }
                 }
                 if (died) {
                     if (_state.value.enemies.none { it.isAlive }) {
@@ -495,9 +527,11 @@ class CombatViewModel(
                     return@launch
                 }
                 if (wasStunned) {
-                    _state.value = _state.value.copy(
-                        enemies = _state.value.enemies.map { if (it.id == enemy.id) it.copy(atbGauge = 0f) else it }
-                    )
+                    _state.update { state ->
+                        state.copy(
+                            enemies = state.enemies.map { if (it.id == enemy.id) it.copy(atbGauge = 0f) else it }
+                        )
+                    }
                     val stunStatus = livingSelf.statuses.firstOrNull { it.status == StatusId.OVERLOAD || it.status == StatusId.FREEZE }
                     val stunDesc = when (stunStatus?.status) {
                         StatusId.FREEZE -> "is frozen solid"
@@ -518,10 +552,10 @@ class CombatViewModel(
             if (phase != null && phase.note.isNotBlank()) {
                 val (px, py) = enemyFloatSlot(enemy.id)
                 val phaseFct = FloatingCombatText(text = phase.note, color = Color(0xFFFFD700), startX = px, startY = py, isCrit = true)
-                _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts + phaseFct)
+                addFloatingText(phaseFct)
                 activeScope.launch {
                     delay(1500)
-                    _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts.filterNot { f -> f.id == phaseFct.id })
+                    removeFloatingText(phaseFct.id)
                 }
                 combatNarrator.speak("${enemy.name} changes tactics! ${phase.note}", force = true)
                 delay(400)
@@ -598,10 +632,10 @@ class CombatViewModel(
                     startY = ey - 30f,
                     isCrit = true
                 )
-                _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts + ultFct)
+                addFloatingText(ultFct)
                 activeScope.launch {
                     delay(1800)
-                    _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts.filterNot { it.id == ultFct.id })
+                    removeFloatingText(ultFct.id)
                 }
             }
 
@@ -718,28 +752,34 @@ class CombatViewModel(
                 ) else it
             }
 
-            _state.value = _state.value.copy(
-                enemies = updatedEnemies,
-                party = updatedParty,
-                floatingTexts = _state.value.floatingTexts + newFloats
-            )
+            _state.update { state ->
+                state.copy(
+                    enemies = updatedEnemies,
+                    party = updatedParty,
+                    floatingTexts = state.floatingTexts + newFloats
+                )
+            }
 
             activeScope.launch {
                 delay(1200)
                 val idsToRemove = newFloats.map { f -> f.id }.toSet()
-                _state.value = _state.value.copy(
-                    floatingTexts = _state.value.floatingTexts.filterNot { f -> f.id in idsToRemove }
-                )
+                _state.update { state ->
+                    state.copy(
+                        floatingTexts = state.floatingTexts.filterNot { f -> f.id in idsToRemove }
+                    )
+                }
             }
 
             delay(300)
 
             // Restore damaged hero to READY if still alive
-            _state.value = _state.value.copy(
-                party = _state.value.party.map {
-                    if (it.isAlive && it.stance == CharacterStance.DAMAGED) it.copy(stance = CharacterStance.READY) else it
-                }
-            )
+            _state.update { state ->
+                state.copy(
+                    party = state.party.map {
+                        if (it.isAlive && it.stance == CharacterStance.DAMAGED) it.copy(stance = CharacterStance.READY) else it
+                    }
+                )
+            }
 
             // In Eyes-Free Pocket Mode, narrate enemy action and PAUSE until voice narration completes
             combatNarrator.narrateEnemyActionSuspend(
@@ -874,10 +914,10 @@ class CombatViewModel(
                 val hero = _state.value.party.firstOrNull { it.id == o.memberId }
                 val (lx, ly) = partyFloatSlot(o.memberId)
                 val fct = FloatingCombatText(text = "LEVEL ${hero?.level ?: o.newLevel}!", color = Color(0xFFFFD700), startX = lx, startY = ly, isCrit = true)
-                _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts + fct)
+                addFloatingText(fct)
                 activeScope.launch {
                     delay(1600)
-                    _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts.filterNot { f -> f.id == fct.id })
+                    removeFloatingText(fct.id)
                 }
             }
             combatNarrator.speak("Victory! ${lines}", force = false)
@@ -1005,15 +1045,15 @@ class CombatViewModel(
             "Zephyr descends from the rocky canyon rim with twin daggers flashing! 'I will not cut my tongue for your silence!' Zephyr defects to the fellowship!",
             force = true
         )
-        _state.value = _state.value.copy(
-            party = updatedParty,
-            floatingTexts = _state.value.floatingTexts + fct
-        )
+        _state.update { state ->
+            state.copy(
+                party = updatedParty,
+                floatingTexts = state.floatingTexts + fct
+            )
+        }
         activeScope.launch {
             delay(1500)
-            _state.value = _state.value.copy(
-                floatingTexts = _state.value.floatingTexts.filter { it.id != fct.id }
-            )
+            removeFloatingText(fct.id)
         }
     }
 
@@ -1068,16 +1108,20 @@ class CombatViewModel(
             } else hero
         }
 
-        _state.value = _state.value.copy(
-            party = updatedParty,
-            floatingTexts = _state.value.floatingTexts + newFloats
-        )
+        _state.update { state ->
+            state.copy(
+                party = updatedParty,
+                floatingTexts = state.floatingTexts + newFloats
+            )
+        }
 
         activeScope.launch {
             delay(2200)
-            _state.value = _state.value.copy(
-                floatingTexts = _state.value.floatingTexts.filterNot { ft -> newFloats.any { it.id == ft.id } }
-            )
+            _state.update { state ->
+                state.copy(
+                    floatingTexts = state.floatingTexts.filterNot { ft -> newFloats.any { it.id == ft.id } }
+                )
+            }
         }
     }
 
@@ -1112,10 +1156,10 @@ class CombatViewModel(
                 startX = 260f,
                 startY = 420f
             )
-            _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts + fct)
+            addFloatingText(fct)
             activeScope.launch {
                 delay(1000)
-                _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts.filter { it.id != fct.id })
+                removeFloatingText(fct.id)
             }
         }
     }
@@ -1130,10 +1174,10 @@ class CombatViewModel(
                 startX = 260f,
                 startY = 420f
             )
-            _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts + fct)
+            addFloatingText(fct)
             activeScope.launch {
                 delay(900)
-                _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts.filter { it.id != fct.id })
+                removeFloatingText(fct.id)
             }
             return
         }
@@ -1166,16 +1210,18 @@ class CombatViewModel(
                 startY = dy
             )
             lastActedHeroId = activeHero.id
-            _state.value = _state.value.copy(
-                party = _state.value.party.map {
-                    if (it.id == activeHero.id) it.copy(atbGauge = 0.35f, stance = CharacterStance.READY, isGuarding = true) else it
-                },
-                activePartyMemberId = null,
-                floatingTexts = _state.value.floatingTexts + fct
-            )
+            _state.update { state ->
+                state.copy(
+                    party = state.party.map {
+                        if (it.id == activeHero.id) it.copy(atbGauge = 0.35f, stance = CharacterStance.READY, isGuarding = true) else it
+                    },
+                    activePartyMemberId = null,
+                    floatingTexts = state.floatingTexts + fct
+                )
+            }
             activeScope.launch {
                 delay(1000)
-                _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts.filter { it.id != fct.id })
+                removeFloatingText(fct.id)
             }
             if (combatNarrator.isEyesFreeMode.value) {
                 combatNarrator.speakSuspend("${activeHero.name} braces and defends!", force = true)
@@ -1387,10 +1433,10 @@ class CombatViewModel(
                     startX = 500f,
                     startY = 400f
                 )
-                _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts + fct)
+                addFloatingText(fct)
                 activeScope.launch {
                     delay(1500)
-                    _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts.filter { it.id != fct.id })
+                    removeFloatingText(fct.id)
                 }
             }
             MetaCommand.ENABLE_EYES_FREE -> {
@@ -1454,10 +1500,10 @@ class CombatViewModel(
                     startX = 500f,
                     startY = 400f
                 )
-                _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts + fct)
+                addFloatingText(fct)
                 activeScope.launch {
                     delay(1500)
-                    _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts.filter { it.id != fct.id })
+                    removeFloatingText(fct.id)
                 }
             }
             MetaCommand.TOGGLE_NARRATION -> {
@@ -1477,10 +1523,10 @@ class CombatViewModel(
                     startX = 500f,
                     startY = 400f
                 )
-                _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts + fct)
+                addFloatingText(fct)
                 activeScope.launch {
                     delay(1500)
-                    _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts.filter { it.id != fct.id })
+                    removeFloatingText(fct.id)
                 }
             }
             MetaCommand.TOGGLE_READ_CHOICES -> {
@@ -1500,10 +1546,10 @@ class CombatViewModel(
                     startX = 500f,
                     startY = 400f
                 )
-                _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts + fct)
+                addFloatingText(fct)
                 activeScope.launch {
                     delay(1500)
-                    _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts.filter { it.id != fct.id })
+                    removeFloatingText(fct.id)
                 }
             }
             MetaCommand.TOGGLE_SPEAKER_ATTRIBUTION -> {
@@ -1523,10 +1569,10 @@ class CombatViewModel(
                     startX = 500f,
                     startY = 400f
                 )
-                _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts + fct)
+                addFloatingText(fct)
                 activeScope.launch {
                     delay(1500)
-                    _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts.filter { it.id != fct.id })
+                    removeFloatingText(fct.id)
                 }
             }
             MetaCommand.TOGGLE_MUSIC -> {
@@ -1546,10 +1592,10 @@ class CombatViewModel(
                     startX = 500f,
                     startY = 400f
                 )
-                _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts + fct)
+                addFloatingText(fct)
                 activeScope.launch {
                     delay(1500)
-                    _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts.filter { it.id != fct.id })
+                    removeFloatingText(fct.id)
                 }
             }
             MetaCommand.OPEN_OPTIONS -> {
@@ -1712,10 +1758,10 @@ class CombatViewModel(
                         startX = sx,
                         startY = sy
                     )
-                    _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts + fct)
+                    addFloatingText(fct)
                     activeScope.launch {
                         delay(1200)
-                        _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts.filter { it.id != fct.id })
+                        removeFloatingText(fct.id)
                     }
                     combatNarrator.speak("${switchTarget.name} is not ready yet ($pct% charged). It is ${activeHero.name}'s turn.", force = true) {
                         if (speechManager.isAutoListen.value) {
@@ -1823,10 +1869,10 @@ class CombatViewModel(
                 startX = hx,
                 startY = hy
             )
-            _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts + fct)
+            addFloatingText(fct)
             activeScope.launch {
                 delay(1400)
-                _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts.filter { it.id != fct.id })
+                removeFloatingText(fct.id)
             }
             val feedbackSpeech = if (!outOfTurnHero.isTurnReady) {
                 val pct = (outOfTurnHero.atbRatio * 100).toInt()
@@ -1859,14 +1905,16 @@ class CombatViewModel(
                     startX = mx,
                     startY = my
                 )
-                _state.value = _state.value.copy(
-                    phase = CombatPhase.PLAYER_INPUT,
-                    activePartyMemberId = activeHero.id,
-                    floatingTexts = _state.value.floatingTexts + fct
-                )
+                _state.update { state ->
+                    state.copy(
+                        phase = CombatPhase.PLAYER_INPUT,
+                        activePartyMemberId = activeHero.id,
+                        floatingTexts = state.floatingTexts + fct
+                    )
+                }
                 activeScope.launch {
                     delay(1400)
-                    _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts.filterNot { it.id == fct.id })
+                    removeFloatingText(fct.id)
                 }
                 combatNarrator.speak(
                     "Not enough mana. ${activeHero.name} needs ${parsed.spell.mpCost} but holds only ${activeHero.currentMp}." +
@@ -2119,15 +2167,17 @@ class CombatViewModel(
             startY = ay,
             isHeal = true
         )
-        _state.value = _state.value.copy(
-            party = _state.value.party.map {
-                if (it.id == member.id) it.copy(currentMp = (it.currentMp + restore).coerceAtMost(it.maxMp)) else it
-            },
-            floatingTexts = _state.value.floatingTexts + fct
-        )
+        _state.update { state ->
+            state.copy(
+                party = state.party.map {
+                    if (it.id == member.id) it.copy(currentMp = (it.currentMp + restore).coerceAtMost(it.maxMp)) else it
+                },
+                floatingTexts = state.floatingTexts + fct
+            )
+        }
         activeScope.launch {
             delay(1400)
-            _state.value = _state.value.copy(floatingTexts = _state.value.floatingTexts.filterNot { it.id == fct.id })
+            removeFloatingText(fct.id)
         }
         combatNarrator.speak("${member.name} breathes slow and steady; $restore mana returns.", force = false)
     }
@@ -2244,10 +2294,12 @@ class CombatViewModel(
             )
         }
 
-        _state.value = _state.value.copy(
-            party = updatedParty,
-            floatingTexts = _state.value.floatingTexts + newFloatingTexts
-        )
+        _state.update { state ->
+            state.copy(
+                party = updatedParty,
+                floatingTexts = state.floatingTexts + newFloatingTexts
+            )
+        }
 
         val targetDesc = if (spell.hitsAll) "the fellowship" else targetsToHeal.joinToString(", ") { it.name }
         combatNarrator.narrateSpellCastSuspend(
@@ -2263,9 +2315,11 @@ class CombatViewModel(
         activeScope.launch {
             delay(1200)
             val idsToRemove = newFloatingTexts.map { it.id }.toSet()
-            _state.value = _state.value.copy(
-                floatingTexts = _state.value.floatingTexts.filterNot { it.id in idsToRemove }
-            )
+            _state.update { state ->
+                state.copy(
+                    floatingTexts = state.floatingTexts.filterNot { it.id in idsToRemove }
+                )
+            }
         }
     }
 
@@ -2383,17 +2437,21 @@ class CombatViewModel(
             )
         }
 
-        _state.value = _state.value.copy(
-            enemies = finalEnemies,
-            floatingTexts = _state.value.floatingTexts + newFloatingTexts
-        )
+        _state.update { state ->
+            state.copy(
+                enemies = finalEnemies,
+                floatingTexts = state.floatingTexts + newFloatingTexts
+            )
+        }
 
         activeScope.launch {
             delay(1200)
             val idsToRemove = newFloatingTexts.map { it.id }.toSet()
-            _state.value = _state.value.copy(
-                floatingTexts = _state.value.floatingTexts.filterNot { it.id in idsToRemove }
-            )
+            _state.update { state ->
+                state.copy(
+                    floatingTexts = state.floatingTexts.filterNot { it.id in idsToRemove }
+                )
+            }
         }
 
         // Clear flash

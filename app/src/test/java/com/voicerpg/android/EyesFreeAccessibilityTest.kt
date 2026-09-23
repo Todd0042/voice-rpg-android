@@ -311,6 +311,45 @@ class EyesFreeAccessibilityTest {
     }
 
     @Test
+    fun testGuardExpiresWhenGuardingHeroBeginsTheirNextTurn() {
+        // A guarding hero's taunt + -50% mitigation must expire the moment their own next turn
+        // begins — it can never persist indefinitely while the hero stays un-hit.
+        val guardingHero = PartyMember(
+            id = "hero",
+            name = "Test Hero",
+            loreClass = "Elementalist",
+            currentHp = 300,
+            maxHp = 300,
+            currentMp = 100,
+            maxMp = 100,
+            spells = emptyList(),
+            atbGauge = 1.0f,
+            isGuarding = true
+        )
+        val enemy = Enemy("e1", "Dummy", "Minion", 100, 100, 10).copy(atbGauge = 0f)
+        viewModel.startEncounter(
+            party = listOf(guardingHero),
+            enemies = listOf(enemy),
+            environment = BattleEnvironment.FOREST
+        )
+        viewModel.pauseAtb()
+        viewModel.setPlayerInputPhaseForTesting("hero")
+        assertEquals(true, viewModel.state.value.party.first().isGuarding)
+
+        // Begin the hero's turn (the same entry point tickAtb uses before granting PLAYER_INPUT)
+        val beginTurn = viewModel.javaClass.getDeclaredMethod("beginPartyMemberTurn", String::class.java)
+        beginTurn.isAccessible = true
+        val consumed = beginTurn.invoke(viewModel, "hero") as Boolean
+
+        assertFalse("guard-only turn must not be consumed", consumed)
+        assertFalse(
+            "guard must expire at the start of the guard's own next turn",
+            viewModel.state.value.party.first().isGuarding
+        )
+        assertTrue("other guard state must be untouched", viewModel.state.value.party.first().isAlive)
+    }
+
+    @Test
     fun testStandbyTransitionAndCallback() {
         var standbyCalled = false
         dummySpeech.startListening(
