@@ -49,8 +49,4 @@ This repository contains the native Android implementation of *VoiceRPG: Echoes 
 * **Mandatory GitHub Release For Every Change:** For every change or feature completed, always tag, create, and publish a new GitHub release with the compiled `app-debug.apk` attached as an asset.
 * **Mandatory Phone Installation For Every Change:** For every change or feature completed, always automatically install the updated APK directly onto the user's connected phone via ADB (`adb install -r app/build/outputs/apk/debug/app-debug.apk`) without waiting to be asked.
 
----
-
-## 6. Standalone Engine Synchronization
-* **Engine Parity:** Any major engine-level feature, system capability, persistence improvement, audio option, or gameplay mode (e.g., Pure Story Mode auto-play, multi-slot `AtomicFile` persistence, narration playback rate controls, playstyle presets, cheat codes) added or updated in this repository MUST be synchronized to the standalone companion engine repository: `/home/todd/Documents/GitHub/voice-rpg-engine`.
 
