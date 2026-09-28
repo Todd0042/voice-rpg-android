@@ -1,13 +1,18 @@
 package com.voicerpg.engine.localization
 
 import android.content.Context
+import android.util.Log
 import com.google.mlkit.common.model.DownloadConditions
+import com.google.mlkit.common.model.RemoteModelManager
 import com.google.mlkit.nl.translate.TranslateLanguage
+import com.google.mlkit.nl.translate.TranslateRemoteModel
 import com.google.mlkit.nl.translate.Translation
 import com.google.mlkit.nl.translate.Translator
 import com.google.mlkit.nl.translate.TranslatorOptions
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -15,6 +20,13 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.resume
+
+enum class ModelDownloadStatus {
+    IDLE,
+    DOWNLOADING,
+    COMPLETED,
+    FAILED
+}
 
 /**
  * Universal On-Device Translation Engine.
@@ -28,6 +40,18 @@ object TranslationManager {
 
     private val _currentRegion = MutableStateFlow("")
     val currentRegion: StateFlow<String> = _currentRegion.asStateFlow()
+
+    // Download status for smart top-screen banner
+    private val _downloadStatus = MutableStateFlow(ModelDownloadStatus.IDLE)
+    val downloadStatus: StateFlow<ModelDownloadStatus> = _downloadStatus.asStateFlow()
+
+    private val _downloadProgress = MutableStateFlow(0f)
+    val downloadProgress: StateFlow<Float> = _downloadProgress.asStateFlow()
+
+    private val _downloadTargetName = MutableStateFlow("")
+    val downloadTargetName: StateFlow<String> = _downloadTargetName.asStateFlow()
+
+    private var progressJob: Job? = null
 
     // Version counter incremented when new dynamic translations arrive to trigger Compose recomposition
     private val _translationVersion = MutableStateFlow(0)
@@ -47,6 +71,10 @@ object TranslationManager {
     fun initialize(context: Context? = null) {
         appContext = context?.applicationContext
         loadAssetDictionary(_currentLanguage.value)
+    }
+
+    fun dismissDownloadBanner() {
+        _downloadStatus.value = ModelDownloadStatus.IDLE
     }
 
     fun loadAssetDictionary(lang: String) {
@@ -82,6 +110,7 @@ object TranslationManager {
             activeTranslator = null
             activeTargetLanguage = "en"
             isModelDownloaded = true
+            _downloadStatus.value = ModelDownloadStatus.IDLE
             return
         }
 
@@ -96,6 +125,16 @@ object TranslationManager {
                 else -> null
             }
 
+            val langDisplayName = when (cleanLang) {
+                "es" -> "Español"
+                "de" -> "Deutsch"
+                "fr" -> "Français"
+                "pt" -> "Português"
+                "it" -> "Italiano"
+                else -> cleanLang.uppercase()
+            }
+            _downloadTargetName.value = langDisplayName
+
             if (mlkitTarget != null) {
                 try {
                     val options = TranslatorOptions.Builder()
@@ -105,20 +144,90 @@ object TranslationManager {
                     val translator = Translation.getClient(options)
                     activeTranslator = translator
 
-                    val conditions = DownloadConditions.Builder().build()
-                    translator.downloadModelIfNeeded(conditions)
-                        .addOnSuccessListener {
-                            isModelDownloaded = true
-                            _translationVersion.value++
+                    // Check if already downloaded via RemoteModelManager
+                    val remoteModel = TranslateRemoteModel.Builder(mlkitTarget).build()
+                    val modelManager = RemoteModelManager.getInstance()
+                    modelManager.isModelDownloaded(remoteModel)
+                        .addOnSuccessListener { downloaded ->
+                            if (downloaded) {
+                                isModelDownloaded = true
+                                _downloadStatus.value = ModelDownloadStatus.IDLE
+                                _translationVersion.value++
+                                logInfo("TranslationManager", "MLKit neural model already present for $langDisplayName")
+                            } else {
+                                startDownload(translator, langDisplayName)
+                            }
                         }
                         .addOnFailureListener {
-                            isModelDownloaded = false
+                            startDownload(translator, langDisplayName)
                         }
-                } catch (_: Throwable) {
-                    // Headless JVM test or missing play services
+                } catch (t: Throwable) {
+                    logWarn("TranslationManager", "MLKit setup skipped: ${t.message}")
                 }
             }
         }
+    }
+
+    private fun logInfo(tag: String, msg: String) {
+        try {
+            Log.i(tag, msg)
+        } catch (_: Throwable) {
+            println("[$tag] $msg")
+        }
+    }
+
+    private fun logWarn(tag: String, msg: String) {
+        try {
+            Log.w(tag, msg)
+        } catch (_: Throwable) {
+            println("[$tag] $msg")
+        }
+    }
+
+    private fun startDownload(translator: Translator, langName: String) {
+        _downloadStatus.value = ModelDownloadStatus.DOWNLOADING
+        _downloadProgress.value = 0.05f
+
+        progressJob?.cancel()
+        progressJob = scope.launch {
+            var p = 0.05f
+            while (p < 0.90f) {
+                delay(250)
+                p += 0.02f
+                _downloadProgress.value = p
+            }
+        }
+
+        // Unconditionally allow cellular data - zero Wi-Fi pause
+        val conditions = DownloadConditions.Builder().build()
+        translator.downloadModelIfNeeded(conditions)
+            .addOnSuccessListener {
+                progressJob?.cancel()
+                _downloadProgress.value = 1.0f
+                _downloadStatus.value = ModelDownloadStatus.COMPLETED
+                isModelDownloaded = true
+                _translationVersion.value++
+                logInfo("TranslationManager", "MLKit neural model successfully downloaded for $langName")
+                // Show completed banner for 5 seconds then dismiss
+                scope.launch {
+                    delay(5000)
+                    if (_downloadStatus.value == ModelDownloadStatus.COMPLETED) {
+                        _downloadStatus.value = ModelDownloadStatus.IDLE
+                    }
+                }
+            }
+            .addOnFailureListener { error ->
+                progressJob?.cancel()
+                _downloadStatus.value = ModelDownloadStatus.FAILED
+                isModelDownloaded = false
+                logWarn("TranslationManager", "MLKit model download failed for $langName: ${error.message}")
+                scope.launch {
+                    delay(5000)
+                    if (_downloadStatus.value == ModelDownloadStatus.FAILED) {
+                        _downloadStatus.value = ModelDownloadStatus.IDLE
+                    }
+                }
+            }
     }
 
     /**

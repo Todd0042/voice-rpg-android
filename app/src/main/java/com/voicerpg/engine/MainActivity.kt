@@ -19,8 +19,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.lifecycleScope
@@ -28,6 +35,9 @@ import com.voicerpg.engine.audio.CombatNarrator
 import com.voicerpg.engine.audio.MusicManager
 import com.voicerpg.engine.audio.SpeechManager
 import com.voicerpg.engine.engine.SaveManager
+import com.voicerpg.engine.localization.ModelDownloadStatus
+import com.voicerpg.engine.localization.TranslationManager
+import com.voicerpg.engine.ui.setup.LanguageModelDownloadBanner
 import kotlinx.coroutines.launch
 import com.voicerpg.engine.model.GameScreen
 import com.voicerpg.engine.ui.combat.DebugWarpDialog
@@ -234,8 +244,26 @@ class MainActivity : ComponentActivity() {
             }
 
             VoiceRPGTheme {
-                Box(modifier = Modifier.fillMaxSize()) {
-                    when (storyState.gameScreen) {
+                val downloadStatus by TranslationManager.downloadStatus.collectAsState()
+                val downloadProgress by TranslationManager.downloadProgress.collectAsState()
+                val downloadTargetName by TranslationManager.downloadTargetName.collectAsState()
+
+                Column(modifier = Modifier.fillMaxSize()) {
+                    AnimatedVisibility(
+                        visible = downloadStatus != ModelDownloadStatus.IDLE,
+                        enter = expandVertically() + fadeIn(),
+                        exit = shrinkVertically() + fadeOut()
+                    ) {
+                        LanguageModelDownloadBanner(
+                            status = downloadStatus,
+                            progress = downloadProgress,
+                            languageName = downloadTargetName,
+                            onDismiss = { TranslationManager.dismissDownloadBanner() }
+                        )
+                    }
+
+                    Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                        when (storyState.gameScreen) {
                         GameScreen.LANGUAGE_SELECTION -> {
                             com.voicerpg.engine.ui.setup.LanguageSelectionScreen(
                                 initialLanguage = storyState.selectedLanguage,
@@ -621,6 +649,7 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+}
 
     override fun onDestroy() {
         super.onDestroy()
