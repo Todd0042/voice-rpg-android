@@ -1,132 +1,189 @@
 # VoiceRPG Android: Echoes of the Logos
 
-An immersive, voice-commanded retro JRPG designed natively for Android. All gameplay—incantations, tactical party combat, world exploration, dialogue choices, and game settings—can be commanded via natural voice or touch.
+[![Latest Release](https://img.shields.io/github/v/release/Todd0042/voice-rpg-android?label=Latest%20Release&color=blue)](https://github.com/Todd0042/voice-rpg-android/releases)
+[![Android](https://img.shields.io/badge/Android-15%20%7C%2016-green.svg)](https://developer.android.com/)
+[![Page Size](https://img.shields.io/badge/16%20KB-Compatible-success.svg)](https://developer.android.com/16kb-page-size)
+[![Kotlin](https://img.shields.io/badge/Kotlin-2.0.21-purple.svg)](https://kotlinlang.org/)
+[![Compose](https://img.shields.io/badge/Jetpack%20Compose-2024.10.01-4285F4.svg)](https://developer.android.com/jetpack/compose)
+[![Offline AI](https://img.shields.io/badge/AI-100%25%20On--Device-orange.svg)](https://developers.google.com/ml-kit)
+
+An immersive, voice-commanded retro JRPG engineered natively for Android. All gameplay—incantations, tactical ATB combat, visual novel story exploration, dialogue choices, and system settings—can be commanded completely hands-free via natural voice or classic retro touch controls.
 
 > [!NOTE]
-> For the complete architectural specification, system design, and mathematical formulas, see [DESIGN.md](DESIGN.md).  
-> For development guidelines and autonomous engineering principles, see [AGENTS.md](AGENTS.md).
+> * **Latest Testing Release:** [v1.6.50-preview](https://github.com/Todd0042/voice-rpg-android/releases/tag/v1.6.50-preview) (with downloadable standalone APK).
+> * **System Specifications & Formulas:** See [DESIGN.md](DESIGN.md).
+> * **Autonomous Engineering & Engine Rules:** See [AGENTS.md](AGENTS.md).
 
 ---
 
-## Core Pillars & Key Features
+## 🌟 Core Pillars & Key Features
 
-### 1. 100% Screenless & Pocket Mode (Audio-First Accessibility)
-* **Play Anywhere, Eyes-Free:** Play while walking with the phone in your pocket, or fully accessible for blind and visually impaired gamers.
-* **Continuous Hands-Free Voice Control:** Optional auto-listen microphone mode automatically re-arms after every action and dialogue utterance.
-* **On-the-Fly Voice Commands:**
-  * Tactical reports: *"Status"*, *"Enemies"*, *"Fellowship"*, *"Help"*.
-  * System toggles: *"Toggle narration"*, *"Read choices"*, *"Pocket mode"*, *"Auto listen"*, *"Open options"*, *"Close options"*.
-* **Multi-Voice TTS Character Engine:**
-  * Leverages Android's `android.speech.tts.Voice` API to dynamically bind distinct physical voice models to each character:
-    * **Sir Cedric:** Installed deep male baritone voice.
-    * **Aethel (Hero):** Heroic female / invocator voice.
-    * **Lyra:** Gentle druidic grove voice.
-    * **Narrator:** Impartial chronicle storyteller voice.
-  * Preserves subtle pitch and cadence shaping as secondary expressive accents.
+### 1. 🌐 Multilingual Voice Engine & Regional Dialects
+* **First-Launch Dialect Calibration:** On initial clean launch, the game presents a dedicated **Language & Regional Accent Setup Screen** before any title or menu displays.
+* **6 Fully Supported Languages:**
+  * 🇪🇸 **Spanish (`es`)**: Spain (Castilian), Mexico, Argentina, Colombia, etc.
+  * 🇩🇪 **German (`de`)**: Germany, Austria, Switzerland
+  * 🇫🇷 **French (`fr`)**: France, Canada, Belgium, Switzerland
+  * 🇵🇹 **Portuguese (`pt`)**: Brazil, Portugal
+  * 🇮🇹 **Italian (`it`)**: Italy, Switzerland
+  * 🇺🇸/🇬🇧 **English (`en`)**: US, UK, Australia, Canada, India, etc.
+* **Full On-Screen & Audio Localization:**
+  * All UI menus, character creation, story dialogues, prompt pills, options, and battle conclusion screens adapt instantly.
+  * `CombatNarrator` binds physical TTS voices corresponding to the player's chosen language and native regional dialect.
+  * Language-specific system commands (`commands_{lang}.json`) and incantation thesauri (`thesaurus.json`) allow voice navigation and spell chants in any supported language.
 
-### 2. Narrative Hubs & Completed Option Elimination
-* **No Endless Loops:** Dialogue hubs (e.g., Whispering Pines Camp, Solaria Aqueducts, the Belfry, and the Drowned Fane) track story progress with completion flags.
-* **Option Elimination:** When a sub-story or objective is completed, that option is eliminated from the choice list.
+---
+
+### 2. 📸 AI Selfie Hero Avatar & Neural Stylization
+* **Front-Facing Camera Capture:** Convert yourself into an authentic 16-bit JRPG protagonist using on-device computer vision.
+* **On-Device ML Kit & TFLite Pipeline:**
+  * **Face Detection & Landmark Extraction:** Automatically detects facial contours, eyes, nose, and mouth orientation.
+  * **Selfie Segmentation:** Isolates the player's head and hair silhouette from backgrounds.
+  * **Neural Style Transfer:** Synthesizes realistic lighting, skin tones, and palette quantization to match 90s classic pixel art.
+* **Customizable JRPG Likeness:**
+  * Detects and matches hair length, eye color, and facial orientation (aligned to standard 3/4 right view).
+  * Selectable retro JRPG hairstyles (Spiky, Short, Classic, Long).
+  * Hero attire overlays: Paladin Gold Plate, Forest Scout Mantle, Rogue Leather, and Mage Robes.
+  * Persistent portrait preview with sticky dialog presentation and memoir advisory disclaimers.
+
+---
+
+### 3. 🎧 100% Screenless & Pocket Mode (Audio-First Accessibility)
+* **Play Eyes-Free Anywhere:** Designed from the ground up to be played while walking with your phone in your pocket, or fully accessible for blind and visually impaired gamers.
+* **Continuous Hands-Free Voice Loop:** The microphone automatically re-arms after every spoken line and narrative beat.
+* **AMOLED Touch Guard:** A true-black interactive screen shield blocks accidental pocket taps while keeping audio, TTS, and microphone listening active.
+* **Instant Playstyle Presets:**
+  * **🎧 Pocket Walk:** Screen dark & protected, auto-listen active, full immersive voice narration.
+  * **📖 Storybook:** Hands-free listening with screen awake, full audio drama.
+  * **🎮 Classic Tactical:** Visual RPG layout with manual mic activation and classic touch inputs.
+* **Voice Meta-Commands:** Spoken queries available anytime:
+  * *"Status"*, *"Enemies"*, *"Fellowship"*, *"Help"*, *"Read choices"*, *"Toggle narration"*, *"Pocket mode"*, *"Auto listen"*, *"Open options"*.
+
+---
+
+### 4. 📖 Narrative Hubs & Pure Story Mode
+* **No Endless Loops:** Branching narrative hubs track progression with atomic completion flags. Completed choices are automatically eliminated upon return.
 * **Milestone Progression:** Once all sub-stories in a hub are explored, the story automatically advances to the next chapter.
-* **16-Bit JRPG Presentation:** Character portraits on left and right flanks with speaking animations and vintage dialogue bubbles over atmospheric environmental backgrounds.
-
-### 3. Party Roster Fidelity & Dynamic Scalability
-* **Story-Grounded Combat:** Combat encounters strictly reflect active story party members:
-  * **Act I (Chapters 1–4):** Strictly the **Duo Fellowship** (Aethel + Sir Cedric).
-  * **Act II Chapter 5:** Duo rescue mission into the Rotting Marsh.
-  * **Act II Chapter 6:** **Trio Fellowship** (Aethel, Sir Cedric, and recruited Grove Warden Lyra).
-* **Flexible Engine Architecture:** Supports battles up to 4 heroes vs. 6 enemies with front/back rows and dynamic mid-battle reinforcements/summons (up to a strict 6-enemy cap).
-
-### 4. Character Creation & Persistent Save System
-* **Initial Loadout:** Custom hero name, class selection (*Elementalist, Templar, Grove Warden, Shadowblade*), and starter aesthetic aura colors.
-* **Robust JSON Persistence (`SaveManager`):** Automatically saves every decision made, completed choice IDs, party stats, defeated encounters, and audio settings across app restarts.
-
-### 5. On-Device Incantation Resonance Engine
-* 100% offline, zero-cloud speech recognition via Android's `SpeechRecognizer`.
-* Evaluates spoken chants across 5 pillars: Thematic Vocabulary Density, Lexical Richness & Cadence, Acoustic Volume, Pitch Modulation, and Anti-Repetition Novelty.
-* Rewards creative, expressive chants with up to a **+200% bonus to damage/healing** and visual particle scaling up to **450+ particles** with screen-splitting shockwaves.
+* **Dedicated "Pure Story Mode":** Players who wish to experience the narrative without tactical friction can enable Pure Story Mode to streamline combat resolution.
+* **Chronicle Archives & Warp Menu:** Review past story chapters, companion bonds, unlocked lore, and warp directly to any reached milestone.
+* **Isolated Multi-Slot Persistence (`SaveManager`):** Atomic local JSON saves (`save_slot_1.json`, etc.) with cloud auto-backup disabled to ensure total privacy and clean resets.
 
 ---
 
-## Story Overview & Campaign Roadmap
+### 5. ⚔️ Tactical ATB Combat & Incantation Resonance
+* **Dynamic ATB Initiative:** Agility-driven Active Time Battle system featuring hero flanks, front/back positioning, and dynamic enemy reinforcements (up to a 6-enemy cap).
+* **Restored 32-Bit Party Sprites:** Distinct animated retro sprites for the entire fellowship: Aethel, Sir Cedric, Lyra, and Zephyr.
+* **5-Pillar Acoustic & Lexical Resonance Engine:**
+  * 100% offline speech recognition via Android's `SpeechRecognizer`.
+  * Graded across: Thematic Vocabulary Density, Lexical Cadence, Acoustic Volume, Pitch Modulation, and Anti-Spam Novelty.
+  * Unleash up to a **+200% Transcendental damage/healing multiplier** accompanied by screen-splitting shockwaves and 450+ particle VFX explosions.
 
-* **Act I: The Falling Silence Shattered (Chapters 1–4):**
-  * *Prologue:* Awakening in Whispering Pines; harnessing the spoken Logos.
-  * *Chapter 1:* Repelling the Forest Ambush at the Old Way Shrine with Sir Cedric.
+---
+
+## 📜 Story Overview & Campaign Roadmap
+
+* **Act I: The Falling Silence Shattered (Chapters 1–4)**
+  * *Prologue:* Awakening in Whispering Pines; awakening the spoken Logos.
+  * *Chapter 1:* Forest Ambush at the Old Way Shrine with Sir Cedric.
   * *Chapter 2:* Campfire fellowship and investigating the petrified village.
-  * *Chapter 3:* The Solaria Aqueduct infiltration, corrupted sentinels, and tuning fork discovery.
-  * *Chapter 4:* Breaching the Sun-Tower Belfry, garrison battle, and tolling the First Great Bell of Solaria!
-* **Act II: The Severed Resonance (Chapters 5–8):**
-  * *Chapter 5: The Drowned Fane & The Briar Cage:* Descent into the Rotting Marsh; assaulting the Blight Binder's lair to rescue Lyra (Duo party).
-  * *Chapter 6: The Warden's Oath & The Weeping Willow:* Lyra officially joins the fellowship; Trio battle against the Bog Behemoth to purify the sacred pool and uncover the Second Great Bell.
-  * *Chapter 7: Tuning the Veridian Chime:* Trio fellowship strikes the botanical fork, reads the First Word steles, slays the Ancient Mire Wyrm, and tolls the Second Bell to drain the marshes.
-  * *Chapter 8: The Shadowed Crags & The Silent Blade:* Ambush by Executioner Kaelen; mid-battle defection of assassin Zephyr to forge the 4-hero Quad Fellowship!
-* **Act III: The Crucible of Oaths — Companion Trials (Chapters 9–11):**
-  * *Chapter 9: The Broken Vow of Dawn (Sir Cedric's Trial):* In the Mausoleum of the Sun, Cedric confronts the shade of Grandmaster Galahault, unlocking the Master Chant: *Aegis of the Dawn*.
-  * *Chapter 10: The Song of the Mute Grove (Lyra's Trial):* In the Emerald Choir, Lyra cleanses the venom spring and crushes the Blighted Broodmother, awakening 30 singing dryads and unlocking *Verdant Cataclysm*.
-  * *Chapter 11: The Silent Blade's Reckoning (Zephyr's Trial):* In the Blind Gorge, Zephyr disarms sonic mines and slays Master Nocturne, shattering the Black Guild and unlocking *Umbral Oblivion*.
-* **Act IV: Ascent of the Monolith (Chapters 12–14):**
-  * *Chapter 12: Awakening the Third Bell:* Assaulting the Clockwork Bastion, shutting down the steam grid, defeating Warmaster Ouros, tolling the Resonant Bastion, and raising the sky bridge!
-  * *Chapter 13: Breach of the Silent Citadel:* Shattering the black glass gate and defeating Commander Vaelor wielding the Void Horn.
-  * *Chapter 14: The Void Reservoir:* Diving into the lake of liquid silence, defeating the Abyssal Leviathan, and freeing millions of captive voice motes that illuminate the Celestial Ribbon Stair.
-* **Act V & Epilogue: The Primordial Syllable & The Great Awakening (Chapters 15–16 & Epilogue):**
-  * *Chapter 15: Ascent of the Celestial Spire:* Fellowship vigils on the threshold of eternity; proving resonance against the Archon Custodians.
-  * *Chapter 16: The Primordial Syllable (Grand Finale):* Confronting Grand Inquisitor Malakor (The Mute Sovereign). In Phase 3, Malakor suppresses all sound ("The Death of Voice"); speaking the 4-line Primordial Incantation in unison shatters the silence, granting a guaranteed 200% Transcendental Multiplier that redeems Malakor.
-  * *Epilogue: The Great Awakening:* Tolling the Bell of Eternity alongside all 4 Great Bells; Whispering Pines unfreezes, voices return to every living soul across Aethelgard, companion destinies are fulfilled, and the First Invocator of the New Age keeps eternal vigil!
+  * *Chapter 3:* Solaria Aqueduct infiltration, corrupted sentinels, and the first tuning fork.
+  * *Chapter 4:* Breaching the Sun-Tower Belfry and tolling the First Great Bell of Solaria!
+* **Act II: The Severed Resonance (Chapters 5–8)**
+  * *Chapter 5 (The Drowned Fane):* Descent into the Rotting Marsh to rescue Lyra (Duo party).
+  * *Chapter 6 (The Warden's Oath):* Lyra joins the fellowship; Trio battle against the Bog Behemoth to purify the sacred pool.
+  * *Chapter 7 (Tuning the Veridian Chime):* Striking the botanical fork, reading the First Word steles, and tolling the Second Bell.
+  * *Chapter 8 (The Shadowed Crags):* Ambush by Executioner Kaelen and defection of assassin Zephyr to forge the 4-hero Quad Fellowship!
+* **Act III: The Crucible of Oaths — Companion Trials (Chapters 9–11)**
+  * *Chapter 9 (Sir Cedric's Trial):* In the Mausoleum of the Sun, Cedric confronts Grandmaster Galahault, unlocking *Aegis of the Dawn*.
+  * *Chapter 10 (Lyra's Trial):* In the Emerald Choir, Lyra cleanses the venom spring and unlocks *Verdant Cataclysm*.
+  * *Chapter 11 (Zephyr's Trial):* In the Blind Gorge, Zephyr slays Master Nocturne, unlocking *Umbral Oblivion*.
+* **Act IV: Ascent of the Monolith (Chapters 12–14)**
+  * *Chapter 12 (The Clockwork Bastion):* Shutting down the steam grid, defeating Warmaster Ouros, and raising the sky bridge.
+  * *Chapter 13 (The Silent Citadel):* Shattering the black glass gate and defeating Commander Vaelor.
+  * *Chapter 14 (The Void Reservoir):* Defeating the Abyssal Leviathan and liberating captive voice motes to illuminate the Celestial Stair.
+* **Act V & Epilogue: The Primordial Syllable & The Great Awakening (Chapters 15–16 & Epilogue)**
+  * *Chapter 15 (Celestial Spire):* Fellowship vigils on the threshold of eternity against Archon Custodians.
+  * *Chapter 16 (The Primordial Syllable):* Confronting Grand Inquisitor Malakor; speaking the 4-line Primordial Incantation in unison shatters the silence.
+  * *Epilogue (The Great Awakening):* Tolling the Bell of Eternity; voices return to every living soul across Aethelgard.
 
 ---
 
-## Technical Architecture
+## 🏗️ Technical Architecture & Project Structure
 
 ```
-app/src/main/java/com/voicerpg/android/
-├── MainActivity.kt               # Entrypoint & Compose window root
-├── audio/
-│   ├── CombatNarrator.kt        # Multi-voice TTS & screenless accessibility engine
-│   └── SpeechManager.kt         # On-device SpeechRecognizer wrapper
-├── engine/
-│   ├── ClassSpellLibrary.kt     # Class abilities, spells, and starting stats
-│   ├── IntentParser.kt          # Dual-stream voice command & spell intent parser
-│   ├── ResonanceEngine.kt       # 5-pillar acoustic & lexical resonance grader
-│   ├── SaveManager.kt           # JSON save file serializer / deserializer
-│   ├── StoryEncounters.kt       # Canonical encounters & dynamic reinforcement definitions
-│   └── StoryScript.kt           # Dialogue nodes, choice hubs, and narrative scenes
-├── model/
-│   ├── CombatModels.kt          # ATB, party members, enemies, and spell data models
-│   ├── SaveModels.kt            # Save state data classes
-│   └── StoryModels.kt           # Dialogue speaker, scenes, and choice models
-├── ui/
-│   ├── combat/                  # Side-view battle arena, living 4-frame backgrounds, ATB HUD
-│   ├── creation/                # Character creation loadout screen
-│   ├── dialogue/                # 16-bit JRPG dialogue bubble & portrait overlay
-│   └── story/                   # Story exploration screen & options modal
-└── viewmodel/
-    ├── CombatViewModel.kt       # 60 FPS ATB battle state machine & voice combat dispatcher
-    └── StoryViewModel.kt        # Exploration, persistence, and dialogue state manager
+app/src/main/
+├── assets/
+│   ├── environments/         # 16-bit scenic backdrops (landscape & portrait)
+│   ├── game/
+│   │   ├── commands/         # Localized voice command definitions (de, en, es, fr, it, pt)
+│   │   ├── spells/           # Incantation catalogs & multilingual thesaurus
+│   │   ├── story/            # Narrative dialogue nodes & scene configurations
+│   │   └── encounters/       # Monster stats, affinities, and enemy groups
+│   └── story/                # Atmospheric chapter narrative backgrounds
+└── java/com/voicerpg/engine/
+    ├── MainActivity.kt       # Screen navigation & root Compose entry point
+    ├── audio/
+    │   ├── CombatNarrator.kt # Multi-voice TTS, physical voice bindings & auto-listen
+    │   └── SpeechManager.kt  # On-device SpeechRecognizer wrapper & permission handler
+    ├── engine/
+    │   ├── IntentParser.kt   # Dual-stream voice command & spell intent parser
+    │   ├── ResonanceEngine.kt# 5-pillar acoustic & lexical resonance grader
+    │   ├── SaveManager.kt    # Scoped internal JSON persistence & global settings
+    │   └── SpellThesaurus.kt # Multilingual semantic matcher for incantations
+    ├── localization/
+    │   └── TranslationManager.kt # Real-time UI & dialogue translation engine
+    ├── model/
+    │   ├── CommandCatalog.kt # Data classes for localized meta-commands
+    │   ├── LanguageCatalog.kt# Supported languages, dialect regions & TTS voice mappings
+    │   └── StoryModels.kt    # Dialogue nodes, choices, and state flags
+    ├── ui/
+    │   ├── combat/           # Retro battle arena, ATB timeline & status indicators
+    │   ├── creation/         # Selfie portrait camera, ML Kit facial stylizer, and class picker
+    │   ├── setup/            # LanguageSelectionScreen & AudioSetupScreen
+    │   ├── story/            # 16-bit dialogue bubble presentation & narrative choices
+    │   └── title/            # Title screen, save slot management, and chronicle archives
+    └── viewmodel/
+        ├── CombatViewModel.kt# 60 FPS ATB battle state machine & voice combat dispatcher
+        └── StoryViewModel.kt # Global navigation, save persistence & dialogue manager
 ```
 
 ---
 
-## Building, Testing & Deployment
+## 🔧 Building, Testing & Deployment
 
-### Build & Run Tests
+### Build Requirements
+* **Android Studio:** Hedgehog | Iguana | Jellyfish | Koala | Ladybug
+* **JDK:** Version 17
+* **Android SDK:** `compileSdk = 35`, `minSdk = 26`, `targetSdk = 35`
+* **16 KB Compatibility:** Native packaging configured with `useLegacyPackaging = false` for Android 15/16 16 KB page-size compatibility.
+
+### Run Tests
 ```bash
-# Run all unit and regression tests
-./gradlew test
+# Run complete unit test suite
+./gradlew testDebugUnitTest
+```
 
-# Assemble debug APK
+### Build APKs
+```bash
+# Build debug APK (includes developer diagnostic overlays)
 ./gradlew assembleDebug
-```
-The compiled APK will be located at: `app/build/outputs/apk/debug/app-debug.apk`.
 
-### Wi-Fi ADB Direct Deployment
+# Build release APK (signed with debug key for direct sideloading)
+./gradlew assembleRelease
+```
+The compiled release APK will be located at:  
+`app/build/outputs/apk/release/app-release.apk`.
+
+### Sideload via ADB
 ```bash
-# Verify connected wireless device
-adb devices
+# Install release APK to connected phone
+adb install -r app/build/outputs/apk/release/app-release.apk
 
-# Install APK directly over Wi-Fi
-adb install -r app/build/outputs/apk/debug/app-debug.apk
-
-# Launch the game
-adb shell am start -n com.voicerpg.android/.MainActivity
+# Launch app directly
+adb shell am start -n com.voicerpg.android/com.voicerpg.engine.MainActivity
 ```
+
+---
+
+## 🤝 Community & Contributions
+Pull requests and bug reports are welcome! When adding new localized dialects, voice commands, or story branches, ensure all changes pass `./gradlew testDebugUnitTest` and adhere to the guidelines in [AGENTS.md](AGENTS.md).
