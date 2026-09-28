@@ -20,6 +20,29 @@
     { "id": "castle", "label": "High Citadel", "assetPath": "environments/castle.jpg" },
     { "id": "cave", "label": "Crystal Cavern", "assetPath": "environments/cave.jpg" }
   ],
+  "tfliteStylization": {
+    "enabledByDefault": true,
+    "modelAssetPath": "game/creation/models/anime_style.tflite",
+    "label": "🎨 JRPG Anime Neural Style",
+    "description": "On-device deep neural network transforming your portrait into anime line-and-wash art",
+    "inputSize": 256
+  },
+  "celShading": {
+    "enabledByDefault": false,
+    "label": "✨ Cel-Shaded Anime Style",
+    "description": "Luminance-quantized anime shading with warm highlights and Solaria indigo shadows",
+    "bands": 4,
+    "smoothRadius": 2,
+    "shadowCoolingFactor": 0.14
+  },
+  "inkOutlines": {
+    "enabledByDefault": false,
+    "label": "🖋️ Chronicle Ink Outlines",
+    "description": "Hand-drawn line-art contours and realm silhouette definition",
+    "inkColorHex": "#18142A",
+    "sensitivity": 1.05,
+    "outlineSilhouette": true
+  },
   "eyeEffect": {
     "enabledByDefault": true,
     "label": "✨ Logos Eye Resonance",

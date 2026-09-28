@@ -58,6 +58,32 @@ class SelfieFilterConfigTest {
     }
 
     @Test
+    fun testCelShadingAndInkOutlineConfigs() {
+        val cel = GameContent.selfieConfig.celShading
+        assertNotNull("Cel shading config should be present", cel)
+        assertTrue("Cel shading label must not be blank", cel!!.label.isNotBlank())
+        assertTrue("Bands must be between 2 and 6", cel.bands in 2..6)
+        assertTrue("Smooth radius must be positive", cel.smoothRadius > 0)
+
+        val ink = GameContent.selfieConfig.inkOutlines
+        assertNotNull("Ink outline config should be present", ink)
+        assertTrue("Ink outline label must not be blank", ink!!.label.isNotBlank())
+        assertTrue("Ink color must start with #", ink.inkColorHex.startsWith("#"))
+        assertTrue("Sensitivity must be positive", ink.sensitivity > 0f)
+    }
+
+    @Test
+    fun testTFLiteStylizationConfig() {
+        val tflite = GameContent.selfieConfig.tfliteStylization
+        assertNotNull("TFLite stylization config should be present", tflite)
+        assertTrue("TFLite label must not be blank", tflite!!.label.isNotBlank())
+        assertTrue("Model asset path must not be blank", tflite.modelAssetPath.isNotBlank())
+        val file = File("app/src/main/assets/${tflite.modelAssetPath}")
+        assertTrue("Model file must exist at ${file.path}", file.exists() || File("src/main/assets/${tflite.modelAssetPath}").exists())
+        assertEquals(256, tflite.inputSize)
+    }
+
+    @Test
     fun testDefaultFallbackWhenConfigAbsent() {
         val emptySource = object : ContentSource {
             override fun readText(path: String): String? = null
@@ -66,5 +92,8 @@ class SelfieFilterConfigTest {
         val pack = GameContentLoader(emptySource).load()
         assertFalse("SelfieFilterConfig should be disabled by default if missing", pack.manifest.selfieConfig.isEnabled)
         assertTrue("Available backgrounds should be empty in fallback", pack.manifest.selfieConfig.availableBackgrounds.isEmpty())
+        org.junit.Assert.assertNull("TFLite stylization should be null in fallback", pack.manifest.selfieConfig.tfliteStylization)
+        org.junit.Assert.assertNull("Cel shading should be null in fallback", pack.manifest.selfieConfig.celShading)
+        org.junit.Assert.assertNull("Ink outlines should be null in fallback", pack.manifest.selfieConfig.inkOutlines)
     }
 }

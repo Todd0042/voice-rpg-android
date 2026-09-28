@@ -65,6 +65,15 @@ fun SelfieFilterDialog(
         mutableStateOf(filterConfig.availableBackgrounds.firstOrNull()?.assetPath)
     }
 
+    var applyTFLite by remember {
+        mutableStateOf(filterConfig.tfliteStylization?.enabledByDefault ?: false)
+    }
+    var applyCelShading by remember {
+        mutableStateOf(filterConfig.celShading?.enabledByDefault ?: false)
+    }
+    var applyInkOutlines by remember {
+        mutableStateOf(filterConfig.inkOutlines?.enabledByDefault ?: false)
+    }
     var applyEyeEffect by remember {
         mutableStateOf(filterConfig.eyeEffect?.enabledByDefault ?: false)
     }
@@ -79,7 +88,7 @@ fun SelfieFilterDialog(
     var isProcessing by remember { mutableStateOf(true) }
 
     // Re-process image whenever any filter setting or chosen background changes
-    LaunchedEffect(applySegmentation, selectedBgAsset, applyEyeEffect, applyScanlines, applyColorGrade) {
+    LaunchedEffect(applySegmentation, selectedBgAsset, applyTFLite, applyCelShading, applyInkOutlines, applyEyeEffect, applyScanlines, applyColorGrade) {
         isProcessing = true
         val result = SelfiePortraitProcessor.processSelfie(
             context = context,
@@ -87,6 +96,9 @@ fun SelfieFilterDialog(
             filterConfig = filterConfig,
             selectedBgAsset = if (applySegmentation) selectedBgAsset else null,
             applySegmentation = applySegmentation && !selectedBgAsset.isNullOrBlank(),
+            applyTFLite = applyTFLite,
+            applyCelShading = applyCelShading,
+            applyInkOutlines = applyInkOutlines,
             applyEyeEffect = applyEyeEffect,
             applyScanlines = applyScanlines,
             applyColorGrade = applyColorGrade
@@ -172,6 +184,39 @@ fun SelfieFilterDialog(
                 }
 
                 Spacer(modifier = Modifier.height(14.dp))
+
+                // Filter Option: Neural Anime Stylization (TFLite)
+                filterConfig.tfliteStylization?.let { tflite ->
+                    FilterToggleRow(
+                        label = tflite.label,
+                        description = tflite.description,
+                        checked = applyTFLite,
+                        onCheckedChange = { applyTFLite = it }
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                }
+
+                // Filter Option: Cel-Shading (Anime Style)
+                filterConfig.celShading?.let { cel ->
+                    FilterToggleRow(
+                        label = cel.label,
+                        description = cel.description,
+                        checked = applyCelShading,
+                        onCheckedChange = { applyCelShading = it }
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                }
+
+                // Filter Option: Stylized Ink Outlines
+                filterConfig.inkOutlines?.let { ink ->
+                    FilterToggleRow(
+                        label = ink.label,
+                        description = ink.description,
+                        checked = applyInkOutlines,
+                        onCheckedChange = { applyInkOutlines = it }
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                }
 
                 // Filter Option: Eye Effect
                 filterConfig.eyeEffect?.let { eye ->

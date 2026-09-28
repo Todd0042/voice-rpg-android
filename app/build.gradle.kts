@@ -20,11 +20,8 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
+            isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("debug")
             buildConfigField("boolean", "DEBUG_WARP_MENU", "false")
         }
         debug {
@@ -49,12 +46,15 @@ android {
     }
 
     androidResources {
-        noCompress += listOf("ogg")
+        noCompress += listOf("ogg", "tflite")
     }
 
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
+        jniLibs {
+            useLegacyPackaging = true
         }
     }
 }
@@ -85,6 +85,10 @@ dependencies {
     // MLKit for Custom Selfie Portrait Generation
     implementation("com.google.mlkit:segmentation-selfie:16.0.0-beta6")
     implementation("com.google.mlkit:face-detection:16.1.7")
+
+    // TensorFlow Lite for Neural Stylization
+    implementation("org.tensorflow:tensorflow-lite:2.16.1")
+    implementation("org.tensorflow:tensorflow-lite-support:0.4.4")
 
     // Testing
     testImplementation("junit:junit:4.13.2")

@@ -20,19 +20,27 @@ import com.google.mlkit.vision.face.FaceDetectorOptions
 import com.google.mlkit.vision.face.FaceLandmark
 import com.google.mlkit.vision.segmentation.Segmentation
 import com.google.mlkit.vision.segmentation.selfie.SelfieSegmenterOptions
+import com.voicerpg.engine.model.CelShadingConfig
 import com.voicerpg.engine.model.ColorGradeConfig
 import com.voicerpg.engine.model.EyeEffectConfig
+import com.voicerpg.engine.model.InkOutlineConfig
 import com.voicerpg.engine.model.ScanlineConfig
 import com.voicerpg.engine.model.SelfieFilterConfig
+import com.voicerpg.engine.model.TFLiteStylizeConfig
 import com.voicerpg.engine.model.VignetteConfig
 import com.voicerpg.engine.engine.SaveManager
 import com.voicerpg.engine.ui.story.StoryAssetLoader
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
+import org.tensorflow.lite.Interpreter
 import java.io.File
+import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import java.nio.MappedByteBuffer
+import java.nio.channels.FileChannel
 import kotlin.coroutines.resume
 import kotlin.math.hypot
 import kotlin.math.min
@@ -104,6 +112,9 @@ object SelfiePortraitProcessor {
         filterConfig: SelfieFilterConfig,
         selectedBgAsset: String? = null,
         applySegmentation: Boolean = true,
+        applyTFLite: Boolean = true,
+        applyCelShading: Boolean = true,
+        applyInkOutlines: Boolean = true,
         applyEyeEffect: Boolean = true,
         applyScanlines: Boolean = true,
         applyColorGrade: Boolean = true
@@ -111,23 +122,48 @@ object SelfiePortraitProcessor {
         // 1. Center crop and scale to square 512x512
         val squareInput = cropAndScale(inputBitmap, PORTRAIT_SIZE)
 
-        // 2. AI Background Segmentation & Background Replacement
-        val composited = if (applySegmentation && !selectedBgAsset.isNullOrBlank()) {
-            val maskBuffer = runSegmentation(squareInput)
-            val bgBitmap = loadAssetBitmap(context, selectedBgAsset, PORTRAIT_SIZE)
-            compositeWithBackground(squareInput, bgBitmap, maskBuffer)
+        // 2. AI Background Segmentation Mask
+        val maskBuffer = if (applySegmentation && !selectedBgAsset.isNullOrBlank()) {
+            runSegmentation(squareInput)
+        } else null
+
+        // 3. Neural Anime Stylization (TFLite On-Device Model)
+        val stylizedSubject = if (applyTFLite && filterConfig.tfliteStylization != null) {
+            applyTFLiteStylization(context, squareInput, filterConfig.tfliteStylization) ?: squareInput
         } else {
             squareInput
         }
 
-        // 3. Eye Orbit Shading (Arcane fatigue / exhaustion shading)
+        // 4. Cel-Shading & Anime Surface Smoothing (Subject Only)
+        val celShadedSubject = if (applyCelShading && filterConfig.celShading != null) {
+            applyCelShading(stylizedSubject, maskBuffer, filterConfig.celShading)
+        } else {
+            stylizedSubject
+        }
+
+        // 5. Stylized Ink Outlines (Internal contours + silhouette edge)
+        val inkedSubject = if (applyInkOutlines && filterConfig.inkOutlines != null) {
+            applyInkOutlines(celShadedSubject, maskBuffer, filterConfig.inkOutlines)
+        } else {
+            celShadedSubject
+        }
+
+        // 5. Background Composite (if background selected)
+        val composited = if (maskBuffer != null && !selectedBgAsset.isNullOrBlank()) {
+            val bgBitmap = loadAssetBitmap(context, selectedBgAsset, PORTRAIT_SIZE)
+            compositeWithBackground(inkedSubject, bgBitmap, maskBuffer)
+        } else {
+            inkedSubject
+        }
+
+        // 6. Eye Orbit Shading (Arcane fatigue or Logos resonance glow)
         val withEyeEffect = if (applyEyeEffect && filterConfig.eyeEffect != null) {
             applyEyeShading(composited, filterConfig.eyeEffect)
         } else {
             composited
         }
 
-        // 4. Color Grading, Scanlines, and Vignette
+        // 7. Color Grading, Scanlines, and Vignette
         val finalResult = applyPostProcessing(
             withEyeEffect,
             applyScanlines = applyScanlines,
@@ -395,6 +431,321 @@ object SelfiePortraitProcessor {
         }
 
         return result
+    }
+
+    private fun applyCelShading(
+        source: Bitmap,
+        maskBuffer: ByteBuffer?,
+        config: CelShadingConfig
+    ): Bitmap {
+        val w = source.width
+        val h = source.height
+        val total = w * h
+        val srcPixels = IntArray(total)
+        source.getPixels(srcPixels, 0, w, 0, 0, w, h)
+        val outPixels = IntArray(total)
+
+        // Read mask alpha into a float array (0f..1f)
+        val maskAlphas = FloatArray(total)
+        if (maskBuffer != null) {
+            maskBuffer.rewind()
+            for (i in 0 until total) {
+                maskAlphas[i] = if (maskBuffer.hasRemaining()) maskBuffer.float.coerceIn(0f, 1f) else 1f
+            }
+        } else {
+            maskAlphas.fill(1f)
+        }
+
+        // Pass 1: Edge-preserving skin smoothing (separable bilateral approximation)
+        val smoothed = IntArray(total)
+        val radius = config.smoothRadius.coerceIn(1, 4)
+        for (y in 0 until h) {
+            val yOffset = y * w
+            for (x in 0 until w) {
+                val idx = yOffset + x
+                val centerPix = srcPixels[idx]
+                val centerLum = (299 * Color.red(centerPix) + 587 * Color.green(centerPix) + 114 * Color.blue(centerPix)) / 1000
+
+                var sumR = 0
+                var sumG = 0
+                var sumB = 0
+                var count = 0
+
+                val minY = (y - radius).coerceAtLeast(0)
+                val maxY = (y + radius).coerceAtMost(h - 1)
+                val minX = (x - radius).coerceAtLeast(0)
+                val maxX = (x + radius).coerceAtMost(w - 1)
+
+                for (ny in minY..maxY) {
+                    val nYOffset = ny * w
+                    for (nx in minX..maxX) {
+                        val nIdx = nYOffset + nx
+                        val nPix = srcPixels[nIdx]
+                        val nLum = (299 * Color.red(nPix) + 587 * Color.green(nPix) + 114 * Color.blue(nPix)) / 1000
+                        if (kotlin.math.abs(centerLum - nLum) < 28) {
+                            sumR += Color.red(nPix)
+                            sumG += Color.green(nPix)
+                            sumB += Color.blue(nPix)
+                            count++
+                        }
+                    }
+                }
+
+                if (count > 0) {
+                    smoothed[idx] = Color.rgb(sumR / count, sumG / count, sumB / count)
+                } else {
+                    smoothed[idx] = centerPix
+                }
+            }
+        }
+
+        // Pass 2: Perceptual luminance quantization & JRPG palette shifting
+        val bands = config.bands.coerceIn(2, 6)
+        val cooling = config.shadowCoolingFactor.coerceIn(0f, 0.4f)
+
+        for (i in 0 until total) {
+            val maskAlpha = maskAlphas[i]
+            val origPix = srcPixels[i]
+            if (maskAlpha < 0.05f) {
+                outPixels[i] = origPix
+                continue
+            }
+
+            val sPix = smoothed[i]
+            val r = Color.red(sPix)
+            val g = Color.green(sPix)
+            val b = Color.blue(sPix)
+            val lum = (299 * r + 587 * g + 114 * b) / 1000
+
+            val bandIdx = (lum * bands / 256).coerceIn(0, bands - 1)
+            val qLum = ((bandIdx + 0.5f) * (255f / bands)).coerceIn(0f, 255f)
+            val lumFactor = if (lum > 0) (qLum / lum.toFloat()).coerceIn(0.5f, 1.8f) else 1f
+
+            var qr = (r * lumFactor).toInt().coerceIn(0, 255)
+            var qg = (g * lumFactor).toInt().coerceIn(0, 255)
+            var qb = (b * lumFactor).toInt().coerceIn(0, 255)
+
+            // JRPG palette shift (warm highlights, cool shadows)
+            if (qLum < 120f) {
+                val shadowRatio = (120f - qLum) / 120f
+                val blueShift = (cooling * shadowRatio * 32).toInt()
+                val redReduce = (cooling * shadowRatio * 16).toInt()
+                qb = (qb + blueShift).coerceAtMost(255)
+                qr = (qr - redReduce).coerceAtLeast(0)
+            } else if (qLum > 180f) {
+                val highlightRatio = (qLum - 180f) / 75f
+                val warmShift = (highlightRatio * 12).toInt()
+                qr = (qr + warmShift).coerceAtMost(255)
+                qg = (qg + (warmShift / 2)).coerceAtMost(255)
+            }
+
+            val finalR = (qr * maskAlpha + Color.red(origPix) * (1f - maskAlpha)).toInt()
+            val finalG = (qg * maskAlpha + Color.green(origPix) * (1f - maskAlpha)).toInt()
+            val finalB = (qb * maskAlpha + Color.blue(origPix) * (1f - maskAlpha)).toInt()
+
+            outPixels[i] = Color.rgb(finalR, finalG, finalB)
+        }
+
+        val result = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        result.setPixels(outPixels, 0, w, 0, 0, w, h)
+        return result
+    }
+
+    private fun applyInkOutlines(
+        source: Bitmap,
+        maskBuffer: ByteBuffer?,
+        config: InkOutlineConfig
+    ): Bitmap {
+        val w = source.width
+        val h = source.height
+        val total = w * h
+        val srcPixels = IntArray(total)
+        source.getPixels(srcPixels, 0, w, 0, 0, w, h)
+        val outPixels = IntArray(total)
+
+        // Read mask alpha into a float array (0f..1f)
+        val maskAlphas = FloatArray(total)
+        if (maskBuffer != null) {
+            maskBuffer.rewind()
+            for (i in 0 until total) {
+                maskAlphas[i] = if (maskBuffer.hasRemaining()) maskBuffer.float.coerceIn(0f, 1f) else 1f
+            }
+        } else {
+            maskAlphas.fill(1f)
+        }
+
+        // Luminance buffer
+        val lums = IntArray(total)
+        for (i in 0 until total) {
+            val c = srcPixels[i]
+            lums[i] = (299 * Color.red(c) + 587 * Color.green(c) + 114 * Color.blue(c)) / 1000
+        }
+
+        val inkColor = parseColor(config.inkColorHex, Color.rgb(24, 20, 42))
+        val inkR = Color.red(inkColor)
+        val inkG = Color.green(inkColor)
+        val inkB = Color.blue(inkColor)
+        val sensitivity = config.sensitivity.coerceIn(0.5f, 2.0f)
+        val tLow = (55f / sensitivity)
+        val tHigh = (130f / sensitivity)
+
+        for (y in 0 until h) {
+            val yOffset = y * w
+            for (x in 0 until w) {
+                val idx = yOffset + x
+                val origPix = srcPixels[idx]
+                val maskAlpha = maskAlphas[idx]
+
+                if (maskAlpha < 0.05f || x == 0 || x == w - 1 || y == 0 || y == h - 1) {
+                    outPixels[idx] = origPix
+                    continue
+                }
+
+                // 3x3 Sobel on luminance
+                val p00 = lums[(y - 1) * w + (x - 1)]
+                val p01 = lums[(y - 1) * w + x]
+                val p02 = lums[(y - 1) * w + (x + 1)]
+                val p10 = lums[yOffset + (x - 1)]
+                val p12 = lums[yOffset + (x + 1)]
+                val p20 = lums[(y + 1) * w + (x - 1)]
+                val p21 = lums[(y + 1) * w + x]
+                val p22 = lums[(y + 1) * w + (x + 1)]
+
+                val gx = (p02 + 2 * p12 + p22) - (p00 + 2 * p10 + p20)
+                val gy = (p20 + 2 * p21 + p22) - (p00 + 2 * p01 + p02)
+                val mag = kotlin.math.abs(gx) + kotlin.math.abs(gy)
+
+                // Silhouette contour edge detection using mask gradient
+                var silhouetteFactor = 0f
+                if (config.outlineSilhouette && maskBuffer != null) {
+                    val m00 = maskAlphas[(y - 1) * w + (x - 1)]
+                    val m02 = maskAlphas[(y - 1) * w + (x + 1)]
+                    val m10 = maskAlphas[yOffset + (x - 1)]
+                    val m12 = maskAlphas[yOffset + (x + 1)]
+                    val m20 = maskAlphas[(y + 1) * w + (x - 1)]
+                    val m22 = maskAlphas[(y + 1) * w + (x + 1)]
+                    val mgx = (m02 + 2 * m12 + m22) - (m00 + 2 * m10 + m20)
+                    val mgy = (m20 + 2 * maskAlphas[(y + 1) * w + x] + m22) - (m00 + 2 * maskAlphas[(y - 1) * w + x] + m02)
+                    val maskMag = kotlin.math.abs(mgx) + kotlin.math.abs(mgy)
+                    silhouetteFactor = (maskMag * 1.5f).coerceIn(0f, 1f)
+                }
+
+                val contourFactor = if (mag > tLow) {
+                    ((mag - tLow) / (tHigh - tLow)).coerceIn(0f, 1f)
+                } else 0f
+
+                val totalInkFactor = kotlin.math.max(contourFactor * 0.85f, silhouetteFactor * 0.95f) * maskAlpha
+
+                if (totalInkFactor > 0.02f) {
+                    val r = (inkR * totalInkFactor + Color.red(origPix) * (1f - totalInkFactor)).toInt()
+                    val g = (inkG * totalInkFactor + Color.green(origPix) * (1f - totalInkFactor)).toInt()
+                    val b = (inkB * totalInkFactor + Color.blue(origPix) * (1f - totalInkFactor)).toInt()
+                    outPixels[idx] = Color.rgb(r, g, b)
+                } else {
+                    outPixels[idx] = origPix
+                }
+            }
+        }
+
+        val result = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        result.setPixels(outPixels, 0, w, 0, 0, w, h)
+        return result
+    }
+
+    private fun loadModelFile(context: Context, modelPath: String): ByteBuffer {
+        return try {
+            val fileDescriptor = context.assets.openFd(modelPath)
+            FileInputStream(fileDescriptor.fileDescriptor).use { inputStream ->
+                val fileChannel = inputStream.channel
+                val startOffset = fileDescriptor.startOffset
+                val declaredLength = fileDescriptor.declaredLength
+                val buffer = fileChannel.map(FileChannel.MapMode.READ_ONLY, startOffset, declaredLength)
+                fileDescriptor.close()
+                buffer
+            }
+        } catch (_: Exception) {
+            context.assets.open(modelPath).use { stream ->
+                val bytes = stream.readBytes()
+                val buffer = ByteBuffer.allocateDirect(bytes.size).apply {
+                    order(ByteOrder.nativeOrder())
+                    put(bytes)
+                    rewind()
+                }
+                buffer
+            }
+        }
+    }
+
+    private fun applyTFLiteStylization(
+        context: Context,
+        source: Bitmap,
+        config: TFLiteStylizeConfig
+    ): Bitmap? {
+        var interpreter: Interpreter? = null
+        return try {
+            val modelBuffer = loadModelFile(context, config.modelAssetPath)
+            val options = Interpreter.Options().apply {
+                setNumThreads(4)
+            }
+            interpreter = Interpreter(modelBuffer, options)
+            val inputSize = config.inputSize.coerceAtLeast(128)
+
+            // Scale source to inputSize x inputSize for the neural network
+            val scaledInput = if (source.width == inputSize && source.height == inputSize) {
+                source
+            } else {
+                Bitmap.createScaledBitmap(source, inputSize, inputSize, true)
+            }
+
+            // Allocate direct byte buffers for input and output: 1 * H * W * 3 * 4 (float32)
+            val inputBuffer = ByteBuffer.allocateDirect(1 * inputSize * inputSize * 3 * 4).apply {
+                order(ByteOrder.nativeOrder())
+            }
+
+            val pixels = IntArray(inputSize * inputSize)
+            scaledInput.getPixels(pixels, 0, inputSize, 0, 0, inputSize, inputSize)
+
+            // UGATIT model expects input in [-1.0f, +1.0f] range
+            for (pixel in pixels) {
+                inputBuffer.putFloat((Color.red(pixel) / 127.5f) - 1.0f)
+                inputBuffer.putFloat((Color.green(pixel) / 127.5f) - 1.0f)
+                inputBuffer.putFloat((Color.blue(pixel) / 127.5f) - 1.0f)
+            }
+
+            val outputBuffer = ByteBuffer.allocateDirect(1 * inputSize * inputSize * 3 * 4).apply {
+                order(ByteOrder.nativeOrder())
+            }
+
+            interpreter.run(inputBuffer, outputBuffer)
+
+            // UGATIT generator ends with Tanh, producing outputs in [-1.0f, +1.0f] range.
+            // Denormalize: pixel = (tanh_val + 1.0f) * 127.5f -> [0..255]
+            outputBuffer.rewind()
+            val outPixels = IntArray(inputSize * inputSize)
+            for (i in 0 until inputSize * inputSize) {
+                val r = ((outputBuffer.float + 1.0f) * 127.5f).toInt().coerceIn(0, 255)
+                val g = ((outputBuffer.float + 1.0f) * 127.5f).toInt().coerceIn(0, 255)
+                val b = ((outputBuffer.float + 1.0f) * 127.5f).toInt().coerceIn(0, 255)
+                outPixels[i] = Color.rgb(r, g, b)
+            }
+
+            val animeBitmap = Bitmap.createBitmap(inputSize, inputSize, Bitmap.Config.ARGB_8888)
+            animeBitmap.setPixels(outPixels, 0, inputSize, 0, 0, inputSize, inputSize)
+
+            // Upscale back to portrait target size (512x512)
+            if (animeBitmap.width != PORTRAIT_SIZE || animeBitmap.height != PORTRAIT_SIZE) {
+                Bitmap.createScaledBitmap(animeBitmap, PORTRAIT_SIZE, PORTRAIT_SIZE, true)
+            } else {
+                animeBitmap
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("SelfiePortraitProcessor", "TFLite anime stylization failed", e)
+            null
+        } finally {
+            try {
+                interpreter?.close()
+            } catch (_: Exception) {}
+        }
     }
 
     private fun parseColor(hex: String?, fallback: Int): Int {
