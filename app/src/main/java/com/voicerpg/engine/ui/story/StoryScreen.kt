@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -399,7 +400,7 @@ fun StoryScreen(
 
                 // Stacked Action Buttons (Outside the banner: 2x2 grid for Log, Options, Skip, Battle)
                 Column(
-                    modifier = Modifier.width(if (isLandscape) 144.dp else 134.dp),
+                    modifier = Modifier.width(if (isLandscape) 152.dp else 144.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                     horizontalAlignment = Alignment.End
                 ) {
@@ -424,10 +425,11 @@ fun StoryScreen(
                             Text(
                                 text = "📜 " + com.voicerpg.engine.localization.TranslationManager.translate("LOG"),
                                 color = LogosGold,
-                                fontSize = 9.sp,
+                                fontSize = 8.5.sp,
                                 fontWeight = FontWeight.Bold,
                                 fontFamily = FontFamily.Monospace,
-                                maxLines = 1
+                                maxLines = 1,
+                                softWrap = false
                             )
                         }
 
@@ -445,10 +447,11 @@ fun StoryScreen(
                             Text(
                                 text = if (isEyesFreeMode) "🎧 " + com.voicerpg.engine.localization.TranslationManager.translate("POCKET") else "⚙️ " + com.voicerpg.engine.localization.TranslationManager.translate("OPT"),
                                 color = if (isEyesFreeMode) Color(0xFFE3F2FD) else LogosGold,
-                                fontSize = 9.sp,
+                                fontSize = 8.5.sp,
                                 fontWeight = FontWeight.Bold,
                                 fontFamily = FontFamily.Monospace,
-                                maxLines = 1
+                                maxLines = 1,
+                                softWrap = false
                             )
                         }
                     }
@@ -472,10 +475,11 @@ fun StoryScreen(
                             Text(
                                 text = if (storyState.isFastForwarding) "⏹️ " + com.voicerpg.engine.localization.TranslationManager.translate("STOP") else "⏩ " + com.voicerpg.engine.localization.TranslationManager.translate("SKIP"),
                                 color = if (storyState.isFastForwarding) Color.White else LogosGold,
-                                fontSize = 9.sp,
+                                fontSize = 8.5.sp,
                                 fontWeight = FontWeight.Bold,
                                 fontFamily = FontFamily.Monospace,
-                                maxLines = 1
+                                maxLines = 1,
+                                softWrap = false
                             )
                         }
 
@@ -493,10 +497,11 @@ fun StoryScreen(
                             Text(
                                 text = "⚔️ " + com.voicerpg.engine.localization.TranslationManager.translate("BTL"),
                                 color = Color.White,
-                                fontSize = 9.sp,
+                                fontSize = 8.5.sp,
                                 fontWeight = FontWeight.Bold,
                                 fontFamily = FontFamily.Monospace,
-                                maxLines = 1
+                                maxLines = 1,
+                                softWrap = false
                             )
                         }
                     }
@@ -1063,15 +1068,21 @@ private fun VoiceInputPromptBar(
                 !hasChoices -> com.voicerpg.engine.localization.TranslationManager.translate("Tap anywhere or say 'Continue' to advance")
                 else -> com.voicerpg.engine.localization.TranslationManager.translate("Choose an option or speak voice keyword")
             },
+            modifier = Modifier
+                .weight(1f)
+                .padding(end = 8.dp),
             color = if (isStandby) Color(0xFFFFD54F) else Color.Gray,
             fontSize = 9.sp,
-            fontFamily = FontFamily.Monospace
+            fontFamily = FontFamily.Monospace,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
         )
 
-        // Hands-free Mic Quick Tap
+        // Hands-free Mic Quick Tap (Pill button that never wraps text vertically)
         Box(
             modifier = Modifier
-                .clip(CircleShape)
+                .wrapContentWidth()
+                .clip(RoundedCornerShape(16.dp))
                 .background(
                     when {
                         isListening -> Color(0xFFEF5350)
@@ -1079,9 +1090,9 @@ private fun VoiceInputPromptBar(
                         else -> RetroPanel
                     }
                 )
-                .border(1.dp, if (isStandby) Color(0xFFFFD54F) else LogosGold, CircleShape)
+                .border(1.dp, if (isStandby) Color(0xFFFFD54F) else LogosGold, RoundedCornerShape(16.dp))
                 .clickable { onStartListening() }
-                .padding(horizontal = 8.dp, vertical = 4.dp)
+                .padding(horizontal = 10.dp, vertical = 6.dp)
         ) {
             Text(
                 text = when {
@@ -1090,9 +1101,11 @@ private fun VoiceInputPromptBar(
                     else -> "🎤 " + com.voicerpg.engine.localization.TranslationManager.translate("SPEAK")
                 },
                 color = if (isStandby) Color(0xFFFFD54F) else LogosGold,
-                fontSize = 9.sp,
+                fontSize = 9.5.sp,
                 fontWeight = FontWeight.Bold,
-                fontFamily = FontFamily.Monospace
+                fontFamily = FontFamily.Monospace,
+                maxLines = 1,
+                softWrap = false
             )
         }
     }
@@ -1145,7 +1158,9 @@ private fun DialogueChoiceItem(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Row(
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(end = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
@@ -1168,51 +1183,62 @@ private fun DialogueChoiceItem(
                 )
             }
 
-            if (isCompleted) {
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(Color(0x334CAF50))
-                        .border(1.dp, Color(0xFF4CAF50), RoundedCornerShape(4.dp))
-                        .padding(horizontal = 5.dp, vertical = 2.dp)
-                ) {
-                    Text(
-                        text = "✓ " + com.voicerpg.engine.localization.TranslationManager.translate("DONE"),
-                        color = Color(0xFF81C784),
-                        fontSize = 8.sp,
-                        fontFamily = FontFamily.Monospace,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            } else if (isLocked) {
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(Color(0x33B0BEC5))
-                        .border(1.dp, Color(0xFF546E7A), RoundedCornerShape(4.dp))
-                        .padding(horizontal = 5.dp, vertical = 2.dp)
-                ) {
-                    Text(
-                        text = "🔒 " + com.voicerpg.engine.localization.TranslationManager.translate("LOCKED"),
-                        color = Color(0xFF90A4AE),
-                        fontSize = 8.sp,
-                        fontFamily = FontFamily.Monospace,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            } else {
-                // Spoken keyword cue
-                val keywordHint = choice.voiceKeywords.firstOrNull() ?: ""
-                if (keywordHint.isNotBlank()) {
-                    val translatedSay = com.voicerpg.engine.localization.TranslationManager.translate("Say")
-                    val translatedHint = com.voicerpg.engine.localization.TranslationManager.translate(keywordHint)
-                    Text(
-                        text = "$translatedSay \"$translatedHint\"",
-                        color = Color(0xFF80D8FF),
-                        fontSize = 8.sp,
-                        fontFamily = FontFamily.Monospace,
-                        fontWeight = FontWeight.Bold
-                    )
+            Box(
+                modifier = Modifier.wrapContentWidth(),
+                contentAlignment = Alignment.CenterEnd
+            ) {
+                if (isCompleted) {
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(Color(0x334CAF50))
+                            .border(1.dp, Color(0xFF4CAF50), RoundedCornerShape(4.dp))
+                            .padding(horizontal = 5.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = "✓ " + com.voicerpg.engine.localization.TranslationManager.translate("DONE"),
+                            color = Color(0xFF81C784),
+                            fontSize = 8.sp,
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            softWrap = false
+                        )
+                    }
+                } else if (isLocked) {
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(Color(0x33B0BEC5))
+                            .border(1.dp, Color(0xFF546E7A), RoundedCornerShape(4.dp))
+                            .padding(horizontal = 5.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = "🔒 " + com.voicerpg.engine.localization.TranslationManager.translate("LOCKED"),
+                            color = Color(0xFF90A4AE),
+                            fontSize = 8.sp,
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            softWrap = false
+                        )
+                    }
+                } else {
+                    // Spoken keyword cue
+                    val keywordHint = choice.voiceKeywords.firstOrNull() ?: ""
+                    if (keywordHint.isNotBlank()) {
+                        val translatedSay = com.voicerpg.engine.localization.TranslationManager.translate("Say")
+                        val translatedHint = com.voicerpg.engine.localization.TranslationManager.translate(keywordHint)
+                        Text(
+                            text = "$translatedSay \"$translatedHint\"",
+                            color = Color(0xFF80D8FF),
+                            fontSize = 8.sp,
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            softWrap = false
+                        )
+                    }
                 }
             }
         }
