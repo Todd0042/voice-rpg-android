@@ -65,6 +65,23 @@ fun SelfieFilterDialog(
         mutableStateOf(filterConfig.availableBackgrounds.firstOrNull()?.assetPath)
     }
 
+    val hasSynthesis = filterConfig.avatarSynthesis != null
+    var applyAvatarSynthesis by remember {
+        mutableStateOf(filterConfig.avatarSynthesis?.enabledByDefault ?: false)
+    }
+    val defaultAttire = filterConfig.avatarSynthesis?.defaultAttireIndex ?: 0
+    var avatarProfile by remember {
+        mutableStateOf(AvatarProfile(attireIndex = defaultAttire))
+    }
+
+    // Automatically analyze selfie features via ML Kit face landmarking
+    LaunchedEffect(rawBitmap) {
+        if (filterConfig.avatarSynthesis != null) {
+            val detected = AvatarSynthesizer.analyzeSelfie(rawBitmap)
+            avatarProfile = detected.copy(attireIndex = defaultAttire)
+        }
+    }
+
     var applyPixelArt by remember {
         mutableStateOf(filterConfig.pixelArt?.enabledByDefault ?: true)
     }
@@ -90,23 +107,44 @@ fun SelfieFilterDialog(
     var processedBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var isProcessing by remember { mutableStateOf(true) }
 
-    // Re-process image whenever any filter setting or chosen background changes
-    LaunchedEffect(applySegmentation, selectedBgAsset, applyPixelArt, applyTFLite, applyCelShading, applyInkOutlines, applyEyeEffect, applyScanlines, applyColorGrade) {
+    // Re-process image whenever any filter setting, avatar feature, or chosen background changes
+    LaunchedEffect(
+        applyAvatarSynthesis,
+        avatarProfile,
+        applySegmentation,
+        selectedBgAsset,
+        applyPixelArt,
+        applyTFLite,
+        applyCelShading,
+        applyInkOutlines,
+        applyEyeEffect,
+        applyScanlines,
+        applyColorGrade
+    ) {
         isProcessing = true
-        val result = SelfiePortraitProcessor.processSelfie(
-            context = context,
-            inputBitmap = rawBitmap,
-            filterConfig = filterConfig,
-            selectedBgAsset = if (applySegmentation) selectedBgAsset else null,
-            applySegmentation = applySegmentation && !selectedBgAsset.isNullOrBlank(),
-            applyPixelArt = applyPixelArt,
-            applyTFLite = applyTFLite,
-            applyCelShading = applyCelShading,
-            applyInkOutlines = applyInkOutlines,
-            applyEyeEffect = applyEyeEffect,
-            applyScanlines = applyScanlines,
-            applyColorGrade = applyColorGrade
-        )
+        val result = if (applyAvatarSynthesis && filterConfig.avatarSynthesis != null) {
+            AvatarSynthesizer.synthesizePortrait(
+                context = context,
+                profile = avatarProfile,
+                selectedBgAsset = if (applySegmentation) selectedBgAsset else null,
+                filterConfig = filterConfig
+            )
+        } else {
+            SelfiePortraitProcessor.processSelfie(
+                context = context,
+                inputBitmap = rawBitmap,
+                filterConfig = filterConfig,
+                selectedBgAsset = if (applySegmentation) selectedBgAsset else null,
+                applySegmentation = applySegmentation && !selectedBgAsset.isNullOrBlank(),
+                applyPixelArt = applyPixelArt,
+                applyTFLite = applyTFLite,
+                applyCelShading = applyCelShading,
+                applyInkOutlines = applyInkOutlines,
+                applyEyeEffect = applyEyeEffect,
+                applyScanlines = applyScanlines,
+                applyColorGrade = applyColorGrade
+            )
+        }
         processedBitmap = result
         isProcessing = false
     }
@@ -189,121 +227,241 @@ fun SelfieFilterDialog(
 
                 Spacer(modifier = Modifier.height(14.dp))
 
-                // Filter Option: Retro Pixel Art
-                filterConfig.pixelArt?.let { pixel ->
+                // Mode Selector: JRPG Avatar Synthesis
+                filterConfig.avatarSynthesis?.let { synth ->
                     FilterToggleRow(
-                        label = pixel.label,
-                        description = pixel.description,
-                        checked = applyPixelArt,
-                        onCheckedChange = { applyPixelArt = it }
+                        label = synth.label,
+                        description = synth.description,
+                        checked = applyAvatarSynthesis,
+                        onCheckedChange = { applyAvatarSynthesis = it }
                     )
-                    Spacer(modifier = Modifier.height(6.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
                 }
 
-                // Filter Option: Neural Anime Stylization (TFLite)
-                filterConfig.tfliteStylization?.let { tflite ->
-                    FilterToggleRow(
-                        label = tflite.label,
-                        description = tflite.description,
-                        checked = applyTFLite,
-                        onCheckedChange = { applyTFLite = it }
+                if (applyAvatarSynthesis && filterConfig.avatarSynthesis != null) {
+                    val synth = filterConfig.avatarSynthesis
+                    val skinLabels = synth.skinToneLabels.ifEmpty { AvatarSynthesizer.SKIN_LABELS }
+                    val hairStyleLabels = synth.hairStyleLabels.ifEmpty { AvatarSynthesizer.HAIR_STYLE_LABELS }
+                    val hairColorLabels = synth.hairColorLabels.ifEmpty { AvatarSynthesizer.HAIR_COLOR_LABELS }
+                    val attireLabels = synth.attireLabels.ifEmpty { AvatarSynthesizer.ATTIRE_LABELS }
+
+                    // Hairstyle Selector
+                    AvatarChipSelectorRow(
+                        title = "💇 HAIRSTYLE",
+                        options = hairStyleLabels,
+                        selectedIndex = avatarProfile.hairStyleIndex,
+                        onSelectIndex = { avatarProfile = avatarProfile.copy(hairStyleIndex = it) }
                     )
                     Spacer(modifier = Modifier.height(6.dp))
-                }
 
-                // Filter Option: Cel-Shading (Anime Style)
-                filterConfig.celShading?.let { cel ->
-                    FilterToggleRow(
-                        label = cel.label,
-                        description = cel.description,
-                        checked = applyCelShading,
-                        onCheckedChange = { applyCelShading = it }
+                    // Hair Color Selector
+                    AvatarChipSelectorRow(
+                        title = "🎨 HAIR COLOR",
+                        options = hairColorLabels,
+                        selectedIndex = avatarProfile.hairColorIndex,
+                        onSelectIndex = { avatarProfile = avatarProfile.copy(hairColorIndex = it) }
                     )
                     Spacer(modifier = Modifier.height(6.dp))
-                }
 
-                // Filter Option: Stylized Ink Outlines
-                filterConfig.inkOutlines?.let { ink ->
-                    FilterToggleRow(
-                        label = ink.label,
-                        description = ink.description,
-                        checked = applyInkOutlines,
-                        onCheckedChange = { applyInkOutlines = it }
+                    // Skin Tone Selector
+                    AvatarChipSelectorRow(
+                        title = "✨ SKIN COMPLEXION",
+                        options = skinLabels,
+                        selectedIndex = avatarProfile.skinToneIndex,
+                        onSelectIndex = { avatarProfile = avatarProfile.copy(skinToneIndex = it) }
                     )
                     Spacer(modifier = Modifier.height(6.dp))
-                }
 
-                // Filter Option: Eye Effect
-                filterConfig.eyeEffect?.let { eye ->
-                    FilterToggleRow(
-                        label = eye.label,
-                        description = eye.description,
-                        checked = applyEyeEffect,
-                        onCheckedChange = { applyEyeEffect = it }
+                    // Attire Selector
+                    AvatarChipSelectorRow(
+                        title = "🛡️ HERO ATTIRE",
+                        options = attireLabels,
+                        selectedIndex = avatarProfile.attireIndex,
+                        onSelectIndex = { avatarProfile = avatarProfile.copy(attireIndex = it) }
                     )
                     Spacer(modifier = Modifier.height(6.dp))
-                }
 
-                // Filter Option: AI Background Cutout
-                if (hasBgs) {
+                    // Glasses Toggle
                     FilterToggleRow(
-                        label = filterConfig.backgroundToggleLabel ?: "AI Background Cutout",
-                        description = filterConfig.backgroundToggleDescription ?: "Replace background with chosen environment",
-                        checked = applySegmentation,
-                        onCheckedChange = { applySegmentation = it }
+                        label = "👓 Glasses / Spectacles",
+                        description = "Detected wireframe eyewear",
+                        checked = avatarProfile.hasGlasses,
+                        onCheckedChange = { avatarProfile = avatarProfile.copy(hasGlasses = it) }
                     )
+                    Spacer(modifier = Modifier.height(6.dp))
 
-                    if (applySegmentation) {
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Row(
+                    // Stubble / Facial Hair Toggle
+                    FilterToggleRow(
+                        label = "🧔 Facial Hair / Stubble",
+                        description = "Detected chin stubble shading",
+                        checked = avatarProfile.hasStubble,
+                        onCheckedChange = { avatarProfile = avatarProfile.copy(hasStubble = it) }
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    // Background Environment Selection
+                    if (hasBgs) {
+                        Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .horizontalScroll(rememberScrollState()),
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(RetroBlack.copy(alpha = 0.5f))
+                                .padding(horizontal = 10.dp, vertical = 6.dp)
                         ) {
-                            filterConfig.availableBackgrounds.forEach { bgOption ->
-                                val isSelected = selectedBgAsset == bgOption.assetPath
-                                Box(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(6.dp))
-                                        .background(if (isSelected) LogosGold.copy(alpha = 0.3f) else RetroBlack)
-                                        .border(1.dp, if (isSelected) LogosGold else RetroBorder, RoundedCornerShape(6.dp))
-                                        .clickable { selectedBgAsset = bgOption.assetPath }
-                                        .padding(horizontal = 8.dp, vertical = 4.dp)
-                                ) {
-                                    Text(
-                                        text = bgOption.label,
-                                        color = if (isSelected) LogosGold else Color.LightGray,
-                                        fontSize = 10.sp,
-                                        fontFamily = FontFamily.Monospace
-                                    )
+                            Text(
+                                text = "🏰 REALM BACKDROP",
+                                color = LogosGold,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = FontFamily.Monospace
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .horizontalScroll(rememberScrollState()),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                filterConfig.availableBackgrounds.forEach { bgOption ->
+                                    val isSelected = selectedBgAsset == bgOption.assetPath
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(6.dp))
+                                            .background(if (isSelected) LogosGold.copy(alpha = 0.3f) else RetroBlack)
+                                            .border(1.dp, if (isSelected) LogosGold else RetroBorder, RoundedCornerShape(6.dp))
+                                            .clickable { selectedBgAsset = bgOption.assetPath }
+                                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                                    ) {
+                                        Text(
+                                            text = bgOption.label,
+                                            color = if (isSelected) LogosGold else Color.LightGray,
+                                            fontSize = 10.sp,
+                                            fontFamily = FontFamily.Monospace,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                        )
+                                    }
                                 }
                             }
                         }
+                        Spacer(modifier = Modifier.height(6.dp))
                     }
-                    Spacer(modifier = Modifier.height(6.dp))
-                }
+                } else {
+                    // Filter Option: Retro Pixel Art
+                    filterConfig.pixelArt?.let { pixel ->
+                        FilterToggleRow(
+                            label = pixel.label,
+                            description = pixel.description,
+                            checked = applyPixelArt,
+                            onCheckedChange = { applyPixelArt = it }
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                    }
 
-                // Filter Option: Scanlines
-                filterConfig.scanlines?.let { scanlines ->
-                    FilterToggleRow(
-                        label = scanlines.label,
-                        description = scanlines.description,
-                        checked = applyScanlines,
-                        onCheckedChange = { applyScanlines = it }
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
-                }
+                    // Filter Option: Neural Anime Stylization (TFLite)
+                    filterConfig.tfliteStylization?.let { tflite ->
+                        FilterToggleRow(
+                            label = tflite.label,
+                            description = tflite.description,
+                            checked = applyTFLite,
+                            onCheckedChange = { applyTFLite = it }
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                    }
 
-                // Filter Option: Color Grade
-                filterConfig.colorGrade?.let { colorGrade ->
-                    FilterToggleRow(
-                        label = colorGrade.label,
-                        description = colorGrade.description,
-                        checked = applyColorGrade,
-                        onCheckedChange = { applyColorGrade = it }
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
+                    // Filter Option: Cel-Shading (Anime Style)
+                    filterConfig.celShading?.let { cel ->
+                        FilterToggleRow(
+                            label = cel.label,
+                            description = cel.description,
+                            checked = applyCelShading,
+                            onCheckedChange = { applyCelShading = it }
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                    }
+
+                    // Filter Option: Stylized Ink Outlines
+                    filterConfig.inkOutlines?.let { ink ->
+                        FilterToggleRow(
+                            label = ink.label,
+                            description = ink.description,
+                            checked = applyInkOutlines,
+                            onCheckedChange = { applyInkOutlines = it }
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                    }
+
+                    // Filter Option: Eye Effect
+                    filterConfig.eyeEffect?.let { eye ->
+                        FilterToggleRow(
+                            label = eye.label,
+                            description = eye.description,
+                            checked = applyEyeEffect,
+                            onCheckedChange = { applyEyeEffect = it }
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                    }
+
+                    // Filter Option: AI Background Cutout
+                    if (hasBgs) {
+                        FilterToggleRow(
+                            label = filterConfig.backgroundToggleLabel ?: "AI Background Cutout",
+                            description = filterConfig.backgroundToggleDescription ?: "Replace background with chosen environment",
+                            checked = applySegmentation,
+                            onCheckedChange = { applySegmentation = it }
+                        )
+
+                        if (applySegmentation) {
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .horizontalScroll(rememberScrollState()),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                filterConfig.availableBackgrounds.forEach { bgOption ->
+                                    val isSelected = selectedBgAsset == bgOption.assetPath
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(6.dp))
+                                            .background(if (isSelected) LogosGold.copy(alpha = 0.3f) else RetroBlack)
+                                            .border(1.dp, if (isSelected) LogosGold else RetroBorder, RoundedCornerShape(6.dp))
+                                            .clickable { selectedBgAsset = bgOption.assetPath }
+                                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                                    ) {
+                                        Text(
+                                            text = bgOption.label,
+                                            color = if (isSelected) LogosGold else Color.LightGray,
+                                            fontSize = 10.sp,
+                                            fontFamily = FontFamily.Monospace
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(6.dp))
+                    }
+
+                    // Filter Option: Scanlines
+                    filterConfig.scanlines?.let { scanlines ->
+                        FilterToggleRow(
+                            label = scanlines.label,
+                            description = scanlines.description,
+                            checked = applyScanlines,
+                            onCheckedChange = { applyScanlines = it }
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                    }
+
+                    // Filter Option: Color Grade
+                    filterConfig.colorGrade?.let { colorGrade ->
+                        FilterToggleRow(
+                            label = colorGrade.label,
+                            description = colorGrade.description,
+                            checked = applyColorGrade,
+                            onCheckedChange = { applyColorGrade = it }
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(10.dp))
@@ -402,3 +560,55 @@ private fun FilterToggleRow(
         )
     }
 }
+
+@Composable
+private fun AvatarChipSelectorRow(
+    title: String,
+    options: List<String>,
+    selectedIndex: Int,
+    onSelectIndex: (Int) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .background(RetroBlack.copy(alpha = 0.5f))
+            .padding(horizontal = 10.dp, vertical = 6.dp)
+    ) {
+        Text(
+            text = title,
+            color = LogosGold,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Bold,
+            fontFamily = FontFamily.Monospace
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            options.forEachIndexed { index, label ->
+                val isSelected = selectedIndex == index
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(if (isSelected) LogosGold.copy(alpha = 0.3f) else RetroBlack)
+                        .border(1.dp, if (isSelected) LogosGold else RetroBorder, RoundedCornerShape(6.dp))
+                        .clickable { onSelectIndex(index) }
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                ) {
+                    Text(
+                        text = label,
+                        color = if (isSelected) LogosGold else Color.LightGray,
+                        fontSize = 10.sp,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                    )
+                }
+            }
+        }
+    }
+}
+

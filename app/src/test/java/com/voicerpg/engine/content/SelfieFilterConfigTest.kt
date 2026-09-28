@@ -98,6 +98,36 @@ class SelfieFilterConfigTest {
     }
 
     @Test
+    fun testAvatarSynthesisConfig() {
+        val synth = GameContent.selfieConfig.avatarSynthesis
+        assertNotNull("Avatar synthesis config should be present", synth)
+        assertTrue("Avatar synthesis should be enabled by default", synth!!.enabledByDefault)
+        assertTrue("Label should not be blank", synth.label.isNotBlank())
+        assertTrue("Description should not be blank", synth.description.isNotBlank())
+        assertTrue("Skin tone labels should not be empty", synth.skinToneLabels.isNotEmpty())
+        assertTrue("Hair style labels should not be empty", synth.hairStyleLabels.isNotEmpty())
+        assertTrue("Hair color labels should not be empty", synth.hairColorLabels.isNotEmpty())
+        assertTrue("Attire labels should not be empty", synth.attireLabels.isNotEmpty())
+
+        // Verify modular avatar sprite assets exist
+        val avatarAssets = listOf(
+            "game/creation/avatar/head_base.png",
+            "game/creation/avatar/hair_spiky.png",
+            "game/creation/avatar/hair_parted.png",
+            "game/creation/avatar/hair_long.png",
+            "game/creation/avatar/body_mage.png",
+            "game/creation/avatar/body_knight.png",
+            "game/creation/avatar/body_scout.png",
+            "game/creation/avatar/glasses.png",
+            "game/creation/avatar/stubble.png"
+        )
+        for (asset in avatarAssets) {
+            val file = File("app/src/main/assets/$asset")
+            assertTrue("Avatar sprite asset must exist at ${file.path}", file.exists() || File("src/main/assets/$asset").exists())
+        }
+    }
+
+    @Test
     fun testDefaultFallbackWhenConfigAbsent() {
         val emptySource = object : ContentSource {
             override fun readText(path: String): String? = null
@@ -106,6 +136,7 @@ class SelfieFilterConfigTest {
         val pack = GameContentLoader(emptySource).load()
         assertFalse("SelfieFilterConfig should be disabled by default if missing", pack.manifest.selfieConfig.isEnabled)
         assertTrue("Available backgrounds should be empty in fallback", pack.manifest.selfieConfig.availableBackgrounds.isEmpty())
+        org.junit.Assert.assertNull("AvatarSynthesis should be null in fallback", pack.manifest.selfieConfig.avatarSynthesis)
         org.junit.Assert.assertNull("PixelArt should be null in fallback", pack.manifest.selfieConfig.pixelArt)
         org.junit.Assert.assertNull("FrameBorder should be null in fallback", pack.manifest.selfieConfig.frameBorderAsset)
         org.junit.Assert.assertNull("TFLite stylization should be null in fallback", pack.manifest.selfieConfig.tfliteStylization)

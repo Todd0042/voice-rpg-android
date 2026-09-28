@@ -21,6 +21,16 @@
     { "id": "cave", "label": "Crystal Cavern", "assetPath": "environments/cave.jpg" }
   ],
   "frameBorderAsset": "game/creation/borders/gold_fantasy_frame.png",
+  "avatarSynthesis": {
+    "enabledByDefault": true,
+    "label": "⚔️ JRPG Hero Visage Synthesis",
+    "description": "Synthesizes an authentic 16-bit Solaria hero portrait matching Aethel from your facial features",
+    "defaultAttireIndex": 0,
+    "skinToneLabels": ["Fair Alabaster", "Warm Peach", "Olive Neutral", "Golden Tan", "Deep Espresso"],
+    "hairStyleLabels": ["Short Spiky", "Medium Parted", "Long Braids"],
+    "hairColorLabels": ["Silver / Grey", "Golden Blonde", "Chestnut Brown", "Raven Black", "Fiery Auburn"],
+    "attireLabels": ["Solaria Mage Robe", "Paladin Gold Plate", "Forest Scout Mantle"]
+  },
   "pixelArt": {
     "enabledByDefault": true,
     "label": "🎮 Retro JRPG Pixel Art",

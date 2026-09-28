@@ -18,6 +18,7 @@ data class SelfieFilterConfig(
     val backgroundToggleLabel: String? = null,
     val backgroundToggleDescription: String? = null,
     val availableBackgrounds: List<SelfieBackgroundOption> = emptyList(),
+    val avatarSynthesis: AvatarSynthesisConfig? = null,
     val eyeEffect: EyeEffectConfig? = null,
     val pixelArt: PixelArtConfig? = null,
     val frameBorderAsset: String? = null,
@@ -27,6 +28,17 @@ data class SelfieFilterConfig(
     val colorGrade: ColorGradeConfig? = null,
     val scanlines: ScanlineConfig? = null,
     val vignette: VignetteConfig? = null
+)
+
+data class AvatarSynthesisConfig(
+    val enabledByDefault: Boolean = true,
+    val label: String = "⚔️ JRPG Hero Visage Synthesis",
+    val description: String = "Synthesize an authentic 16-bit JRPG portrait from detected facial features",
+    val defaultAttireIndex: Int = 0,
+    val skinToneLabels: List<String> = emptyList(),
+    val hairStyleLabels: List<String> = emptyList(),
+    val hairColorLabels: List<String> = emptyList(),
+    val attireLabels: List<String> = emptyList()
 )
 
 data class PixelArtConfig(
