@@ -241,8 +241,11 @@ fun SelfieFilterDialog(
                 if (applyAvatarSynthesis && filterConfig.avatarSynthesis != null) {
                     val synth = filterConfig.avatarSynthesis
                     val skinLabels = synth.skinToneLabels.ifEmpty { AvatarSynthesizer.SKIN_LABELS }
+                    val eyeColorLabels = synth.eyeColorLabels.ifEmpty { AvatarSynthesizer.EYE_COLOR_LABELS }
+                    val faceShapeLabels = synth.faceShapeLabels.ifEmpty { AvatarSynthesizer.FACE_SHAPE_LABELS }
                     val hairStyleLabels = synth.hairStyleLabels.ifEmpty { AvatarSynthesizer.HAIR_STYLE_LABELS }
                     val hairColorLabels = synth.hairColorLabels.ifEmpty { AvatarSynthesizer.HAIR_COLOR_LABELS }
+                    val facialHairLabels = synth.facialHairLabels.ifEmpty { AvatarSynthesizer.FACIAL_HAIR_LABELS }
                     val attireLabels = synth.attireLabels.ifEmpty { AvatarSynthesizer.ATTIRE_LABELS }
 
                     // Hairstyle Selector
@@ -263,12 +266,41 @@ fun SelfieFilterDialog(
                     )
                     Spacer(modifier = Modifier.height(6.dp))
 
+                    // Eye Color Selector
+                    AvatarChipSelectorRow(
+                        title = "👀 EYE COLOR",
+                        options = eyeColorLabels,
+                        selectedIndex = avatarProfile.eyeColorIndex,
+                        onSelectIndex = { avatarProfile = avatarProfile.copy(eyeColorIndex = it) }
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+
                     // Skin Tone Selector
                     AvatarChipSelectorRow(
                         title = "✨ SKIN COMPLEXION",
                         options = skinLabels,
                         selectedIndex = avatarProfile.skinToneIndex,
                         onSelectIndex = { avatarProfile = avatarProfile.copy(skinToneIndex = it) }
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    // Jawline / Face Shape Selector
+                    AvatarChipSelectorRow(
+                        title = "🗿 JAWLINE / FACE SHAPE",
+                        options = faceShapeLabels,
+                        selectedIndex = avatarProfile.faceShapeIndex,
+                        onSelectIndex = { avatarProfile = avatarProfile.copy(faceShapeIndex = it) }
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    // Facial Hair Selector
+                    AvatarChipSelectorRow(
+                        title = "🧔 FACIAL HAIR",
+                        options = facialHairLabels,
+                        selectedIndex = avatarProfile.facialHairIndex,
+                        onSelectIndex = {
+                            avatarProfile = avatarProfile.copy(facialHairIndex = it, hasStubble = it > 0)
+                        }
                     )
                     Spacer(modifier = Modifier.height(6.dp))
 
@@ -287,15 +319,6 @@ fun SelfieFilterDialog(
                         description = "Detected wireframe eyewear",
                         checked = avatarProfile.hasGlasses,
                         onCheckedChange = { avatarProfile = avatarProfile.copy(hasGlasses = it) }
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
-
-                    // Stubble / Facial Hair Toggle
-                    FilterToggleRow(
-                        label = "🧔 Facial Hair / Stubble",
-                        description = "Detected chin stubble shading",
-                        checked = avatarProfile.hasStubble,
-                        onCheckedChange = { avatarProfile = avatarProfile.copy(hasStubble = it) }
                     )
                     Spacer(modifier = Modifier.height(6.dp))
 

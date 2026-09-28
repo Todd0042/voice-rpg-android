@@ -36,8 +36,11 @@ data class AvatarSynthesisConfig(
     val description: String = "Synthesize an authentic 16-bit JRPG portrait from detected facial features",
     val defaultAttireIndex: Int = 0,
     val skinToneLabels: List<String> = emptyList(),
+    val eyeColorLabels: List<String> = emptyList(),
+    val faceShapeLabels: List<String> = emptyList(),
     val hairStyleLabels: List<String> = emptyList(),
     val hairColorLabels: List<String> = emptyList(),
+    val facialHairLabels: List<String> = emptyList(),
     val attireLabels: List<String> = emptyList()
 )
 

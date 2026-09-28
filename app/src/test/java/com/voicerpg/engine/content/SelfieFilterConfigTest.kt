@@ -105,13 +105,18 @@ class SelfieFilterConfigTest {
         assertTrue("Label should not be blank", synth.label.isNotBlank())
         assertTrue("Description should not be blank", synth.description.isNotBlank())
         assertTrue("Skin tone labels should not be empty", synth.skinToneLabels.isNotEmpty())
+        assertTrue("Eye color labels should not be empty", synth.eyeColorLabels.isNotEmpty())
+        assertTrue("Face shape labels should not be empty", synth.faceShapeLabels.isNotEmpty())
         assertTrue("Hair style labels should not be empty", synth.hairStyleLabels.isNotEmpty())
         assertTrue("Hair color labels should not be empty", synth.hairColorLabels.isNotEmpty())
+        assertTrue("Facial hair labels should not be empty", synth.facialHairLabels.isNotEmpty())
         assertTrue("Attire labels should not be empty", synth.attireLabels.isNotEmpty())
 
         // Verify modular avatar sprite assets exist
         val avatarAssets = listOf(
             "game/creation/avatar/head_base.png",
+            "game/creation/avatar/head_base_square.png",
+            "game/creation/avatar/head_base_round.png",
             "game/creation/avatar/hair_spiky.png",
             "game/creation/avatar/hair_parted.png",
             "game/creation/avatar/hair_long.png",
@@ -119,7 +124,10 @@ class SelfieFilterConfigTest {
             "game/creation/avatar/body_knight.png",
             "game/creation/avatar/body_scout.png",
             "game/creation/avatar/glasses.png",
-            "game/creation/avatar/stubble.png"
+            "game/creation/avatar/stubble.png",
+            "game/creation/avatar/beard_stubble.png",
+            "game/creation/avatar/beard_goatee.png",
+            "game/creation/avatar/beard_full.png"
         )
         for (asset in avatarAssets) {
             val file = File("app/src/main/assets/$asset")

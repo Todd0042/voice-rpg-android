@@ -27,8 +27,11 @@
     "description": "Synthesizes an authentic 16-bit Solaria hero portrait matching Aethel from your facial features",
     "defaultAttireIndex": 0,
     "skinToneLabels": ["Fair Alabaster", "Warm Peach", "Olive Neutral", "Golden Tan", "Deep Espresso"],
+    "eyeColorLabels": ["Logos Sky Blue", "Chestnut Brown", "Forest Emerald", "Golden Hazel", "Slate Grey"],
+    "faceShapeLabels": ["Slender V-Chin", "Square Heroic", "Soft Rounded"],
     "hairStyleLabels": ["Short Spiky", "Medium Parted", "Long Braids"],
     "hairColorLabels": ["Silver / Grey", "Golden Blonde", "Chestnut Brown", "Raven Black", "Fiery Auburn"],
+    "facialHairLabels": ["Clean Shaven", "5 O'Clock Stubble", "Goatee & Mustache", "Full Beard"],
     "attireLabels": ["Solaria Mage Robe", "Paladin Gold Plate", "Forest Scout Mantle"]
   },
   "pixelArt": {
