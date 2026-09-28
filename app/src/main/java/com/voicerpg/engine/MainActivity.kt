@@ -237,6 +237,7 @@ class MainActivity : ComponentActivity() {
                         GameScreen.TITLE -> {
                             val speechState by speechManager.speechState.collectAsState()
                             TitleScreen(
+                                manifest = com.voicerpg.engine.content.GameContent.manifest,
                                 hasSave = storyState.hasExistingSave,
                                 saveSummary = storyState.saveSummary,
                                 saveSlots = storyState.saveSlots,

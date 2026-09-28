@@ -306,14 +306,14 @@ fun CharacterCreationScreen(
 
             // Header
             Text(
-                text = "⚔️ TEMPLATE CHARACTER CREATION ⚔️",
+                text = manifest.creationTitle ?: "⚔️ CHARACTER CREATION ⚔️",
                 color = LogosGold,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Black,
                 fontFamily = FontFamily.Monospace
             )
             Text(
-                text = "Template Character Setup & Initial Loadout",
+                text = manifest.creationSubtitle ?: "Character Setup & Initial Loadout",
                 color = Color.LightGray,
                 fontSize = 11.sp,
                 fontFamily = FontFamily.Monospace
@@ -540,10 +540,11 @@ fun CharacterCreationScreen(
                     .border(2.dp, auraColorVal, RoundedCornerShape(12.dp))
                     .padding(14.dp)
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                     // Portrait Bust
                     Box(
                         modifier = Modifier
@@ -705,6 +706,7 @@ fun CharacterCreationScreen(
                     }
                 }
             }
+        }
 
             Spacer(modifier = Modifier.height(16.dp))
 

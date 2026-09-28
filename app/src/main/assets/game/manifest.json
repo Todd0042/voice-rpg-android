@@ -26,7 +26,9 @@
     "Umbral Adept",
     "Logos Seeker"
   ],
-  "creationEmbarkPrompt": "AWAKEN \u2794",
+  "creationTitle": "⚔️ FORGE YOUR INVOCATOR ⚔️",
+  "creationSubtitle": "Character Creation & Initial Loadout",
+  "creationEmbarkPrompt": "AWAKEN ➔",
   "creationVoiceKeywords": [
     "awaken",
     "begin",
