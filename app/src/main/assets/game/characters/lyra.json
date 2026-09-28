@@ -1,0 +1,46 @@
+{
+  "id": "lyra",
+  "role": "npc",
+  "name": "Lyra",
+  "title": "Grove Warden",
+  "portraitAsset": "portraits/lyra.jpg",
+  "themeColor": "#A5D6A7",
+  "ttsPitch": 1.2,
+  "samplePhrase": "The grove breathes with ancient power.",
+  "loreClass": "Grove Warden",
+  "voiceAliases": [
+    "lyra",
+    "warden",
+    "grove warden",
+    "druid"
+  ],
+  "joinWhenFlag": "lyra_recruited",
+  "combat": {
+    "maxHp": 280,
+    "maxMp": 120,
+    "speed": 65,
+    "defense": 4,
+    "avatarTint": "#A5D6A7",
+    "startAtb": 0.35,
+    "spellIds": [
+      "soothing_rain",
+      "briar_entangle",
+      "deep_root"
+    ],
+    "growth": {
+      "maxHp": 15,
+      "maxMp": 10,
+      "speed": 1,
+      "defense": 1,
+      "potencyPct": 0.04
+    }
+  },
+  "spellGrants": [
+    {
+      "flag": "lyra_trial_complete",
+      "spellIds": [
+        "verdant_cataclysm"
+      ]
+    }
+  ]
+}

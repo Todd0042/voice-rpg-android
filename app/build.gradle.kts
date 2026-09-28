@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.voicerpg.android"
+    namespace = "com.voicerpg.engine"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.voicerpg.android"
+        applicationId = "com.voicerpg.echoesoflogos"
         minSdk = 26
         targetSdk = 35
         versionCode = 1
@@ -81,6 +81,10 @@ dependencies {
 
     // JSON Serialization for Game Save System
     implementation("com.google.code.gson:gson:2.11.0")
+
+    // MLKit for Custom Selfie Portrait Generation
+    implementation("com.google.mlkit:segmentation-selfie:16.0.0-beta6")
+    implementation("com.google.mlkit:face-detection:16.1.7")
 
     // Testing
     testImplementation("junit:junit:4.13.2")

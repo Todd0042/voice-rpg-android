@@ -7,5 +7,6 @@
 /captures
 .externalNativeBuild
 .cxx
-local.properties
 .kotlin
+scratch/
+echoes_of_logos_migration_plan.md
