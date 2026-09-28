@@ -84,6 +84,20 @@ class SelfieFilterConfigTest {
     }
 
     @Test
+    fun testPixelArtConfig() {
+        val pixel = GameContent.selfieConfig.pixelArt
+        assertNotNull("PixelArt config should be present", pixel)
+        assertTrue("PixelArt label must not be blank", pixel!!.label.isNotBlank())
+        assertTrue("Grid resolution must be in 96..256", pixel.gridResolution in 96..256)
+        assertTrue("Palette bands must be in 2..8", pixel.paletteBands in 2..8)
+
+        val frameAsset = GameContent.selfieConfig.frameBorderAsset
+        assertNotNull("Frame border asset should be present", frameAsset)
+        val file = File("app/src/main/assets/$frameAsset")
+        assertTrue("Frame border file must exist at ${file.path}", file.exists() || File("src/main/assets/$frameAsset").exists())
+    }
+
+    @Test
     fun testDefaultFallbackWhenConfigAbsent() {
         val emptySource = object : ContentSource {
             override fun readText(path: String): String? = null
@@ -92,6 +106,8 @@ class SelfieFilterConfigTest {
         val pack = GameContentLoader(emptySource).load()
         assertFalse("SelfieFilterConfig should be disabled by default if missing", pack.manifest.selfieConfig.isEnabled)
         assertTrue("Available backgrounds should be empty in fallback", pack.manifest.selfieConfig.availableBackgrounds.isEmpty())
+        org.junit.Assert.assertNull("PixelArt should be null in fallback", pack.manifest.selfieConfig.pixelArt)
+        org.junit.Assert.assertNull("FrameBorder should be null in fallback", pack.manifest.selfieConfig.frameBorderAsset)
         org.junit.Assert.assertNull("TFLite stylization should be null in fallback", pack.manifest.selfieConfig.tfliteStylization)
         org.junit.Assert.assertNull("Cel shading should be null in fallback", pack.manifest.selfieConfig.celShading)
         org.junit.Assert.assertNull("Ink outlines should be null in fallback", pack.manifest.selfieConfig.inkOutlines)

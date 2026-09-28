@@ -65,6 +65,9 @@ fun SelfieFilterDialog(
         mutableStateOf(filterConfig.availableBackgrounds.firstOrNull()?.assetPath)
     }
 
+    var applyPixelArt by remember {
+        mutableStateOf(filterConfig.pixelArt?.enabledByDefault ?: true)
+    }
     var applyTFLite by remember {
         mutableStateOf(filterConfig.tfliteStylization?.enabledByDefault ?: false)
     }
@@ -88,7 +91,7 @@ fun SelfieFilterDialog(
     var isProcessing by remember { mutableStateOf(true) }
 
     // Re-process image whenever any filter setting or chosen background changes
-    LaunchedEffect(applySegmentation, selectedBgAsset, applyTFLite, applyCelShading, applyInkOutlines, applyEyeEffect, applyScanlines, applyColorGrade) {
+    LaunchedEffect(applySegmentation, selectedBgAsset, applyPixelArt, applyTFLite, applyCelShading, applyInkOutlines, applyEyeEffect, applyScanlines, applyColorGrade) {
         isProcessing = true
         val result = SelfiePortraitProcessor.processSelfie(
             context = context,
@@ -96,6 +99,7 @@ fun SelfieFilterDialog(
             filterConfig = filterConfig,
             selectedBgAsset = if (applySegmentation) selectedBgAsset else null,
             applySegmentation = applySegmentation && !selectedBgAsset.isNullOrBlank(),
+            applyPixelArt = applyPixelArt,
             applyTFLite = applyTFLite,
             applyCelShading = applyCelShading,
             applyInkOutlines = applyInkOutlines,
@@ -184,6 +188,17 @@ fun SelfieFilterDialog(
                 }
 
                 Spacer(modifier = Modifier.height(14.dp))
+
+                // Filter Option: Retro Pixel Art
+                filterConfig.pixelArt?.let { pixel ->
+                    FilterToggleRow(
+                        label = pixel.label,
+                        description = pixel.description,
+                        checked = applyPixelArt,
+                        onCheckedChange = { applyPixelArt = it }
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                }
 
                 // Filter Option: Neural Anime Stylization (TFLite)
                 filterConfig.tfliteStylization?.let { tflite ->

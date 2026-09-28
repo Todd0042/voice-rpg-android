@@ -24,6 +24,7 @@ import com.voicerpg.engine.model.CelShadingConfig
 import com.voicerpg.engine.model.ColorGradeConfig
 import com.voicerpg.engine.model.EyeEffectConfig
 import com.voicerpg.engine.model.InkOutlineConfig
+import com.voicerpg.engine.model.PixelArtConfig
 import com.voicerpg.engine.model.ScanlineConfig
 import com.voicerpg.engine.model.SelfieFilterConfig
 import com.voicerpg.engine.model.TFLiteStylizeConfig
@@ -112,9 +113,10 @@ object SelfiePortraitProcessor {
         filterConfig: SelfieFilterConfig,
         selectedBgAsset: String? = null,
         applySegmentation: Boolean = true,
-        applyTFLite: Boolean = true,
-        applyCelShading: Boolean = true,
-        applyInkOutlines: Boolean = true,
+        applyPixelArt: Boolean = true,
+        applyTFLite: Boolean = false,
+        applyCelShading: Boolean = false,
+        applyInkOutlines: Boolean = false,
         applyEyeEffect: Boolean = true,
         applyScanlines: Boolean = true,
         applyColorGrade: Boolean = true
@@ -127,7 +129,7 @@ object SelfiePortraitProcessor {
             runSegmentation(squareInput)
         } else null
 
-        // 3. Neural Anime Stylization (TFLite On-Device Model)
+        // 3. Optional Neural Anime Stylization (TFLite On-Device Model)
         val stylizedSubject = if (applyTFLite && filterConfig.tfliteStylization != null) {
             applyTFLiteStylization(context, squareInput, filterConfig.tfliteStylization) ?: squareInput
         } else {
@@ -148,7 +150,7 @@ object SelfiePortraitProcessor {
             celShadedSubject
         }
 
-        // 5. Background Composite (if background selected)
+        // 6. Background Composite (if background selected)
         val composited = if (maskBuffer != null && !selectedBgAsset.isNullOrBlank()) {
             val bgBitmap = loadAssetBitmap(context, selectedBgAsset, PORTRAIT_SIZE)
             compositeWithBackground(inkedSubject, bgBitmap, maskBuffer)
@@ -156,16 +158,30 @@ object SelfiePortraitProcessor {
             inkedSubject
         }
 
-        // 6. Eye Orbit Shading (Arcane fatigue or Logos resonance glow)
+        // 7. Eye Orbit Shading (Arcane fatigue in Wally's or Logos resonance glow in Echoes)
         val withEyeEffect = if (applyEyeEffect && filterConfig.eyeEffect != null) {
             applyEyeShading(composited, filterConfig.eyeEffect)
         } else {
             composited
         }
 
-        // 7. Color Grading, Scanlines, and Vignette
+        // 8. Retro JRPG Pixel-Art Pipeline (Kuwahara + 144px grid + palette quantization + 1px inking)
+        val pixelArtOutput = if (applyPixelArt && filterConfig.pixelArt != null) {
+            applyPixelArtPipeline(withEyeEffect, filterConfig.pixelArt)
+        } else {
+            withEyeEffect
+        }
+
+        // 9. Frame Border Overlay (e.g. ornate gold fantasy frame in Echoes or CRT bezel in Wally's)
+        val framedResult = if (!filterConfig.frameBorderAsset.isNullOrBlank()) {
+            overlayFrameBorder(context, pixelArtOutput, filterConfig.frameBorderAsset)
+        } else {
+            pixelArtOutput
+        }
+
+        // 10. Color Grading, Scanlines, and Vignette
         val finalResult = applyPostProcessing(
-            withEyeEffect,
+            framedResult,
             applyScanlines = applyScanlines,
             scanlineConfig = filterConfig.scanlines,
             applyColorGrade = applyColorGrade,
@@ -650,6 +666,222 @@ object SelfiePortraitProcessor {
         val result = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
         result.setPixels(outPixels, 0, w, 0, 0, w, h)
         return result
+    }
+
+    private fun applyPixelArtPipeline(
+        source: Bitmap,
+        config: PixelArtConfig
+    ): Bitmap {
+        val targetDim = config.gridResolution.coerceIn(96, 256)
+        // 1. Bilinear downsample to retro grid size (e.g. 144x144)
+        val small = Bitmap.createScaledBitmap(source, targetDim, targetDim, true)
+        val w = small.width
+        val h = small.height
+        val total = w * h
+
+        val srcPixels = IntArray(total)
+        small.getPixels(srcPixels, 0, w, 0, 0, w, h)
+
+        // 2. Fast Kuwahara Filter at retro grid size (flattens skin noise, preserves silhouette edges)
+        val r = config.kuwaharaRadius.coerceIn(1, 4)
+        val smoothed = applyKuwaharaFilter(srcPixels, w, h, r)
+
+        // 3. Palette Quantization with 2x2 Bayer Dithering & JRPG Warm Highlight / Cool Shadow Shifting
+        val bands = config.paletteBands.coerceIn(2, 8)
+        val ditherScale = config.ditherStrength.coerceIn(0f, 0.25f) * 255f
+        val shadowCooling = config.shadowCoolingFactor.coerceIn(0f, 0.4f)
+        val bayer2x2 = floatArrayOf(
+            -0.5f, 0.0f,
+            0.25f, -0.25f
+        )
+
+        val lums = FloatArray(total)
+        val quantized = IntArray(total)
+
+        for (y in 0 until h) {
+            val yOff = y * w
+            val bayerY = (y % 2) * 2
+            for (x in 0 until w) {
+                val idx = yOff + x
+                val pix = smoothed[idx]
+                val cr = Color.red(pix)
+                val cg = Color.green(pix)
+                val cb = Color.blue(pix)
+                val lum = (299 * cr + 587 * cg + 114 * cb) / 1000f
+                lums[idx] = lum
+
+                val dither = bayer2x2[bayerY + (x % 2)] * ditherScale
+                val dLum = (lum + dither).coerceIn(0f, 255f)
+                val band = (dLum * bands / 256f).toInt().coerceIn(0, bands - 1)
+                val qLum = ((band + 0.5f) * (255f / bands)).coerceIn(0f, 255f)
+                val ratio = if (lum > 1f) (qLum / lum).coerceIn(0.4f, 2.2f) else 1f
+
+                var qr = (cr * ratio).toInt().coerceIn(0, 255)
+                var qg = (cg * ratio).toInt().coerceIn(0, 255)
+                var qb = (cb * ratio).toInt().coerceIn(0, 255)
+
+                // JRPG tonal warmth shift
+                if (qLum < 120f) {
+                    val shadowRatio = (120f - qLum) / 120f
+                    val blueShift = (shadowCooling * shadowRatio * 32).toInt()
+                    val redReduce = (shadowCooling * shadowRatio * 16).toInt()
+                    qb = (qb + blueShift).coerceAtMost(255)
+                    qr = (qr - redReduce).coerceAtLeast(0)
+                } else if (qLum > 180f) {
+                    val highlightRatio = (qLum - 180f) / 75f
+                    val warmShift = (highlightRatio * 12).toInt()
+                    qr = (qr + warmShift).coerceAtMost(255)
+                    qg = (qg + (warmShift / 2)).coerceAtMost(255)
+                }
+
+                quantized[idx] = Color.rgb(qr, qg, qb)
+            }
+        }
+
+        // 4. 1px Pixel-Art Edge Inking (Sobel in grid space)
+        val inkColor = parseColor(config.outlineColorHex, Color.rgb(30, 26, 45))
+        val inkR = Color.red(inkColor)
+        val inkG = Color.green(inkColor)
+        val inkB = Color.blue(inkColor)
+        val sensitivity = config.outlineSensitivity.coerceIn(0.5f, 2.0f)
+        val tLow = 50f / sensitivity
+        val tHigh = 120f / sensitivity
+
+        val outPixels = IntArray(total)
+
+        for (y in 0 until h) {
+            val yOff = y * w
+            for (x in 0 until w) {
+                val idx = yOff + x
+                val origPix = quantized[idx]
+
+                if (x == 0 || x == w - 1 || y == 0 || y == h - 1) {
+                    outPixels[idx] = origPix
+                    continue
+                }
+
+                val p00 = lums[(y - 1) * w + (x - 1)]
+                val p01 = lums[(y - 1) * w + x]
+                val p02 = lums[(y - 1) * w + (x + 1)]
+                val p10 = lums[yOff + (x - 1)]
+                val p12 = lums[yOff + (x + 1)]
+                val p20 = lums[(y + 1) * w + (x - 1)]
+                val p21 = lums[(y + 1) * w + x]
+                val p22 = lums[(y + 1) * w + (x + 1)]
+
+                val gx = (p02 + 2 * p12 + p22) - (p00 + 2 * p10 + p20)
+                val gy = (p20 + 2 * p21 + p22) - (p00 + 2 * p01 + p02)
+                val mag = kotlin.math.abs(gx) + kotlin.math.abs(gy)
+
+                if (mag > tLow) {
+                    val inkFactor = ((mag - tLow) / (tHigh - tLow)).coerceIn(0f, 1f) * 0.85f
+                    val r = (inkR * inkFactor + Color.red(origPix) * (1f - inkFactor)).toInt()
+                    val g = (inkG * inkFactor + Color.green(origPix) * (1f - inkFactor)).toInt()
+                    val b = (inkB * inkFactor + Color.blue(origPix) * (1f - inkFactor)).toInt()
+                    outPixels[idx] = Color.rgb(r, g, b)
+                } else {
+                    outPixels[idx] = origPix
+                }
+            }
+        }
+
+        val retroSmall = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        retroSmall.setPixels(outPixels, 0, w, 0, 0, w, h)
+
+        // 5. Point-sample (Nearest-Neighbor) 4x upscale to PORTRAIT_SIZE (512x512)
+        val upscaled = Bitmap.createBitmap(PORTRAIT_SIZE, PORTRAIT_SIZE, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(upscaled)
+        val paint = Paint().apply {
+            isFilterBitmap = false // Crucial for crisp, sharp retro pixel blocks!
+        }
+        val destRect = RectF(0f, 0f, PORTRAIT_SIZE.toFloat(), PORTRAIT_SIZE.toFloat())
+        canvas.drawBitmap(retroSmall, null, destRect, paint)
+        return upscaled
+    }
+
+    private fun applyKuwaharaFilter(pixels: IntArray, w: Int, h: Int, radius: Int): IntArray {
+        val out = IntArray(w * h)
+        val lum = FloatArray(w * h)
+        for (i in pixels.indices) {
+            val p = pixels[i]
+            lum[i] = (299 * Color.red(p) + 587 * Color.green(p) + 114 * Color.blue(p)) / 1000f
+        }
+
+        for (y in 0 until h) {
+            val yOffset = y * w
+            for (x in 0 until w) {
+                if (x < radius || x >= w - radius || y < radius || y >= h - radius) {
+                    out[yOffset + x] = pixels[yOffset + x]
+                    continue
+                }
+
+                var minVar = Float.MAX_VALUE
+                var bestR = 0
+                var bestG = 0
+                var bestB = 0
+
+                for (q in 0..3) {
+                    val xStart = if (q == 0 || q == 2) x - radius else x
+                    val xEnd = if (q == 0 || q == 2) x else x + radius
+                    val yStart = if (q == 0 || q == 1) y - radius else y
+                    val yEnd = if (q == 0 || q == 1) y else y + radius
+
+                    var sumLum = 0f
+                    var sumLumSq = 0f
+                    var sumR = 0
+                    var sumG = 0
+                    var sumB = 0
+                    var count = 0
+
+                    for (qy in yStart..yEnd) {
+                        val qyOff = qy * w
+                        for (qx in xStart..xEnd) {
+                            val l = lum[qyOff + qx]
+                            val p = pixels[qyOff + qx]
+                            sumLum += l
+                            sumLumSq += l * l
+                            sumR += Color.red(p)
+                            sumG += Color.green(p)
+                            sumB += Color.blue(p)
+                            count++
+                        }
+                    }
+
+                    val meanLum = sumLum / count
+                    val variance = (sumLumSq / count) - (meanLum * meanLum)
+
+                    if (variance < minVar) {
+                        minVar = variance
+                        bestR = sumR / count
+                        bestG = sumG / count
+                        bestB = sumB / count
+                    }
+                }
+
+                out[yOffset + x] = Color.rgb(bestR, bestG, bestB)
+            }
+        }
+        return out
+    }
+
+    private fun overlayFrameBorder(
+        context: Context,
+        portrait: Bitmap,
+        frameBorderAsset: String
+    ): Bitmap {
+        return try {
+            val frameBitmap = loadAssetBitmap(context, frameBorderAsset, PORTRAIT_SIZE) ?: return portrait
+            val result = Bitmap.createBitmap(PORTRAIT_SIZE, PORTRAIT_SIZE, Bitmap.Config.ARGB_8888)
+            val canvas = Canvas(result)
+            canvas.drawBitmap(portrait, 0f, 0f, null)
+            val framePaint = Paint().apply {
+                isFilterBitmap = false // Preserve sharp pixel edges of the decorative frame
+            }
+            canvas.drawBitmap(frameBitmap, 0f, 0f, framePaint)
+            result
+        } catch (_: Exception) {
+            portrait
+        }
     }
 
     private fun loadModelFile(context: Context, modelPath: String): ByteBuffer {

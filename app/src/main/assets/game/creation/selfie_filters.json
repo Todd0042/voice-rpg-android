@@ -20,8 +20,21 @@
     { "id": "castle", "label": "High Citadel", "assetPath": "environments/castle.jpg" },
     { "id": "cave", "label": "Crystal Cavern", "assetPath": "environments/cave.jpg" }
   ],
-  "tfliteStylization": {
+  "frameBorderAsset": "game/creation/borders/gold_fantasy_frame.png",
+  "pixelArt": {
     "enabledByDefault": true,
+    "label": "🎮 Retro JRPG Pixel Art",
+    "description": "16-bit Chronicle pixel grid with discrete color shading matching Aethel and companion portraits",
+    "gridResolution": 144,
+    "kuwaharaRadius": 2,
+    "paletteBands": 4,
+    "ditherStrength": 0.08,
+    "shadowCoolingFactor": 0.14,
+    "outlineSensitivity": 1.05,
+    "outlineColorHex": "#18142A"
+  },
+  "tfliteStylization": {
+    "enabledByDefault": false,
     "modelAssetPath": "game/creation/models/anime_style.tflite",
     "label": "🎨 JRPG Anime Neural Style",
     "description": "On-device deep neural network transforming your portrait into anime line-and-wash art",

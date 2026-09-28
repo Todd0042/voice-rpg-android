@@ -19,12 +19,27 @@ data class SelfieFilterConfig(
     val backgroundToggleDescription: String? = null,
     val availableBackgrounds: List<SelfieBackgroundOption> = emptyList(),
     val eyeEffect: EyeEffectConfig? = null,
+    val pixelArt: PixelArtConfig? = null,
+    val frameBorderAsset: String? = null,
     val tfliteStylization: TFLiteStylizeConfig? = null,
     val celShading: CelShadingConfig? = null,
     val inkOutlines: InkOutlineConfig? = null,
     val colorGrade: ColorGradeConfig? = null,
     val scanlines: ScanlineConfig? = null,
     val vignette: VignetteConfig? = null
+)
+
+data class PixelArtConfig(
+    val enabledByDefault: Boolean = true,
+    val label: String = "🎮 Retro Pixel Art",
+    val description: String = "16-bit JRPG pixel art grid with discrete color shading",
+    val gridResolution: Int = 144,
+    val kuwaharaRadius: Int = 2,
+    val paletteBands: Int = 4,
+    val ditherStrength: Float = 0.08f,
+    val shadowCoolingFactor: Float = 0.14f,
+    val outlineSensitivity: Float = 1.05f,
+    val outlineColorHex: String = "#1E1A2D"
 )
 
 data class TFLiteStylizeConfig(
