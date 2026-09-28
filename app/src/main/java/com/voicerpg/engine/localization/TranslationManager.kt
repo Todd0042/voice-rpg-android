@@ -38,11 +38,36 @@ object TranslationManager {
     private var activeTargetLanguage: String = "en"
     private var isModelDownloaded = false
 
+    private var appContext: Context? = null
+    private val assetDictionaries = ConcurrentHashMap<String, Map<String, String>>()
+
     // In-memory cache for dynamic translations: [lang:text] -> translatedText
     private val dynamicCache = ConcurrentHashMap<String, String>()
 
     fun initialize(context: Context? = null) {
-        // Ready for offline on-device translation
+        appContext = context?.applicationContext
+        loadAssetDictionary(_currentLanguage.value)
+    }
+
+    fun loadAssetDictionary(lang: String) {
+        val clean = lang.lowercase().trim().take(2)
+        if (clean == "en" || clean.isBlank()) return
+        if (assetDictionaries.containsKey(clean)) return
+        val ctx = appContext ?: return
+        try {
+            val assetPath = "game/localization/strings_$clean.json"
+            ctx.assets.open(assetPath).use { inputStream ->
+                val reader = java.io.InputStreamReader(inputStream, Charsets.UTF_8)
+                val type = object : com.google.gson.reflect.TypeToken<Map<String, String>>() {}.type
+                val map: Map<String, String>? = com.google.gson.Gson().fromJson(reader, type)
+                if (!map.isNullOrEmpty()) {
+                    assetDictionaries[clean] = map
+                    _translationVersion.value++
+                }
+            }
+        } catch (_: Throwable) {
+            // Asset might not exist or test environment without assets
+        }
     }
 
     fun setLanguageAndRegion(lang: String, region: String = "") {
@@ -50,6 +75,7 @@ object TranslationManager {
         val cleanRegion = region.uppercase().trim()
         _currentLanguage.value = cleanLang
         _currentRegion.value = cleanRegion
+        loadAssetDictionary(cleanLang)
 
         if (cleanLang == "en" || cleanLang.isBlank()) {
             activeTranslator?.close()
@@ -207,6 +233,15 @@ object TranslationManager {
 
     private fun lookupDictionary(text: String, lang: String): String? {
         val normalized = text.trim()
+
+        // 1. Check loaded JSON asset dictionary for this language
+        val assetMap = assetDictionaries[lang]
+        if (assetMap != null) {
+            assetMap[normalized]?.let { return it }
+            assetMap.entries.firstOrNull { it.key.equals(normalized, ignoreCase = true) }?.value?.let { return it }
+        }
+
+        // 2. Check built-in fallback dictionary
         val langMap = DICTIONARY[lang] ?: return null
 
         // Exact match

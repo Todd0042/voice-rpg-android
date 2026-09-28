@@ -58,6 +58,7 @@ import androidx.compose.ui.window.Dialog
 import com.voicerpg.engine.audio.CombatNarrator
 import com.voicerpg.engine.audio.SpeechManager
 import com.voicerpg.engine.audio.SpeechState
+import com.voicerpg.engine.localization.TranslationManager
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import com.voicerpg.engine.content.GameContent
@@ -842,7 +843,7 @@ fun CharacterCreationScreen(
 
             // Epithet Title Selector
             Text(
-                text = "4. HONORIFIC TITLE",
+                text = t("HONORIFIC TITLE"),
                 color = LogosGold,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
@@ -973,14 +974,14 @@ private fun ClassOptionCard(
             ) {
                 Column {
                     Text(
-                        text = heroClass.title.uppercase(),
+                        text = TranslationManager.translate(heroClass.title).uppercase(),
                         color = if (isSelected) LogosGold else Color.White,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Black,
                         fontFamily = FontFamily.Monospace
                     )
                     Text(
-                        text = heroClass.subtitle,
+                        text = TranslationManager.translate(heroClass.subtitle),
                         color = if (isSelected) LogosGlow else Color.Gray,
                         fontSize = 10.sp,
                         fontFamily = FontFamily.Monospace
@@ -989,16 +990,16 @@ private fun ClassOptionCard(
 
                 // Stats Pills
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    StatPill("HP", heroClass.startingHp.toString(), Color(0xFF4CAF50))
-                    StatPill("MP", heroClass.startingMp.toString(), Color(0xFF00B0FF))
-                    StatPill("SPD", heroClass.startingSpeed.toString(), Color(0xFFFFB74D))
+                    StatPill(TranslationManager.translate("HP"), heroClass.startingHp.toString(), Color(0xFF4CAF50))
+                    StatPill(TranslationManager.translate("MP"), heroClass.startingMp.toString(), Color(0xFF00B0FF))
+                    StatPill(TranslationManager.translate("SPD"), heroClass.startingSpeed.toString(), Color(0xFFFFB74D))
                 }
             }
 
             Spacer(modifier = Modifier.height(6.dp))
 
             Text(
-                text = heroClass.description,
+                text = TranslationManager.translate(heroClass.description),
                 color = Color.LightGray,
                 fontSize = 10.sp,
                 fontFamily = FontFamily.Monospace,
@@ -1023,7 +1024,7 @@ private fun ClassOptionCard(
                             .padding(horizontal = 6.dp, vertical = 2.dp)
                     ) {
                         Text(
-                            text = "⚡ ${sp.name}",
+                            text = "⚡ ${TranslationManager.translate(sp.name)}",
                             color = Color(0xFF80D8FF),
                             fontSize = 9.sp,
                             fontFamily = FontFamily.Monospace,

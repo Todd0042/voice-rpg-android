@@ -41,6 +41,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.voicerpg.engine.engine.QuestMilestone
 import com.voicerpg.engine.engine.QuestRecap
+import com.voicerpg.engine.localization.TranslationManager
 import com.voicerpg.engine.model.DialogueLogEntry
 import com.voicerpg.engine.ui.theme.FrostCyan
 import com.voicerpg.engine.ui.theme.HolyYellow
@@ -101,7 +102,7 @@ fun DialogueBacklogDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "📜 CHRONICLE & BACKLOG",
+                        text = "📜 " + TranslationManager.translate("CHRONICLE & BACKLOG"),
                         color = LogosGold,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Black,
@@ -146,7 +147,7 @@ fun DialogueBacklogDialog(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "📖 STORY RECAP",
+                            text = "📖 " + TranslationManager.translate("STORY RECAP"),
                             color = if (isRecapActive) LogosGold else Color.LightGray,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
@@ -166,7 +167,7 @@ fun DialogueBacklogDialog(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "💬 DIALOGUE LOG (${history.size})",
+                            text = "💬 " + TranslationManager.translate("DIALOGUE LOG") + " (${history.size})",
                             color = if (!isRecapActive) LogosGold else Color.LightGray,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
@@ -252,7 +253,7 @@ fun DialogueBacklogDialog(
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Text(
-                                            text = "🔊 READ RECAP",
+                                            text = "🔊 " + TranslationManager.translate("READ RECAP"),
                                             color = LogosGold,
                                             fontSize = 8.sp,
                                             fontWeight = FontWeight.Bold,
@@ -263,7 +264,7 @@ fun DialogueBacklogDialog(
                                 }
 
                                 Text(
-                                    text = "📍 Location: ${questRecap.currentSceneName}",
+                                    text = "📍 " + TranslationManager.translate("Location") + ": ${TranslationManager.translate(questRecap.currentSceneName)}",
                                     color = Color.LightGray,
                                     fontSize = 9.sp,
                                     fontFamily = FontFamily.Monospace,
@@ -272,7 +273,7 @@ fun DialogueBacklogDialog(
                                 )
 
                                 Text(
-                                    text = "🛡️ Fellowship: " + questRecap.fellowshipRoster.joinToString(" • "),
+                                    text = "🛡️ " + TranslationManager.translate("Fellowship") + ": " + questRecap.fellowshipRoster.joinToString(" • "),
                                     color = FrostCyan,
                                     fontSize = 9.sp,
                                     fontFamily = FontFamily.Monospace,
@@ -290,7 +291,7 @@ fun DialogueBacklogDialog(
                                         .padding(horizontal = 6.dp, vertical = 4.dp)
                                 ) {
                                     Text(
-                                        text = "🎯 OBJECTIVE: ${questRecap.activeObjective}",
+                                        text = "🎯 " + TranslationManager.translate("OBJECTIVE") + ": ${TranslationManager.translate(questRecap.activeObjective)}",
                                         color = Color(0xFFC5CAE9),
                                         fontSize = 9.sp,
                                         fontWeight = FontWeight.Bold,
@@ -306,7 +307,7 @@ fun DialogueBacklogDialog(
                         Spacer(modifier = Modifier.height(8.dp))
 
                         Text(
-                            text = "PREVIOUSLY ON YOUR QUEST:",
+                            text = TranslationManager.translate("PREVIOUSLY ON YOUR QUEST:"),
                             color = Color.Gray,
                             fontSize = 9.sp,
                             fontWeight = FontWeight.Bold,
@@ -338,7 +339,7 @@ fun DialogueBacklogDialog(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "No dialogue recorded yet in this chronicle.",
+                                text = TranslationManager.translate("No dialogue recorded yet in this chronicle."),
                                 color = Color.Gray,
                                 fontSize = 12.sp,
                                 fontFamily = FontFamily.Monospace
@@ -371,7 +372,7 @@ fun DialogueBacklogDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = if (isRecapActive) "💡 Say 'Recap' to hear quest summary" else "💡 Tap 🔊 to replay speech • Say 'Close' hands-free",
+                        text = if (isRecapActive) "💡 " + TranslationManager.translate("Say 'Recap' to hear quest summary") else "💡 " + TranslationManager.translate("Tap 🔊 to replay speech • Say 'Close' hands-free"),
                         color = Color.Gray,
                         fontSize = 9.sp,
                         fontFamily = FontFamily.Monospace
@@ -386,7 +387,7 @@ fun DialogueBacklogDialog(
                             .padding(horizontal = 12.dp, vertical = 6.dp)
                     ) {
                         Text(
-                            text = "CLOSE",
+                            text = TranslationManager.translate("CLOSE"),
                             color = Color.White,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
@@ -454,7 +455,7 @@ private fun QuestMilestoneItem(
                         .padding(horizontal = 5.dp, vertical = 2.dp)
                 ) {
                     Text(
-                        text = if (milestone.isCurrent) "⏳ CURRENT" else "✓ COMPLETED",
+                        text = if (milestone.isCurrent) "⏳ " + TranslationManager.translate("CURRENT") else "✓ " + TranslationManager.translate("COMPLETED"),
                         color = if (milestone.isCurrent) LogosGold else Color(0xFF81C784),
                         fontSize = 7.sp,
                         fontWeight = FontWeight.Bold,
@@ -465,7 +466,7 @@ private fun QuestMilestoneItem(
             }
 
             Text(
-                text = "📍 ${milestone.location}",
+                text = "📍 ${TranslationManager.translate(milestone.location)}",
                 color = Color.Gray,
                 fontSize = 9.sp,
                 fontFamily = FontFamily.Monospace
@@ -474,7 +475,7 @@ private fun QuestMilestoneItem(
             Spacer(modifier = Modifier.height(2.dp))
 
             Text(
-                text = milestone.summary,
+                text = TranslationManager.translate(milestone.summary),
                 color = Color.LightGray,
                 fontSize = 11.sp,
                 fontFamily = FontFamily.Monospace,
@@ -532,7 +533,7 @@ private fun DialogueBacklogItem(
                     }
 
                     Text(
-                        text = entry.speakerName.uppercase(),
+                        text = TranslationManager.translate(entry.speakerName).uppercase(),
                         color = speakerThemeColor,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Black,
@@ -542,7 +543,7 @@ private fun DialogueBacklogItem(
                     Spacer(modifier = Modifier.width(6.dp))
 
                     Text(
-                        text = "• ${entry.sceneName}",
+                        text = "• ${TranslationManager.translate(entry.sceneName)}",
                         color = Color.Gray,
                         fontSize = 9.sp,
                         fontFamily = FontFamily.Monospace
@@ -560,7 +561,7 @@ private fun DialogueBacklogItem(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "🔊 REPLAY",
+                        text = "🔊 " + TranslationManager.translate("REPLAY"),
                         color = LogosGold,
                         fontSize = 8.sp,
                         fontWeight = FontWeight.Bold,
@@ -571,7 +572,7 @@ private fun DialogueBacklogItem(
 
             // Dialogue Text
             Text(
-                text = entry.text,
+                text = TranslationManager.translate(entry.text),
                 color = Color.White,
                 fontSize = 12.sp,
                 fontFamily = FontFamily.Monospace,

@@ -289,7 +289,7 @@ fun StoryScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = if (storyState.isStoryAutoPlayPaused) "⏸ PAUSED" else "▶ STORY MODE",
+                                text = if (storyState.isStoryAutoPlayPaused) "⏸ " + com.voicerpg.engine.localization.TranslationManager.translate("PAUSED") else "▶ " + com.voicerpg.engine.localization.TranslationManager.translate("STORY MODE"),
                                 color = Color(0xFFF3E5F5),
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Black,
@@ -313,7 +313,7 @@ fun StoryScreen(
                                         .padding(horizontal = 8.dp, vertical = 5.dp)
                                 ) {
                                     Text(
-                                        text = "🔒 POCKET",
+                                        text = "🔒 " + com.voicerpg.engine.localization.TranslationManager.translate("POCKET"),
                                         color = Color.White,
                                         fontSize = 10.sp,
                                         fontWeight = FontWeight.Bold,
@@ -328,7 +328,7 @@ fun StoryScreen(
                                         .padding(horizontal = 8.dp, vertical = 5.dp)
                                 ) {
                                     Text(
-                                        text = if (storyState.isStoryAutoPlayPaused) "RESUME" else "PAUSE",
+                                        text = if (storyState.isStoryAutoPlayPaused) com.voicerpg.engine.localization.TranslationManager.translate("RESUME") else com.voicerpg.engine.localization.TranslationManager.translate("PAUSE"),
                                         color = Color.White,
                                         fontSize = 10.sp,
                                         fontWeight = FontWeight.Bold,
@@ -343,7 +343,7 @@ fun StoryScreen(
                                         .padding(horizontal = 8.dp, vertical = 5.dp)
                                 ) {
                                     Text(
-                                        text = "EXIT",
+                                        text = com.voicerpg.engine.localization.TranslationManager.translate("EXIT"),
                                         color = Color.White,
                                         fontSize = 10.sp,
                                         fontWeight = FontWeight.Bold,
@@ -376,7 +376,7 @@ fun StoryScreen(
                         verticalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
                         Text(
-                            text = storyState.currentScene.chapterTitle.uppercase(),
+                            text = com.voicerpg.engine.localization.TranslationManager.translate(storyState.currentScene.chapterTitle).uppercase(),
                             color = LogosGold,
                             fontSize = if (isLandscape) 10.sp else 11.sp,
                             fontWeight = FontWeight.Black,
@@ -387,7 +387,7 @@ fun StoryScreen(
                             lineHeight = 14.sp
                         )
                         Text(
-                            text = "📍 ${storyState.currentScene.name}",
+                            text = "📍 ${com.voicerpg.engine.localization.TranslationManager.translate(storyState.currentScene.name)}",
                             color = Color.LightGray,
                             fontSize = 9.sp,
                             fontFamily = FontFamily.Monospace,
@@ -422,7 +422,7 @@ fun StoryScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "📜 LOG",
+                                text = "📜 " + com.voicerpg.engine.localization.TranslationManager.translate("LOG"),
                                 color = LogosGold,
                                 fontSize = 9.sp,
                                 fontWeight = FontWeight.Bold,
@@ -443,7 +443,7 @@ fun StoryScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = if (isEyesFreeMode) "🎧 POCKET" else "⚙️ OPT",
+                                text = if (isEyesFreeMode) "🎧 " + com.voicerpg.engine.localization.TranslationManager.translate("POCKET") else "⚙️ " + com.voicerpg.engine.localization.TranslationManager.translate("OPT"),
                                 color = if (isEyesFreeMode) Color(0xFFE3F2FD) else LogosGold,
                                 fontSize = 9.sp,
                                 fontWeight = FontWeight.Bold,
@@ -470,7 +470,7 @@ fun StoryScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = if (storyState.isFastForwarding) "⏹️ STOP" else "⏩ SKIP",
+                                text = if (storyState.isFastForwarding) "⏹️ " + com.voicerpg.engine.localization.TranslationManager.translate("STOP") else "⏩ " + com.voicerpg.engine.localization.TranslationManager.translate("SKIP"),
                                 color = if (storyState.isFastForwarding) Color.White else LogosGold,
                                 fontSize = 9.sp,
                                 fontWeight = FontWeight.Bold,
@@ -491,7 +491,7 @@ fun StoryScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "⚔️ BTL",
+                                text = "⚔️ " + com.voicerpg.engine.localization.TranslationManager.translate("BTL"),
                                 color = Color.White,
                                 fontSize = 9.sp,
                                 fontWeight = FontWeight.Bold,
@@ -980,7 +980,7 @@ private fun RetroSpeechBubble(
                         Spacer(modifier = Modifier.width(6.dp))
                     }
                     Text(
-                        text = "💬 ${node.speaker.name.uppercase()}",
+                        text = "💬 ${com.voicerpg.engine.localization.TranslationManager.translate(node.speaker.name).uppercase()}",
                         color = speakerColor,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Black,
@@ -1001,7 +1001,7 @@ private fun RetroSpeechBubble(
                     }
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = promptText,
+                        text = com.voicerpg.engine.localization.TranslationManager.translate(promptText),
                         color = LogosGold.copy(alpha = arrowAlpha),
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
@@ -1015,7 +1015,7 @@ private fun RetroSpeechBubble(
             if (node.speaker.title.isNotBlank()) {
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = "• ${node.speaker.title}",
+                    text = "• ${com.voicerpg.engine.localization.TranslationManager.translate(node.speaker.title)}",
                     color = Color.Gray,
                     fontSize = 9.sp,
                     fontFamily = FontFamily.Monospace,
@@ -1085,9 +1085,9 @@ private fun VoiceInputPromptBar(
         ) {
             Text(
                 text = when {
-                    isListening -> "🎙️ LISTENING..."
-                    isStandby -> "⏸️ STANDBY"
-                    else -> "🎤 SPEAK"
+                    isListening -> "🎙️ " + com.voicerpg.engine.localization.TranslationManager.translate("LISTENING...")
+                    isStandby -> "⏸️ " + com.voicerpg.engine.localization.TranslationManager.translate("STANDBY")
+                    else -> "🎤 " + com.voicerpg.engine.localization.TranslationManager.translate("SPEAK")
                 },
                 color = if (isStandby) Color(0xFFFFD54F) else LogosGold,
                 fontSize = 9.sp,
@@ -1177,7 +1177,7 @@ private fun DialogueChoiceItem(
                         .padding(horizontal = 5.dp, vertical = 2.dp)
                 ) {
                     Text(
-                        text = "✓ DONE",
+                        text = "✓ " + com.voicerpg.engine.localization.TranslationManager.translate("DONE"),
                         color = Color(0xFF81C784),
                         fontSize = 8.sp,
                         fontFamily = FontFamily.Monospace,
@@ -1193,7 +1193,7 @@ private fun DialogueChoiceItem(
                         .padding(horizontal = 5.dp, vertical = 2.dp)
                 ) {
                     Text(
-                        text = "🔒 LOCKED",
+                        text = "🔒 " + com.voicerpg.engine.localization.TranslationManager.translate("LOCKED"),
                         color = Color(0xFF90A4AE),
                         fontSize = 8.sp,
                         fontFamily = FontFamily.Monospace,
@@ -1204,8 +1204,10 @@ private fun DialogueChoiceItem(
                 // Spoken keyword cue
                 val keywordHint = choice.voiceKeywords.firstOrNull() ?: ""
                 if (keywordHint.isNotBlank()) {
+                    val translatedSay = com.voicerpg.engine.localization.TranslationManager.translate("Say")
+                    val translatedHint = com.voicerpg.engine.localization.TranslationManager.translate(keywordHint)
                     Text(
-                        text = "Say \"$keywordHint\"",
+                        text = "$translatedSay \"$translatedHint\"",
                         color = Color(0xFF80D8FF),
                         fontSize = 8.sp,
                         fontFamily = FontFamily.Monospace,

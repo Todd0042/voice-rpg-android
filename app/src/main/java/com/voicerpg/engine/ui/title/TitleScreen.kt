@@ -196,7 +196,7 @@ fun TitleScreen(
                 modifier = Modifier.padding(top = 16.dp)
             ) {
                 Text(
-                    text = "VOICE-FIRST RPG",
+                    text = t("VOICE-FIRST RPG"),
                     color = LogosGold.copy(alpha = 0.9f),
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
@@ -291,11 +291,47 @@ fun TitleScreen(
                                 }
 
                                 if (saveSummary.timestamp > 0) {
-                                    val relativeTime = DateUtils.getRelativeTimeSpanString(
-                                        saveSummary.timestamp,
-                                        System.currentTimeMillis(),
-                                        DateUtils.MINUTE_IN_MILLIS
-                                    ).toString()
+                                    val currentLang = TranslationManager.currentLanguage.value
+                                    val diffMs = System.currentTimeMillis() - saveSummary.timestamp
+                                    val mins = (diffMs / 60000).coerceAtLeast(0)
+                                    val relativeTime = when (currentLang.lowercase().take(2)) {
+                                        "es" -> when {
+                                            mins < 1 -> "hace un momento"
+                                            mins < 60 -> "hace $mins min"
+                                            mins < 1440 -> "hace ${mins / 60} h"
+                                            else -> "hace ${mins / 1440} d"
+                                        }
+                                        "de" -> when {
+                                            mins < 1 -> "gerade eben"
+                                            mins < 60 -> "vor $mins Min."
+                                            mins < 1440 -> "vor ${mins / 60} Std."
+                                            else -> "vor ${mins / 1440} T."
+                                        }
+                                        "fr" -> when {
+                                            mins < 1 -> "à l'instant"
+                                            mins < 60 -> "il y a $mins min"
+                                            mins < 1440 -> "il y a ${mins / 60} h"
+                                            else -> "il y a ${mins / 1440} j"
+                                        }
+                                        "pt" -> when {
+                                            mins < 1 -> "agora mesmo"
+                                            mins < 60 -> "há $mins min"
+                                            mins < 1440 -> "há ${mins / 60} h"
+                                            else -> "há ${mins / 1440} d"
+                                        }
+                                        "it" -> when {
+                                            mins < 1 -> "proprio ora"
+                                            mins < 60 -> "$mins min fa"
+                                            mins < 1440 -> "${mins / 60} ore fa"
+                                            else -> "${mins / 1440} gg fa"
+                                        }
+                                        else -> when {
+                                            mins < 1 -> "just now"
+                                            mins < 60 -> "$mins min ago"
+                                            mins < 1440 -> "${mins / 60} hr ago"
+                                            else -> "${mins / 1440} d ago"
+                                        }
+                                    }
                                     Text(
                                         text = relativeTime,
                                         color = Color.LightGray.copy(alpha = 0.7f),
@@ -308,7 +344,7 @@ fun TitleScreen(
                             Spacer(modifier = Modifier.height(4.dp))
 
                             Text(
-                                text = "⚔️ ${saveSummary.heroName} • ${saveSummary.heroClassTitle}  |  👥 ${saveSummary.partySize} ${t("In Fellowship")}",
+                                text = "⚔️ ${saveSummary.heroName} • ${t(saveSummary.heroClassTitle)}  |  👥 ${saveSummary.partySize} ${t("In Fellowship")}",
                                 color = FrostCyan,
                                 fontSize = 11.sp,
                                 fontFamily = FontFamily.Monospace,
@@ -318,7 +354,7 @@ fun TitleScreen(
                             )
 
                             Text(
-                                text = "📜 ${saveSummary.chapterTitle} • ${saveSummary.sceneName}",
+                                text = "📜 ${t(saveSummary.chapterTitle)} • ${t(saveSummary.sceneName)}",
                                 color = Color.White.copy(alpha = 0.85f),
                                 fontSize = 10.sp,
                                 fontFamily = FontFamily.Monospace,

@@ -84,6 +84,7 @@ class MainActivity : ComponentActivity() {
         // without this the engine would fall back to the empty EmergencyFallback and every
         // battle/tutorial/story screen would crash on boot. Content stays JSON + assets only.
         com.voicerpg.engine.content.GameContent.initialize(applicationContext)
+        com.voicerpg.engine.localization.TranslationManager.initialize(this)
 
         speechManager = SpeechManager(this)
         combatNarrator = CombatNarrator(this)
