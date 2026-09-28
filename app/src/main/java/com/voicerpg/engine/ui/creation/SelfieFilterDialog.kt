@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -44,6 +45,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.voicerpg.engine.model.SelfieFilterConfig
 import com.voicerpg.engine.ui.theme.LogosGold
 import com.voicerpg.engine.ui.theme.RetroBlack
@@ -149,21 +151,24 @@ fun SelfieFilterDialog(
         isProcessing = false
     }
 
-    Dialog(onDismissRequest = onDismiss) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
         Box(
             modifier = Modifier
-                .fillMaxWidth()
+                .fillMaxWidth(0.95f)
+                .fillMaxHeight(0.92f)
                 .clip(RoundedCornerShape(16.dp))
                 .background(RetroPanel)
                 .border(2.dp, LogosGold, RoundedCornerShape(16.dp))
-                .padding(16.dp)
+                .padding(14.dp)
         ) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState()),
+                modifier = Modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                // Fixed Header: Title & Subtitle
                 Text(
                     text = filterConfig.filterDialogTitle ?: "📸 CUSTOM PORTRAIT FILTER",
                     color = LogosGold,
@@ -180,12 +185,12 @@ fun SelfieFilterDialog(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
-                // Portrait Preview Frame
+                // Fixed Portrait Preview Frame (stays pinned at top during scrolling)
                 Box(
                     modifier = Modifier
-                        .size(190.dp)
+                        .size(180.dp)
                         .clip(RoundedCornerShape(10.dp))
                         .border(2.dp, LogosGold, RoundedCornerShape(10.dp))
                         .background(Color.Black),
@@ -225,18 +230,26 @@ fun SelfieFilterDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(14.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
-                // Mode Selector: JRPG Avatar Synthesis
-                filterConfig.avatarSynthesis?.let { synth ->
-                    FilterToggleRow(
-                        label = synth.label,
-                        description = synth.description,
-                        checked = applyAvatarSynthesis,
-                        onCheckedChange = { applyAvatarSynthesis = it }
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                }
+                // Scrollable Customization Options (middle area scrolls while preview stays fixed at top)
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState()),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    // Mode Selector: JRPG Avatar Synthesis
+                    filterConfig.avatarSynthesis?.let { synth ->
+                        FilterToggleRow(
+                            label = synth.label,
+                            description = synth.description,
+                            checked = applyAvatarSynthesis,
+                            onCheckedChange = { applyAvatarSynthesis = it }
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
 
                 if (applyAvatarSynthesis && filterConfig.avatarSynthesis != null) {
                     val synth = filterConfig.avatarSynthesis
@@ -487,9 +500,11 @@ fun SelfieFilterDialog(
                     }
                 }
 
+                } // End of scrollable customization Column
+
                 Spacer(modifier = Modifier.height(10.dp))
 
-                // Action Buttons: Cancel / Save
+                // Fixed Action Buttons: Cancel / Save (always accessible at the bottom)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
