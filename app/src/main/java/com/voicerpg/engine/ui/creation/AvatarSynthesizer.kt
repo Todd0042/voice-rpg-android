@@ -300,11 +300,12 @@ object AvatarSynthesizer {
             val g = Color.green(p)
             val b = Color.blue(p)
 
-            // Preserve eye whites and dark line art so expressions remain crisp
+            // Preserve eye whites, irises, and dark line art so expressions remain crisp
             if (isSkin) {
                 val isEyeWhite = r > 240 && g > 240 && b > 240
                 val isLineArt = r < 35 && g < 35 && b < 45
-                if (isEyeWhite || isLineArt) {
+                val isEyeIris = (b > r + 25 && b > 90) || (r < 50 && g < 50 && b < 50 && (i % w in 250..375))
+                if (isEyeWhite || isLineArt || isEyeIris) {
                     out[i] = p
                     continue
                 }
