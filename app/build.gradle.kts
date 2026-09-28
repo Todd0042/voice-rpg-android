@@ -54,7 +54,7 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
         jniLibs {
-            useLegacyPackaging = true
+            useLegacyPackaging = false
         }
     }
 }
@@ -82,9 +82,10 @@ dependencies {
     // JSON Serialization for Game Save System
     implementation("com.google.code.gson:gson:2.11.0")
 
-    // MLKit for Custom Selfie Portrait Generation
+    // MLKit for Custom Selfie Portrait Generation and On-Device Translation
     implementation("com.google.mlkit:segmentation-selfie:16.0.0-beta6")
     implementation("com.google.mlkit:face-detection:16.1.7")
+    implementation("com.google.mlkit:translate:17.0.3")
 
     // TensorFlow Lite for Neural Stylization
     implementation("org.tensorflow:tensorflow-lite:2.16.1")

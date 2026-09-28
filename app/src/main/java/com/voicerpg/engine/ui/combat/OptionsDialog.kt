@@ -35,7 +35,10 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.window.Dialog
+import com.voicerpg.engine.model.LanguageCatalog
+import com.voicerpg.engine.ui.theme.FrostCyan
 import com.voicerpg.engine.ui.theme.LogosGold
 import com.voicerpg.engine.ui.theme.LogosGlow
 import com.voicerpg.engine.ui.theme.RetroBlack
@@ -79,6 +82,10 @@ fun OptionsDialog(
     isDebugWarpEnabled: Boolean = true,
     onOpenDebugWarp: (() -> Unit)? = null,
     onReturnToTitle: (() -> Unit)? = null,
+    selectedLanguage: String = "en",
+    selectedRegion: String = "",
+    onSelectLanguage: (String) -> Unit = {},
+    onSelectRegion: (String) -> Unit = {},
     onClose: () -> Unit
 ) {
     if (!isOpen) return
@@ -184,7 +191,111 @@ fun OptionsDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // =============================================================
+                // Language Selection (EN, ES, DE, FR, PT, IT)
+                // =============================================================
+                Text(
+                    text = "🌐 LANGUAGE / IDIOMA / SPRACHE",
+                    color = LogosGold,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Monospace,
+                    modifier = Modifier.align(Alignment.Start)
+                )
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    val languages = listOf(
+                        "en" to "EN",
+                        "es" to "ES",
+                        "de" to "DE",
+                        "fr" to "FR",
+                        "pt" to "PT",
+                        "it" to "IT"
+                    )
+                    languages.forEach { (code, label) ->
+                        val isSelected = selectedLanguage.equals(code, ignoreCase = true)
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(if (isSelected) LogosGold else Color(0xFF1B2230))
+                                .border(1.dp, if (isSelected) LogosGlow else RetroBorder, RoundedCornerShape(6.dp))
+                                .clickable { onSelectLanguage(code) }
+                                .padding(vertical = 7.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = label,
+                                color = if (isSelected) RetroBlack else Color.White,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+                    }
+                }
+
+                // Regional Accent selector for chosen language
+                val availableRegions = LanguageCatalog.getRegionsForLanguage(selectedLanguage)
+                if (availableRegions.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "VOICE ACCENT / REGION",
+                        color = Color.LightGray,
+                        fontSize = 10.sp,
+                        fontFamily = FontFamily.Monospace,
+                        modifier = Modifier.align(Alignment.Start)
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    val chunkedRegions = availableRegions.chunked(2)
+                    chunkedRegions.forEach { rowRegions ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 4.dp),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            rowRegions.forEach { regOpt ->
+                                val isSelected = selectedRegion.equals(regOpt.code, ignoreCase = true)
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(if (isSelected) FrostCyan else RetroPanel)
+                                        .border(
+                                            1.dp,
+                                            if (isSelected) Color.White else RetroBorder,
+                                            RoundedCornerShape(6.dp)
+                                        )
+                                        .clickable { onSelectRegion(regOpt.code) }
+                                        .padding(vertical = 5.dp, horizontal = 4.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = regOpt.displayName,
+                                        color = if (isSelected) RetroBlack else Color.White,
+                                        fontSize = 10.sp,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                        fontFamily = FontFamily.Monospace,
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
+                            }
+                            if (rowRegions.size == 1) {
+                                Spacer(modifier = Modifier.weight(1f))
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
 
                 // =============================================================
                 // Collapsible Advanced Settings Accordion

@@ -91,6 +91,7 @@ fun StoryScreen(
     val isEyesFreeMode by combatViewModel.combatNarrator.isEyesFreeMode.collectAsState()
     val isAutoListen by storyViewModel.speechManager.isAutoListen.collectAsState()
     val isChimeMuted by storyViewModel.speechManager.isChimeMuted.collectAsState()
+    val translationVersion by com.voicerpg.engine.localization.TranslationManager.translationVersion.collectAsState()
 
     val context = LocalContext.current
     val configuration = LocalConfiguration.current
@@ -1027,7 +1028,7 @@ private fun RetroSpeechBubble(
 
             // Spoken Dialogue Content
             Text(
-                text = node.text.trim(),
+                text = com.voicerpg.engine.localization.TranslationManager.translate(node.text.trim()),
                 color = Color.White,
                 fontSize = 12.sp,
                 fontFamily = FontFamily.Monospace,
@@ -1058,9 +1059,9 @@ private fun VoiceInputPromptBar(
     ) {
         Text(
             text = when {
-                isStandby -> "⏸️ Standing by — tap screen to resume"
-                !hasChoices -> "Tap or say 'Next' to continue"
-                else -> "Tap choice or speak your decision"
+                isStandby -> "⏸️ " + com.voicerpg.engine.localization.TranslationManager.translate("Ready. Tap mic or speak...")
+                !hasChoices -> com.voicerpg.engine.localization.TranslationManager.translate("Tap anywhere or say 'Continue' to advance")
+                else -> com.voicerpg.engine.localization.TranslationManager.translate("Choose an option or speak voice keyword")
             },
             color = if (isStandby) Color(0xFFFFD54F) else Color.Gray,
             fontSize = 9.sp,
@@ -1155,8 +1156,9 @@ private fun DialogueChoiceItem(
                     fontFamily = FontFamily.Monospace
                 )
                 Spacer(modifier = Modifier.width(6.dp))
+                val translatedChoiceText = com.voicerpg.engine.localization.TranslationManager.translate(choice.text)
                 Text(
-                    text = if (isLocked) "🔒 " + choice.text else choice.text,
+                    text = if (isLocked) "🔒 " + translatedChoiceText else translatedChoiceText,
                     color = textColor,
                     fontSize = 11.sp,
                     fontFamily = FontFamily.Monospace,

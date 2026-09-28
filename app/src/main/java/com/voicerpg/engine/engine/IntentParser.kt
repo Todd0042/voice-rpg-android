@@ -11,6 +11,9 @@ import com.voicerpg.engine.model.MetaCommand
 
 object IntentParser {
 
+    @Volatile
+    var currentLocale: String = "en"
+
     /**
      * Dynamic party-member matching: a member is invoked when the utterance contains their
      * display name, their lore class, or any voiceAlias declared in their character data file.
@@ -26,94 +29,14 @@ object IntentParser {
         utterance: String,
         availableSpells: List<Spell> = emptyList(),
         activeEnemies: List<Enemy> = emptyList(),
-        party: List<PartyMember> = emptyList()
+        party: List<PartyMember> = emptyList(),
+        locale: String = currentLocale
     ): ParsedIntent {
         val lower = utterance.lowercase().trim()
-        val wordsInUtterance = lower.split(Regex("[^a-zA-Z0-9]+")).filter { it.isNotBlank() }.toSet()
+        val wordsInUtterance = lower.split(Regex("[^\\p{L}0-9]+")).filter { it.isNotBlank() }.toSet()
 
-        // 0. Detect Meta Voice Commands (Accessibility, Screenless / Pocket Mode, Status, Settings)
-        val metaCommand = when {
-            lower == "status" || lower == "report" || lower == "status report" || lower.contains("situation report") ||
-                    lower == "check status" || lower == "battle status" || lower == "health" || lower == "hp" -> MetaCommand.STATUS_REPORT
-
-            lower == "enemies" || lower == "check enemies" || lower == "monsters" || lower == "targets" ||
-                    lower.contains("who is alive") || lower.contains("who is left") || lower == "target scan" -> MetaCommand.CHECK_ENEMIES
-
-            lower == "party" || lower == "allies" || lower == "party status" || lower == "check party" ||
-                    lower == "fellowship" || lower.contains("team status") || lower == "team health" -> MetaCommand.CHECK_PARTY
-
-            lower == "unlock" || lower == "unlock screen" || lower == "show screen" || lower == "turn on screen" ||
-                    lower == "open screen" || lower == "wake up" || lower == "wake screen" || lower == "dismiss lock" ||
-                    lower == "resume screen" -> MetaCommand.UNLOCK_SCREEN
-
-            lower == "lock" || lower == "lock screen" || lower == "lock display" || lower == "pocket lock" ||
-                    lower == "blank screen" || lower == "hide screen" || lower == "dim screen" -> MetaCommand.LOCK_SCREEN
-
-            lower.contains("exit pocket mode") || lower.contains("disable pocket mode") || lower.contains("turn off pocket mode") ||
-                    lower.contains("stop pocket mode") || lower.contains("leave pocket mode") || lower.contains("exit eyes free") ||
-                    lower.contains("disable eyes free") || lower.contains("turn off eyes free") -> MetaCommand.DISABLE_EYES_FREE
-
-            lower.contains("enable pocket mode") || lower.contains("turn on pocket mode") || lower.contains("start pocket mode") ||
-                    lower.contains("enable eyes free") || lower.contains("turn on eyes free") -> MetaCommand.ENABLE_EYES_FREE
-
-            lower.contains("eyes free") || lower.contains("pocket mode") || lower.contains("blind mode") ||
-                    lower.contains("screenless") || lower.contains("audio mode") || lower.contains("toggle narrator") ||
-                    lower.contains("toggle audio") || lower == "narrator" -> MetaCommand.TOGGLE_EYES_FREE
-
-            lower.contains("auto listen") || lower.contains("hands free") || lower.contains("auto mic") ||
-                    lower.contains("automatic listening") -> MetaCommand.TOGGLE_AUTO_LISTEN
-
-            lower.contains("toggle narration") || lower == "narration" || lower.contains("narration on") ||
-                    lower.contains("narration off") || lower.contains("read dialogue") || lower.contains("toggle speech") -> MetaCommand.TOGGLE_NARRATION
-
-            lower.contains("read choices") || lower.contains("toggle choices") || lower.contains("read options") ||
-                    lower.contains("toggle options reading") || lower.contains("stop reading choices") -> MetaCommand.TOGGLE_READ_CHOICES
-
-            lower.contains("speaker name") || lower.contains("toggle speaker") || lower.contains("who is speaking") ||
-                    lower.contains("toggle attribution") || lower == "attribution" || lower.contains("announcer says") -> MetaCommand.TOGGLE_SPEAKER_ATTRIBUTION
-
-            lower.contains("toggle music") || lower == "music" || lower.contains("music on") ||
-                    lower.contains("music off") || lower.contains("mute music") || lower.contains("unmute music") ||
-                    lower.contains("background music") || lower.contains("bgm") -> MetaCommand.TOGGLE_MUSIC
-
-            lower == "options" || lower == "settings" || lower == "menu" || lower.contains("open options") ||
-                    lower.contains("open settings") || lower.contains("show options") -> MetaCommand.OPEN_OPTIONS
-
-            lower.contains("close options") || lower.contains("close settings") || lower == "resume" ||
-                    lower == "back" || lower == "close menu" -> MetaCommand.CLOSE_OPTIONS
-
-            lower == "log" || lower == "history" || lower == "backlog" || lower.contains("open log") ||
-                    lower.contains("show log") || lower.contains("open history") || lower.contains("dialogue history") ||
-                    lower.contains("review dialogue") -> MetaCommand.OPEN_BACKLOG
-
-            lower.contains("close log") || lower.contains("close history") || lower.contains("close backlog") ||
-                    lower.contains("dismiss log") -> MetaCommand.CLOSE_BACKLOG
-
-            lower == "skip" || lower.contains("fast forward") || lower.contains("skip dialogue") || lower == "rush" -> MetaCommand.FAST_FORWARD
-
-            lower == "stop" || lower == "halt" || lower == "pause" || lower.contains("stop skip") -> MetaCommand.STOP_FAST_FORWARD
-
-            lower == "recap" || lower == "story so far" || lower.contains("quest recap") ||
-                    lower.contains("story recap") || lower == "where was i" || lower.contains("catch me up") ||
-                    lower == "quest log" || lower.contains("what happened") -> MetaCommand.STORY_RECAP
-
-            lower == "help" || lower.contains("what can i say") || lower == "commands" ||
-                    lower == "voice commands" || lower == "help commands" -> MetaCommand.HELP
-
-            lower.contains("faster narration") || lower.contains("speed up narration") ||
-                    lower.contains("faster speech") || lower.contains("faster voice") ||
-                    lower == "faster" || lower.contains("speak faster") -> MetaCommand.SPEED_UP_NARRATION
-
-            lower.contains("slower narration") || lower.contains("slow down narration") ||
-                    lower.contains("slower speech") || lower.contains("slower voice") ||
-                    lower == "slower" || lower.contains("speak slower") -> MetaCommand.SLOW_DOWN_NARRATION
-
-            lower.contains("normal narration") || lower.contains("reset speech speed") ||
-                    lower.contains("normal speech speed") || lower.contains("reset narration speed") ||
-                    lower.contains("normal speed") || lower.contains("normal voice") -> MetaCommand.RESET_NARRATION_SPEED
-
-            else -> MetaCommand.NONE
-        }
+        // 0. Detect Meta Voice Commands via localized command catalog with English fallback
+        val metaCommand = com.voicerpg.engine.content.GameContent.resolveMetaCommand(utterance, locale)
 
         if (metaCommand != MetaCommand.NONE) {
             return ParsedIntent(
@@ -124,8 +47,7 @@ object IntentParser {
             )
         }
 
-        val hasHealKeyword = lower.contains("heal") || lower.contains("mend") || lower.contains("restore") ||
-                lower.contains("cure") || lower.contains("cleanse") || lower.contains("dispel") || lower.contains("purify")
+        val hasHealKeyword = com.voicerpg.engine.content.GameContent.hasAction(utterance, "heal", locale)
 
         var targetEnemyId: String? = null
         var targetHeroId: String? = null
@@ -138,10 +60,9 @@ object IntentParser {
                 targetHeroId = matchedHero.id
                 TargetSelection.SPECIFIC_HERO
             }
-            "self" in wordsInUtterance || "me" in wordsInUtterance -> TargetSelection.SELF
-            lower.contains("party") || lower.contains("allies") || lower.contains("team") -> TargetSelection.PARTY_LOWEST
-            "all" in wordsInUtterance || "everyone" in wordsInUtterance || "horde" in wordsInUtterance ||
-                    lower.contains("all enemies") || lower.contains("all foes") -> TargetSelection.ALL_ENEMIES
+            com.voicerpg.engine.content.GameContent.hasGroup(utterance, "self", locale) -> TargetSelection.SELF
+            com.voicerpg.engine.content.GameContent.hasGroup(utterance, "party", locale) -> TargetSelection.PARTY_LOWEST
+            com.voicerpg.engine.content.GameContent.hasGroup(utterance, "all", locale) -> TargetSelection.ALL_ENEMIES
             else -> TargetSelection.FIRST_ALIVE_ENEMY
         }
 
@@ -149,16 +70,8 @@ object IntentParser {
         if (target == TargetSelection.FIRST_ALIVE_ENEMY) {
             val aliveEnemies = activeEnemies.filter { it.isAlive }
 
-            // A. Ordinal position matching ("first", "second", "third", etc.)
-            val ordinalIndex = when {
-                lower.contains("first") || lower.contains("1st") || lower.contains("enemy 1") || lower.contains("monster 1") -> 0
-                lower.contains("second") || lower.contains("2nd") || lower.contains("enemy 2") || lower.contains("monster 2") -> 1
-                lower.contains("third") || lower.contains("3rd") || lower.contains("enemy 3") || lower.contains("monster 3") -> 2
-                lower.contains("fourth") || lower.contains("4th") || lower.contains("enemy 4") || lower.contains("monster 4") -> 3
-                lower.contains("fifth") || lower.contains("5th") || lower.contains("enemy 5") || lower.contains("monster 5") -> 4
-                lower.contains("sixth") || lower.contains("6th") || lower.contains("enemy 6") || lower.contains("monster 6") -> 5
-                else -> -1
-            }
+            // A. Ordinal position matching via localized command catalog with English fallback
+            val ordinalIndex = com.voicerpg.engine.content.GameContent.resolveOrdinal(utterance, locale)
 
             if (ordinalIndex in aliveEnemies.indices) {
                 val matched = aliveEnemies[ordinalIndex]

@@ -30,6 +30,8 @@ import com.voicerpg.engine.model.Spell
 import com.voicerpg.engine.model.SpellSchool
 import com.voicerpg.engine.model.StoryScene
 import com.voicerpg.engine.ui.sprites.SpriteFrame
+import com.voicerpg.engine.model.CommandCatalog
+import com.voicerpg.engine.model.MetaCommand
 import java.io.File
 
 // =============================================================================
@@ -428,6 +430,38 @@ data class ThesaurusFileDto(
     val schools: Map<String, List<String>>? = null
 )
 
+data class TargetingDictionaryDto(
+    val ordinals: Map<String, List<String>>? = null,
+    val positionals: Map<String, List<String>>? = null,
+    val groups: Map<String, List<String>>? = null
+)
+
+data class CommandCatalogDto(
+    val locale: String = "en",
+    val metaCommands: Map<String, List<String>>? = null,
+    val targeting: TargetingDictionaryDto? = null,
+    val actions: Map<String, List<String>>? = null
+) {
+    fun toCatalog(): CommandCatalog {
+        val resolvedMeta = metaCommands?.mapNotNull { (key, phrases) ->
+            runCatching { MetaCommand.valueOf(key) }.getOrNull()?.let { it to phrases }
+        }?.toMap() ?: emptyMap()
+
+        val resolvedOrdinals = targeting?.ordinals?.mapNotNull { (key, phrases) ->
+            key.toIntOrNull()?.let { it to phrases }
+        }?.toMap() ?: emptyMap()
+
+        return CommandCatalog(
+            locale = locale,
+            metaCommands = resolvedMeta,
+            ordinals = resolvedOrdinals,
+            positionals = targeting?.positionals ?: emptyMap(),
+            groups = targeting?.groups ?: emptyMap(),
+            actions = actions ?: emptyMap()
+        )
+    }
+}
+
 // =============================================================================
 // RESOLVED ENGINE MODELS
 // =============================================================================
@@ -691,7 +725,8 @@ class GameContentPack(
     val environments: Map<String, EnvironmentDefinition> = emptyMap(),
     val statusCatalog: Map<String, StatusDef> = emptyMap(),
     val affinityMatrix: AffinityMatrix? = null,
-    val thesaurusRoots: Map<SpellSchool, List<String>> = emptyMap()
+    val thesaurusRoots: Map<SpellSchool, List<String>> = emptyMap(),
+    val commandCatalogs: Map<String, CommandCatalog> = emptyMap()
 ) {
     val heroCharacter: GameCharacter? = characters.values.firstOrNull { it.role == CharacterRole.HERO }
 
@@ -991,7 +1026,10 @@ class GameContentLoader(private val source: ContentSource) {
             environments = environments,
             statusCatalog = statusCatalog,
             affinityMatrix = affinityMatrix,
-            thesaurusRoots = thesaurusRoots
+            thesaurusRoots = thesaurusRoots,
+            commandCatalogs = source.listFiles("commands").mapNotNull { file ->
+                read("commands/$file", CommandCatalogDto::class.java)?.toCatalog()
+            }.associateBy { it.locale }
         )
         return if (pack.scenes.isEmpty() || pack.nodes.isEmpty()) EmergencyFallback.build() else pack
     }
@@ -1291,7 +1329,8 @@ object EmergencyFallback {
             environments = emptyMap(),
             statusCatalog = emptyMap(),
             affinityMatrix = null,
-            thesaurusRoots = emptyMap()
+            thesaurusRoots = emptyMap(),
+            commandCatalogs = mapOf("en" to GameContent.DEFAULT_COMMAND_CATALOG)
         )
     }
 }
@@ -1407,6 +1446,96 @@ object GameContent {
     fun createDuoParty(): List<PartyMember> = pack.createDuoParty()
     fun createMinion(idSuffix: String, name: String = "Template Minion", subtitle: String = "Minion", hp: Int = 150): Enemy =
         pack.createMinion(idSuffix, name, subtitle, hp)
+
+    val commandCatalogs: Map<String, CommandCatalog> get() = pack.commandCatalogs
+
+    fun commandCatalogFor(locale: String): CommandCatalog {
+        return pack.commandCatalogs[locale]
+            ?: pack.commandCatalogs["en"]
+            ?: DEFAULT_COMMAND_CATALOG
+    }
+
+    fun resolveMetaCommand(utterance: String, locale: String = "en"): MetaCommand {
+        val active = commandCatalogFor(locale).resolveMetaCommand(utterance)
+        if (active != MetaCommand.NONE) return active
+        if (locale != "en") {
+            return commandCatalogFor("en").resolveMetaCommand(utterance)
+        }
+        return MetaCommand.NONE
+    }
+
+    fun resolveOrdinal(utterance: String, locale: String = "en"): Int {
+        val active = commandCatalogFor(locale).resolveOrdinal(utterance)
+        if (active != -1) return active
+        if (locale != "en") {
+            return commandCatalogFor("en").resolveOrdinal(utterance)
+        }
+        return -1
+    }
+
+    fun hasAction(utterance: String, actionName: String, locale: String = "en"): Boolean {
+        if (commandCatalogFor(locale).hasAction(utterance, actionName)) return true
+        if (locale != "en") {
+            return commandCatalogFor("en").hasAction(utterance, actionName)
+        }
+        return false
+    }
+
+    fun hasGroup(utterance: String, groupName: String, locale: String = "en"): Boolean {
+        if (commandCatalogFor(locale).hasGroup(utterance, groupName)) return true
+        if (locale != "en") {
+            return commandCatalogFor("en").hasGroup(utterance, groupName)
+        }
+        return false
+    }
+
+    val DEFAULT_COMMAND_CATALOG = CommandCatalog(
+        locale = "en",
+        metaCommands = mapOf(
+            MetaCommand.STATUS_REPORT to listOf("status", "report", "status report", "situation report", "check status", "battle status", "health", "hp"),
+            MetaCommand.CHECK_ENEMIES to listOf("enemies", "check enemies", "monsters", "targets", "who is alive", "who is left", "target scan"),
+            MetaCommand.CHECK_PARTY to listOf("party", "allies", "party status", "check party", "fellowship", "team status", "team health"),
+            MetaCommand.UNLOCK_SCREEN to listOf("unlock", "unlock screen", "show screen", "turn on screen", "open screen", "wake up", "wake screen", "dismiss lock", "resume screen"),
+            MetaCommand.LOCK_SCREEN to listOf("lock", "lock screen", "lock display", "pocket lock", "blank screen", "hide screen", "dim screen"),
+            MetaCommand.DISABLE_EYES_FREE to listOf("exit pocket mode", "disable pocket mode", "turn off pocket mode", "stop pocket mode", "leave pocket mode", "exit eyes free", "disable eyes free", "turn off eyes free"),
+            MetaCommand.ENABLE_EYES_FREE to listOf("enable pocket mode", "turn on pocket mode", "start pocket mode", "enable eyes free", "turn on eyes free"),
+            MetaCommand.TOGGLE_EYES_FREE to listOf("eyes free", "pocket mode", "blind mode", "screenless", "audio mode", "toggle narrator", "toggle audio", "narrator"),
+            MetaCommand.TOGGLE_AUTO_LISTEN to listOf("auto listen", "hands free", "auto mic", "automatic listening"),
+            MetaCommand.TOGGLE_NARRATION to listOf("toggle narration", "narration", "narration on", "narration off", "read dialogue", "toggle speech"),
+            MetaCommand.TOGGLE_READ_CHOICES to listOf("read choices", "toggle choices", "read options", "toggle options reading", "stop reading choices"),
+            MetaCommand.TOGGLE_SPEAKER_ATTRIBUTION to listOf("speaker name", "toggle speaker", "who is speaking", "toggle attribution", "attribution", "announcer says"),
+            MetaCommand.TOGGLE_MUSIC to listOf("toggle music", "music", "music on", "music off", "mute music", "unmute music", "background music", "bgm"),
+            MetaCommand.OPEN_OPTIONS to listOf("options", "settings", "menu", "open options", "open settings", "show options"),
+            MetaCommand.CLOSE_OPTIONS to listOf("close options", "close settings", "resume", "back", "close menu"),
+            MetaCommand.OPEN_BACKLOG to listOf("log", "history", "backlog", "open log", "show log", "open history", "dialogue history", "review dialogue"),
+            MetaCommand.CLOSE_BACKLOG to listOf("close log", "close history", "close backlog", "dismiss log"),
+            MetaCommand.FAST_FORWARD to listOf("skip", "fast forward", "skip dialogue", "rush"),
+            MetaCommand.STOP_FAST_FORWARD to listOf("stop", "halt", "pause", "stop skip"),
+            MetaCommand.STORY_RECAP to listOf("recap", "story so far", "quest recap", "story recap", "where was i", "catch me up", "quest log", "what happened"),
+            MetaCommand.HELP to listOf("help", "what can i say", "commands", "voice commands", "help commands"),
+            MetaCommand.SPEED_UP_NARRATION to listOf("faster narration", "speed up narration", "faster speech", "faster voice", "faster", "speak faster"),
+            MetaCommand.SLOW_DOWN_NARRATION to listOf("slower narration", "slow down narration", "slower speech", "slower voice", "slower", "speak slower"),
+            MetaCommand.RESET_NARRATION_SPEED to listOf("normal narration", "reset speech speed", "normal speech speed", "reset narration speed", "normal speed", "normal voice")
+        ),
+        ordinals = mapOf(
+            0 to listOf("first", "1st", "enemy 1", "monster 1"),
+            1 to listOf("second", "2nd", "enemy 2", "monster 2"),
+            2 to listOf("third", "3rd", "enemy 3", "monster 3"),
+            3 to listOf("fourth", "4th", "enemy 4", "monster 4"),
+            4 to listOf("fifth", "5th", "enemy 5", "monster 5"),
+            5 to listOf("sixth", "6th", "enemy 6", "monster 6")
+        ),
+        groups = mapOf(
+            "all" to listOf("all", "everyone", "horde", "all enemies", "all foes"),
+            "party" to listOf("party", "allies", "team"),
+            "self" to listOf("self", "me")
+        ),
+        actions = mapOf(
+            "heal" to listOf("heal", "mend", "restore", "cure", "cleanse", "dispel", "purify"),
+            "defend" to listOf("defend", "guard", "block", "shield", "brace"),
+            "attack" to listOf("attack", "strike", "hit", "slash", "assault")
+        )
+    )
 }
 
 /** Parses "#RRGGBB" or "#AARRGGBB" into a Compose color without touching android.graphics. */

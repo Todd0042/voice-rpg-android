@@ -39,6 +39,7 @@ import com.voicerpg.engine.ui.pocket.PocketHeroVitals
 import com.voicerpg.engine.ui.pocket.PocketModeTouchGuard
 import com.voicerpg.engine.ui.pocket.PocketModeUnlockedBanner
 import com.voicerpg.engine.ui.setup.AudioSetupScreen
+import com.voicerpg.engine.ui.setup.LanguageRegionDialog
 import com.voicerpg.engine.ui.setup.MicPermissionRationaleDialog
 import com.voicerpg.engine.ui.story.StoryScreen
 import com.voicerpg.engine.ui.theme.VoiceRPGTheme
@@ -224,7 +225,7 @@ class MainActivity : ComponentActivity() {
                     musicManager.playCombatMusic()
                 } else if (storyState.gameScreen == GameScreen.STORY_EXPLORATION) {
                     musicManager.playTrack(storyState.currentScene.musicAsset)
-                } else if (storyState.gameScreen == GameScreen.TITLE || storyState.gameScreen == GameScreen.TUTORIAL) {
+                } else if (storyState.gameScreen == GameScreen.TITLE || storyState.gameScreen == GameScreen.TUTORIAL || storyState.gameScreen == GameScreen.LANGUAGE_SELECTION) {
                     musicManager.playTrack(MusicManager.TRACK_TITLE)
                 } else {
                     musicManager.playTrack(MusicManager.TRACK_EXPLORATION)
@@ -234,6 +235,15 @@ class MainActivity : ComponentActivity() {
             VoiceRPGTheme {
                 Box(modifier = Modifier.fillMaxSize()) {
                     when (storyState.gameScreen) {
+                        GameScreen.LANGUAGE_SELECTION -> {
+                            com.voicerpg.engine.ui.setup.LanguageSelectionScreen(
+                                initialLanguage = storyState.selectedLanguage,
+                                initialRegion = storyState.selectedRegion,
+                                onConfirmSelection = { lang, reg ->
+                                    storyViewModel.completeLanguageSetup(lang, reg)
+                                }
+                            )
+                        }
                         GameScreen.TITLE -> {
                             val speechState by speechManager.speechState.collectAsState()
                             TitleScreen(
@@ -455,8 +465,17 @@ class MainActivity : ComponentActivity() {
                             combatViewModel.closeOptions()
                             storyViewModel.returnToTitle()
                         },
+                        selectedLanguage = storyState.selectedLanguage,
+                        selectedRegion = storyState.selectedRegion,
+                        onSelectLanguage = { lang ->
+                            storyViewModel.setSelectedLanguage(lang)
+                        },
+                        onSelectRegion = { reg ->
+                            storyViewModel.setSelectedRegion(reg)
+                        },
                         onClose = { combatViewModel.closeOptions() }
                     )
+
 
                     // Universal chapter warp & developer tools dialog
                     DebugWarpDialog(

@@ -93,6 +93,8 @@ fun CharacterCreationScreen(
     val isAutoListen = speechManager?.isAutoListen?.collectAsState()?.value ?: false
     val speechState = speechManager?.speechState?.collectAsState()?.value ?: SpeechState.Idle
     val coroutineScope = rememberCoroutineScope()
+    val translationVersion by com.voicerpg.engine.localization.TranslationManager.translationVersion.collectAsState()
+    fun t(text: String): String = com.voicerpg.engine.localization.TranslationManager.translate(text)
 
     val context = LocalContext.current
     val manifest = GameContent.manifest
@@ -294,7 +296,7 @@ fun CharacterCreationScreen(
                             .padding(horizontal = 12.dp, vertical = 6.dp)
                     ) {
                         Text(
-                            text = "◀ BACK TO AUDIO SETUP",
+                            text = t("◀ BACK TO AUDIO SETUP"),
                             color = LogosGold,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
@@ -306,14 +308,14 @@ fun CharacterCreationScreen(
 
             // Header
             Text(
-                text = manifest.creationTitle ?: "⚔️ CHARACTER CREATION ⚔️",
+                text = t(manifest.creationTitle ?: "⚔️ CHARACTER CREATION ⚔️"),
                 color = LogosGold,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Black,
                 fontFamily = FontFamily.Monospace
             )
             Text(
-                text = manifest.creationSubtitle ?: "Character Setup & Initial Loadout",
+                text = t(manifest.creationSubtitle ?: "Character Setup & Initial Loadout"),
                 color = Color.LightGray,
                 fontSize = 11.sp,
                 fontFamily = FontFamily.Monospace
@@ -712,7 +714,7 @@ fun CharacterCreationScreen(
 
             // Section 1: Name Input
             Text(
-                text = "1. INVOCATOR'S TRUE NAME",
+                text = t("HERO'S NAME"),
                 color = LogosGold,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
@@ -725,7 +727,7 @@ fun CharacterCreationScreen(
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
-                label = { Text("Character Name", fontFamily = FontFamily.Monospace) },
+                label = { Text(t("Hero Name"), fontFamily = FontFamily.Monospace) },
                 singleLine = true,
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = LogosGold,
@@ -771,7 +773,7 @@ fun CharacterCreationScreen(
 
             // Section 2: Class Selection
             Text(
-                text = "2. CHOOSE YOUR DISCIPLINE (CLASS)",
+                text = t("ARCHETYPE & CALLING"),
                 color = LogosGold,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
@@ -795,7 +797,7 @@ fun CharacterCreationScreen(
 
             // Section 3: Aesthetics (Aura Color & Title)
             Text(
-                text = "3. AURA LUMINESCENCE (AESTHETICS)",
+                text = t("VOICE RESONANCE AFFINITY"),
                 color = LogosGold,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
@@ -891,7 +893,7 @@ fun CharacterCreationScreen(
                     .height(48.dp)
             ) {
                 Text(
-                    text = manifest.creationEmbarkPrompt.ifBlank { "AWAKEN ➔" },
+                    text = t(manifest.creationEmbarkPrompt.ifBlank { "AWAKEN ➔" }),
                     fontFamily = FontFamily.Monospace,
                     fontWeight = FontWeight.Black,
                     fontSize = 14.sp
@@ -907,7 +909,7 @@ fun CharacterCreationScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "🎤 Speak class or say 'Awaken' to start",
+                    text = "🎤 " + t("Speak class or say 'Awaken' to start"),
                     color = Color.Gray,
                     fontSize = 10.sp,
                     fontFamily = FontFamily.Monospace
@@ -929,7 +931,7 @@ fun CharacterCreationScreen(
                             .padding(horizontal = 10.dp, vertical = 5.dp)
                     ) {
                         Text(
-                            text = if (speechState is SpeechState.Listening) "🎙️ LISTENING..." else "🎤 SPEAK",
+                            text = if (speechState is SpeechState.Listening) "🎙️ LISTENING..." else "🎤 " + t("SPEAK"),
                             color = LogosGold,
                             fontSize = 9.sp,
                             fontWeight = FontWeight.Bold,

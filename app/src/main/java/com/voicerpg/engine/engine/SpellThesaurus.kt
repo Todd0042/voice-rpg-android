@@ -88,7 +88,7 @@ object SpellThesaurus {
      * Identifies all thematic root keywords present in the utterance.
      */
     fun findMatches(text: String, school: SpellSchool): List<String> {
-        val words = text.lowercase().replace(Regex("[^a-z0-9\\s]"), " ").split("\\s+".toRegex())
+        val words = text.lowercase().replace(Regex("[^\\p{L}0-9\\s]"), " ").split("\\s+".toRegex())
         val dictionary = getKeywordsForSchool(school)
         return words.filter { word ->
             dictionary.contains(word) || dictionary.any { root -> word.contains(root) || root.contains(word) && word.length >= 4 }

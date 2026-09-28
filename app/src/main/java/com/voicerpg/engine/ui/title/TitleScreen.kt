@@ -44,6 +44,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -63,6 +64,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.voicerpg.engine.localization.TranslationManager
 import com.voicerpg.engine.audio.SpeechState
 import com.voicerpg.engine.content.GameContent
 import com.voicerpg.engine.content.GameManifest
@@ -121,6 +123,9 @@ fun TitleScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val translationVersion by TranslationManager.translationVersion.collectAsState()
+    fun t(text: String): String = TranslationManager.translate(text)
+
     var showOverwriteDialog by remember { mutableStateOf(false) }
     var showSlotArchivesDialog by remember { mutableStateOf(false) }
     var showStoryModePromptDialog by remember { mutableStateOf(false) }
@@ -228,7 +233,7 @@ fun TitleScreen(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = manifest.gameSubtitle.ifBlank { "Voice-Commanded Storytelling RPG" },
+                    text = t(manifest.gameSubtitle.ifBlank { "Voice-Commanded Storytelling RPG" }),
                     color = Color.LightGray.copy(alpha = 0.85f),
                     fontSize = 11.sp,
                     fontFamily = FontFamily.Monospace,
@@ -277,7 +282,7 @@ fun TitleScreen(
                                     )
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Text(
-                                        text = "CONTINUE [SLOT $currentSlot]",
+                                        text = t("CONTINUE [SLOT $currentSlot]"),
                                         color = LogosGold,
                                         fontSize = 14.sp,
                                         fontWeight = FontWeight.Black,
@@ -303,7 +308,7 @@ fun TitleScreen(
                             Spacer(modifier = Modifier.height(4.dp))
 
                             Text(
-                                text = "⚔️ ${saveSummary.heroName} • ${saveSummary.heroClassTitle}  |  👥 ${saveSummary.partySize} In Fellowship",
+                                text = "⚔️ ${saveSummary.heroName} • ${saveSummary.heroClassTitle}  |  👥 ${saveSummary.partySize} ${t("In Fellowship")}",
                                 color = FrostCyan,
                                 fontSize = 11.sp,
                                 fontFamily = FontFamily.Monospace,
@@ -350,7 +355,7 @@ fun TitleScreen(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "CHRONICLE ARCHIVES (3 SLOTS)",
+                            text = t("CHRONICLE ARCHIVES (3 SLOTS)"),
                             color = LogosGold,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
@@ -394,7 +399,7 @@ fun TitleScreen(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = if (hasSave) "START NEW JOURNEY" else "BEGIN JOURNEY",
+                            text = if (hasSave) t("START NEW JOURNEY") else t("BEGIN JOURNEY"),
                             color = if (!hasSave) HolyYellow else Color.White,
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold,
@@ -432,7 +437,7 @@ fun TitleScreen(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "PURE STORY MODE (AUTO-PLAY)",
+                            text = t("PURE STORY MODE (AUTO-PLAY)"),
                             color = Color(0xFFF3E5F5),
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
@@ -464,7 +469,7 @@ fun TitleScreen(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "AUDIO SETUP & VOICES",
+                            text = t("AUDIO SETUP & VOICES"),
                             color = Color.White,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
@@ -496,7 +501,7 @@ fun TitleScreen(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "GAME OPTIONS & ACCESSIBILITY",
+                            text = t("GAME OPTIONS & ACCESSIBILITY"),
                             color = Color.White,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
@@ -528,7 +533,7 @@ fun TitleScreen(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "CHRONICLE GUIDE",
+                            text = t("CHRONICLE GUIDE"),
                             color = Color.White,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
@@ -569,9 +574,9 @@ fun TitleScreen(
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = if (isListening) {
-                            "🎤 Listening... Speak 'Continue', 'New Game', 'Tutorial', or 'Options'"
+                            "🎤 " + t("Listening... Speak 'Continue', 'New Game', 'Tutorial', or 'Options'")
                         } else {
-                            "🎤 Speak 'Continue', 'New Game', 'Tutorial', or Tap to Talk"
+                            "🎤 " + t("Speak 'Continue', 'New Game', 'Tutorial', or Tap to Talk")
                         },
                         color = if (isListening) Color.White else Color.LightGray,
                         fontSize = 11.sp,

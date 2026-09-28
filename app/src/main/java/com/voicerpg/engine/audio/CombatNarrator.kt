@@ -30,31 +30,30 @@ class CombatNarrator(
 
     companion object {
         /**
-         * Standard baseline allowed English voice regions, excluding Nigeria and India
-         * from general cast distribution by default unless explicitly configured on a character.
+         * Generic fallback voice regions (empty allows all installed regions for the active language).
          */
-        val DEFAULT_ALLOWED_VOICE_REGIONS = listOf("US", "CA", "GB", "AU", "IE", "ZA")
+        val DEFAULT_ALLOWED_VOICE_REGIONS = emptyList<String>()
 
         /**
          * Extracts the 2-letter uppercase ISO country/region code from a voice
-         * (e.g. "US", "GB", "AU", "IN", "CA", "IE", "ZA", "NG").
+         * (e.g. "US", "GB", "AU", "IN", "CA", "IE", "ZA", "NG", "MX", "ES", "BR", "DE", "FR", "IT").
          */
         fun getVoiceRegionCode(voice: Voice?): String {
             if (voice == null) return ""
             val country = voice.locale.country.uppercase(Locale.ROOT)
             if (country.isNotBlank()) return country
             val nameLower = voice.name.lowercase(Locale.ROOT)
-            return when {
-                nameLower.startsWith("en-us") || nameLower.contains("-us-") -> "US"
-                nameLower.startsWith("en-gb") || nameLower.contains("-gb-") -> "GB"
-                nameLower.startsWith("en-au") || nameLower.contains("-au-") -> "AU"
-                nameLower.startsWith("en-in") || nameLower.contains("-in-") -> "IN"
-                nameLower.startsWith("en-ng") || nameLower.contains("-ng-") -> "NG"
-                nameLower.startsWith("en-ca") || nameLower.contains("-ca-") -> "CA"
-                nameLower.startsWith("en-za") || nameLower.contains("-za-") -> "ZA"
-                nameLower.startsWith("en-ie") || nameLower.contains("-ie-") -> "IE"
-                else -> ""
+            val langRegionRegex = Regex("""(?:^|[_\-])[a-z]{2}[_\-]([a-z]{2})(?:[_\-]|$)""")
+            val match = langRegionRegex.find(nameLower)
+            if (match != null && match.groupValues.size > 1) {
+                return match.groupValues[1].uppercase(Locale.ROOT)
             }
+            val tokenRegex = Regex("""[_\-]([a-z]{2})[_\-]""")
+            val tokenMatch = tokenRegex.find(nameLower)
+            if (tokenMatch != null && tokenMatch.groupValues.size > 1) {
+                return tokenMatch.groupValues[1].uppercase(Locale.ROOT)
+            }
+            return ""
         }
 
         /**
@@ -182,6 +181,52 @@ class CombatNarrator(
         _isCombatActive.value = active
     }
 
+    private val _selectedLanguage = MutableStateFlow("en")
+    val selectedLanguage: StateFlow<String> = _selectedLanguage.asStateFlow()
+
+    private val _selectedRegion = MutableStateFlow("")
+    val selectedRegion: StateFlow<String> = _selectedRegion.asStateFlow()
+
+    fun setSelectedLanguage(langCode: String) {
+        val clean = langCode.lowercase().take(2)
+        _selectedLanguage.value = clean
+        updateTtsLocale()
+    }
+
+    fun setSelectedRegion(regionCode: String) {
+        _selectedRegion.value = regionCode.uppercase(Locale.ROOT).trim()
+        updateTtsLocale()
+    }
+
+    fun setSelectedLanguageAndRegion(langCode: String, regionCode: String = "") {
+        _selectedLanguage.value = langCode.lowercase().take(2)
+        _selectedRegion.value = regionCode.uppercase(Locale.ROOT).trim()
+        updateTtsLocale()
+    }
+
+    private fun updateTtsLocale() {
+        tts?.let { engine ->
+            val lang = _selectedLanguage.value
+            val reg = _selectedRegion.value
+            val locale = if (reg.isNotBlank()) {
+                Locale(lang, reg)
+            } else {
+                when (lang) {
+                    "es" -> Locale("es", "ES")
+                    "de" -> Locale("de", "DE")
+                    "fr" -> Locale("fr", "FR")
+                    "pt" -> Locale("pt", "BR")
+                    "it" -> Locale("it", "IT")
+                    else -> Locale.US
+                }
+            }
+            try {
+                engine.setLanguage(locale)
+            } catch (_: Exception) {}
+            assignCharacterVoices(engine)
+        }
+    }
+
     init {
         if (context != null) {
             try {
@@ -202,7 +247,15 @@ class CombatNarrator(
                 try {
                     engine.setAudioAttributes(audioAttributes)
                 } catch (_: Exception) {}
-                val result = engine.setLanguage(Locale.US)
+                val initLocale = when (_selectedLanguage.value.lowercase()) {
+                    "es" -> Locale("es", "ES")
+                    "de" -> Locale("de", "DE")
+                    "fr" -> Locale("fr", "FR")
+                    "pt" -> Locale("pt", "BR")
+                    "it" -> Locale("it", "IT")
+                    else -> Locale.US
+                }
+                val result = engine.setLanguage(initLocale)
                 if (result != TextToSpeech.LANG_MISSING_DATA && result != TextToSpeech.LANG_NOT_SUPPORTED) {
                     engine.setSpeechRate(1.15f) // Crisp, brisk pacing for combat flow
                     engine.setPitch(1.0f)
@@ -311,11 +364,12 @@ class CombatNarrator(
                         !(v.features?.contains("legacySetLanguageVoice") ?: false)
             }.ifEmpty { installedVoices }
 
-            val englishPhysicalVoices = physicalVoices.filter {
-                it.locale.language.equals(Locale.ENGLISH.language, ignoreCase = true)
+            val activeLang = _selectedLanguage.value.lowercase()
+            val languagePhysicalVoices = physicalVoices.filter {
+                it.locale.language.equals(activeLang, ignoreCase = true)
             }.ifEmpty { physicalVoices }
 
-            android.util.Log.d("VoiceRPG_TTS", "Installed: ${installedVoices.size}, Physical English: ${englishPhysicalVoices.size}")
+            android.util.Log.d("VoiceRPG_TTS", "Installed: ${installedVoices.size}, Physical ($activeLang): ${languagePhysicalVoices.size}")
 
             // Google TTS & third-party voice classification tokens:
             // Female codes: sfg (Voice 1), iom (Voice 3), tpd (Voice 5), tpf (Voice 7), gba, gbb, gbg, aua, auc, inc, or "female"
@@ -323,26 +377,30 @@ class CombatNarrator(
             val femaleTokens = listOf("female", "#f", "-f-", "_f_", "_female", "-f0", "smtf", "sfg", "iom", "tpd", "tpf", "gba", "gbb", "gbg", "aua", "auc", "inc")
             val maleTokens = listOf("male", "#m", "-m-", "_m_", "_male", "-m0", "smtm", "iob", "iog", "tpc", "iol", "rjs", "gbc", "gbd", "aub", "aud", "ina")
 
-            val femaleVoices = englishPhysicalVoices.filter { v ->
+            val femaleVoices = languagePhysicalVoices.filter { v ->
                 val lower = v.name.lowercase(Locale.ROOT)
                 femaleTokens.any { lower.contains(it) } && !lower.contains("male")
             }
 
-            val maleVoices = englishPhysicalVoices.filter { v ->
+            val maleVoices = languagePhysicalVoices.filter { v ->
                 val lower = v.name.lowercase(Locale.ROOT)
                 maleTokens.any { lower.contains(it) } && !lower.contains("female")
             }
 
             // Remaining unclassified voices to supplement pools
-            val otherVoices = englishPhysicalVoices.filter { it !in maleVoices && it !in femaleVoices }
+            val otherVoices = languagePhysicalVoices.filter { it !in maleVoices && it !in femaleVoices }
 
-            val malePool = (maleVoices + otherVoices.filterIndexed { i, _ -> i % 2 == 1 }).ifEmpty { englishPhysicalVoices }
-            val femalePool = (femaleVoices + otherVoices.filterIndexed { i, _ -> i % 2 == 0 }).ifEmpty { englishPhysicalVoices }
+            val malePool = (maleVoices + otherVoices.filterIndexed { i, _ -> i % 2 == 1 }).ifEmpty { languagePhysicalVoices }
+            val femalePool = (femaleVoices + otherVoices.filterIndexed { i, _ -> i % 2 == 0 }).ifEmpty { languagePhysicalVoices }
 
-            // British narrator voice if present, else default
-            val britishStoryteller = englishPhysicalVoices.firstOrNull {
-                it.name.contains("rjs") || (it.locale.country.equals("GB", ignoreCase = true) && it.name in maleTokens)
-            } ?: defaultVoice
+            val activeRegion = _selectedRegion.value.uppercase(Locale.ROOT)
+
+            // British narrator voice if present for English when GB or default is active
+            val britishStoryteller = if (activeLang == "en" && (activeRegion == "GB" || activeRegion.isBlank())) {
+                languagePhysicalVoices.firstOrNull {
+                    it.name.contains("rjs") || (it.locale.country.equals("GB", ignoreCase = true) && it.name in maleTokens)
+                }
+            } else null
 
             val distinctMalePool = if (britishStoryteller != null && malePool.size > 1) {
                 malePool.filter { it != britishStoryteller }
@@ -358,12 +416,21 @@ class CombatNarrator(
             var maleIdx = 0
             var neutralIdx = 0
 
-            fun List<Voice>.filterByRegion(regions: List<String>): List<Voice> {
-                val matched = filter { getVoiceRegionCode(it) in regions }
-                return matched.ifEmpty { this }
+            fun List<Voice>.filterByRegionPreference(regions: List<String>): List<Voice> {
+                if (activeRegion.isNotBlank()) {
+                    if (regions.isEmpty() || activeRegion in regions) {
+                        val userMatches = filter { getVoiceRegionCode(it) == activeRegion }
+                        if (userMatches.isNotEmpty()) return userMatches
+                    }
+                }
+                if (regions.isNotEmpty()) {
+                    val matched = filter { getVoiceRegionCode(it) in regions }
+                    if (matched.isNotEmpty()) return matched
+                }
+                return this
             }
 
-            // Dynamically distribute available physical voices respecting character gender and region
+            // Dynamically distribute available physical voices respecting character gender, language, and region preference
             allSpeakers.forEach { speaker ->
                 val preferred = customPreferredVoiceIds[speaker.id] ?: PREFERRED_VOICE_IDS[speaker.id]
                 val char = com.voicerpg.engine.content.GameContent.characterById(speaker.id)
@@ -372,31 +439,31 @@ class CombatNarrator(
                 val isMale = charGender?.equals("male", ignoreCase = true) == true
 
                 val rawRegions = speaker.allowedVoiceRegions.ifEmpty {
-                    char?.allowedVoiceRegions?.ifEmpty { DEFAULT_ALLOWED_VOICE_REGIONS } ?: DEFAULT_ALLOWED_VOICE_REGIONS
+                    char?.allowedVoiceRegions ?: emptyList()
                 }.map { it.uppercase(Locale.ROOT) }
 
                 val candidate = when {
-                    preferred != null && englishPhysicalVoices.any { it.name == preferred } ->
-                        englishPhysicalVoices.first { it.name == preferred }
+                    preferred != null && languagePhysicalVoices.any { it.name == preferred } ->
+                        languagePhysicalVoices.first { it.name == preferred }
                     speaker.isNarrator || speaker.id == "narrator" -> {
-                        val narratorPool = englishPhysicalVoices.filterByRegion(rawRegions)
+                        val narratorPool = languagePhysicalVoices.filterByRegionPreference(rawRegions)
                         britishStoryteller ?: narratorPool.firstOrNull() ?: defaultVoice
                     }
                     isFemale -> {
-                        val regional = femalePool.filterByRegion(rawRegions)
-                        regional[femaleIdx++ % regional.size]
+                        val regional = femalePool.filterByRegionPreference(rawRegions)
+                        if (regional.isNotEmpty()) regional[femaleIdx++ % regional.size] else defaultVoice
                     }
                     isMale -> {
-                        val regional = distinctMalePool.filterByRegion(rawRegions)
-                        regional[maleIdx++ % regional.size]
+                        val regional = distinctMalePool.filterByRegionPreference(rawRegions)
+                        if (regional.isNotEmpty()) regional[maleIdx++ % regional.size] else defaultVoice
                     }
                     else -> {
-                        val regional = englishPhysicalVoices.filterByRegion(rawRegions)
-                        regional[neutralIdx++ % regional.size]
+                        val regional = languagePhysicalVoices.filterByRegionPreference(rawRegions)
+                        if (regional.isNotEmpty()) regional[neutralIdx++ % regional.size] else defaultVoice
                     }
                 }
-                dynamicSpeakerVoices[speaker.id] = applyVoicePreference(speaker.id, candidate, englishPhysicalVoices)
-                android.util.Log.d("VoiceRPG_TTS", "Assigned ${speaker.name} (${speaker.id}, gender=$charGender, regions=$rawRegions): ${dynamicSpeakerVoices[speaker.id]?.name}")
+                dynamicSpeakerVoices[speaker.id] = applyVoicePreference(speaker.id, candidate, languagePhysicalVoices)
+                android.util.Log.d("VoiceRPG_TTS", "Assigned ${speaker.name} (${speaker.id}, gender=$charGender, regions=$rawRegions, prefRegion=$activeRegion): ${dynamicSpeakerVoices[speaker.id]?.name}")
             }
         } catch (e: Exception) {
             android.util.Log.e("VoiceRPG_TTS", "Error assigning voices", e)
@@ -592,10 +659,11 @@ class CombatNarrator(
             !v.name.endsWith("-language", ignoreCase = true) &&
                     !(v.features?.contains("legacySetLanguageVoice") ?: false)
         }.ifEmpty { installed }
-        val english = physical.filter {
-            it.locale.language.equals(Locale.ENGLISH.language, ignoreCase = true)
+        val activeLang = _selectedLanguage.value.lowercase()
+        val matchingLang = physical.filter {
+            it.locale.language.equals(activeLang, ignoreCase = true)
         }.ifEmpty { physical }
-        return english.sortedBy { it.name }
+        return matchingLang.sortedBy { it.name }
     }
 
     fun cycleSpeakerVoice(speaker: DialogueSpeaker, onDone: (() -> Unit)? = null): Voice? {
@@ -608,7 +676,7 @@ class CombatNarrator(
         val isMale = charGender?.equals("male", ignoreCase = true) == true
 
         val rawRegions = speaker.allowedVoiceRegions.ifEmpty {
-            char?.allowedVoiceRegions?.ifEmpty { DEFAULT_ALLOWED_VOICE_REGIONS } ?: DEFAULT_ALLOWED_VOICE_REGIONS
+            char?.allowedVoiceRegions ?: emptyList()
         }.map { it.uppercase(Locale.ROOT) }
 
         val femaleTokens = listOf("female", "#f", "-f-", "_f_", "_female", "-f0", "smtf", "sfg", "iom", "tpd", "tpf", "gba", "gbb", "gbg", "aua", "auc", "inc")
@@ -626,12 +694,23 @@ class CombatNarrator(
             else -> physicalVoices
         }
 
-        val eligibleVoices = genderVoices.filter { getVoiceRegionCode(it) in rawRegions }.ifEmpty { genderVoices }
+        val activeRegion = _selectedRegion.value.uppercase(Locale.ROOT)
+        val regionalMatches = if (activeRegion.isNotBlank()) {
+            if (rawRegions.isEmpty() || activeRegion in rawRegions) {
+                genderVoices.filter { getVoiceRegionCode(it) == activeRegion }
+            } else emptyList()
+        } else emptyList()
+
+        val eligibleVoices = when {
+            regionalMatches.isNotEmpty() -> regionalMatches
+            rawRegions.isNotEmpty() -> genderVoices.filter { getVoiceRegionCode(it) in rawRegions }.ifEmpty { genderVoices }
+            else -> genderVoices
+        }
 
         val current = getVoiceForSpeaker(speaker)
         val currentIndex = eligibleVoices.indexOfFirst { it.name == current?.name }
-        val nextIndex = if (currentIndex >= 0) (currentIndex + 1) % eligibleVoices.size else 0
-        val nextVoice = eligibleVoices[nextIndex]
+        val nextIndex = if (currentIndex >= 0 && eligibleVoices.isNotEmpty()) (currentIndex + 1) % eligibleVoices.size else 0
+        val nextVoice = eligibleVoices.getOrNull(nextIndex) ?: return null
         setSpeakerVoice(speaker, nextVoice)
         previewSpeakerVoice(speaker, onDone)
         return nextVoice
@@ -680,8 +759,10 @@ class CombatNarrator(
             tts?.setSpeechRate(_speechRate.value)
         }
 
-        val cleanedText = text.replace("...", ". ").trim()
-        val speakerPrefix = if (speaker.isNarrator || !_isSpeakerAttributionEnabled.value) "" else "${speaker.name} says: "
+        val translatedText = com.voicerpg.engine.localization.TranslationManager.translate(text)
+        val cleanedText = translatedText.replace("...", ". ").trim()
+        val saysWord = com.voicerpg.engine.localization.TranslationManager.translate("says:")
+        val speakerPrefix = if (speaker.isNarrator || !_isSpeakerAttributionEnabled.value) "" else "${speaker.name} $saysWord "
 
         val fullScript = StringBuilder()
         fullScript.append("$speakerPrefix$cleanedText")
@@ -691,11 +772,15 @@ class CombatNarrator(
             _isReadChoicesEnabled.value || (_isEyesFreeMode.value && _isAutoReadHubChoices.value)
         )
         if (shouldReadChoices) {
-            fullScript.append(". Your options are: ")
+            val yourOptionsWord = com.voicerpg.engine.localization.TranslationManager.translate("Your options are:")
+            fullScript.append(". $yourOptionsWord ")
+            val optionWord = com.voicerpg.engine.localization.TranslationManager.translate("Option")
             choices.forEachIndexed { index, choice ->
-                fullScript.append("Option ${index + 1}: ${choice.text}. ")
+                val choiceTranslated = com.voicerpg.engine.localization.TranslationManager.translate(choice.text)
+                fullScript.append("$optionWord ${index + 1}: $choiceTranslated. ")
             }
-            fullScript.append("What is your command?")
+            val whatCommandWord = com.voicerpg.engine.localization.TranslationManager.translate("What is your command?")
+            fullScript.append(whatCommandWord)
         }
 
         speak(fullScript.toString(), force = true, preserveVoice = true, onDone = onDone)
@@ -737,7 +822,8 @@ class CombatNarrator(
         pendingSpeechOnDone = onDone
         _isSpeaking.value = true
 
-        val speechText = normalizeTtsText(text)
+        val translatedText = com.voicerpg.engine.localization.TranslationManager.translate(text)
+        val speechText = normalizeTtsText(translatedText)
         val params = Bundle().apply {
             putFloat(TextToSpeech.Engine.KEY_PARAM_VOLUME, 1.0f)
         }

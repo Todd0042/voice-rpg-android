@@ -175,12 +175,22 @@ class ResonanceEngine(
         )
     }
 
+    companion object {
+        private val VOCATIVE_REGEX = Regex("""\b(o|oh|ó|ô)\b""")
+    }
+
     private fun hasPoeticIndicators(text: String): Boolean {
         val lower = text.lowercase()
+        if (VOCATIVE_REGEX.containsMatchIn(lower)) return true
         val poeticTerms = listOf(
-            "o ", "spirits of", "descend", "arise", "by the power",
+            "spirits of", "descend", "arise", "by the power",
             "unto", "thou", "hark", "awaken", "primordial", "celestial",
-            "hearken", "from the void", "unleash", "shall burn", "solar core"
+            "hearken", "from the void", "unleash", "shall burn", "solar core",
+            "espiritus de", "desciendan", "por el poder", "desata", "desaten",
+            "geister von", "steigt herab", "durch die macht", "entfessle", "entfesselt", "urzeitlich", "himmlisch",
+            "esprits de", "descendez", "par le pouvoir", "dechaine", "dechainez", "celeste",
+            "espiritos de", "descam", "pelo poder", "liberte", "libertar",
+            "spiriti di", "scendete", "per il potere", "scatena", "scatenate", "primordiale", "celestiale"
         )
         return poeticTerms.any { lower.contains(it) }
     }
@@ -196,7 +206,9 @@ class ResonanceEngine(
     }
 
     private fun countSyllables(word: String): Int {
-        val clean = word.lowercase().replace(Regex("[^a-z]"), "")
+        val normalized = java.text.Normalizer.normalize(word.lowercase(), java.text.Normalizer.Form.NFD)
+            .replace(Regex("\\p{M}"), "")
+        val clean = normalized.replace(Regex("[^a-z]"), "")
         if (clean.length <= 3) return 1
         var count = 0
         var prevIsVowel = false

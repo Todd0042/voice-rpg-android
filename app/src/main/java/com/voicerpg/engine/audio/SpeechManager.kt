@@ -47,6 +47,20 @@ class SpeechManager(private val context: Context? = null) {
     private val _rmsLevel = MutableStateFlow(0f)
     val rmsLevel: StateFlow<Float> = _rmsLevel.asStateFlow()
 
+    private val _selectedLocale = MutableStateFlow("en")
+    val selectedLocale: StateFlow<String> = _selectedLocale.asStateFlow()
+
+    private val _selectedRegion = MutableStateFlow("")
+    val selectedRegion: StateFlow<String> = _selectedRegion.asStateFlow()
+
+    fun setSelectedLocale(locale: String) {
+        _selectedLocale.value = locale
+    }
+
+    fun setSelectedRegion(region: String) {
+        _selectedRegion.value = region.uppercase().trim()
+    }
+
     private val pitchDetector = PitchDetector()
     private val rmsSamples = mutableListOf<Float>()
     private var speechStartTimeMs = 0L
@@ -192,6 +206,22 @@ class SpeechManager(private val context: Context? = null) {
             val recognizer = getOrCreateRecognizer() ?: return
 
             val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                val locale = _selectedLocale.value.lowercase()
+                val region = _selectedRegion.value.uppercase()
+                val langTag = if (region.isNotBlank()) {
+                    "$locale-$region"
+                } else {
+                    when (locale) {
+                        "es" -> "es-ES"
+                        "de" -> "de-DE"
+                        "fr" -> "fr-FR"
+                        "pt" -> "pt-BR"
+                        "it" -> "it-IT"
+                        else -> "en-US"
+                    }
+                }
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE, langTag)
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, langTag)
                 putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
                 putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
                 putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)

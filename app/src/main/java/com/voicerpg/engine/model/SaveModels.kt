@@ -107,5 +107,9 @@ data class GameSaveData(
     val musicVolume: Float = 0.55f,
 
     // 7. Per-speaker TTS voice assignments (installed Android voice model names keyed by speaker id)
-    val voiceAssignments: Map<String, String> = emptyMap()
+    val voiceAssignments: Map<String, String> = emptyMap(),
+
+    // 8. Multi-Language / Locale Selection (en, es, de, fr, pt, it) & Preferred Region (e.g. US, GB, MX, ES)
+    val selectedLanguage: String = "en",
+    val selectedRegion: String = ""
 )
